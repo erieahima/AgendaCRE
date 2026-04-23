@@ -5,18 +5,23 @@ import { firebaseConfig } from '../firebase-config.js';
 const isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY";
 
 let db = null;
-let firestore = null; // Guardar import module referencias
+let auth = null;
 
 if (isConfigured) {
-    // Inicializar
     const app = window.firebaseApp(firebaseConfig);
     db = window.getFirestore(app);
+    auth = window.firebaseAuth.getAuth(app);
 } else {
     console.error("Firebase no está configurado. Revisa firebase-config.js");
 }
 
-// Dependencias de firestore modulares necesarias. Se deben importar de la web.
-import { collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+import { 
+    collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc 
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+import { 
+    signInWithEmailAndPassword, signOut, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 // -- SEDES --
 const SEDES_INICIALES = [
@@ -178,3 +183,16 @@ export async function borrarCitasBulk(citasPorBorrarIds) {
     }
     return borradasCount;
 }
+
+// -- PERFILES DE USUARIO --
+export async function getUsuarioData(uid) {
+    if (!isConfigured) return null;
+    const userRef = doc(db, "usuarios", uid);
+    const snap = await getDoc(userRef);
+    if (snap.exists()) {
+        return snap.data();
+    }
+    return null;
+}
+
+export { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged };

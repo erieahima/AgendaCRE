@@ -3,24 +3,41 @@ import { getSedes, inicializarSedes } from './firebase.js';
 import { renderCalendario, loadCitasCalendario } from './calendario.js';
 import { setupGenerador } from './generador.js';
 import { setupImpresion } from './impresion.js';
+import { initAuth, hasPermission } from './auth.js';
 
 // Estado global de la aplicación
 const AppState = {
     sedes: [],
-    sedeActivaId: null
+    sedeActivaId: null,
+    user: null
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Setup navegación
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Setup navegación base
     setupNavigation();
 
+    // 2. Esperar a la Autenticación
+    initAuth(async (userProfile) => {
+        AppState.user = userProfile;
+        await loadAuthenticatedApp();
+    });
+});
+
+async function loadAuthenticatedApp() {
     // 2. Inicializar y cargar sedes
     await inicializarSedes();
-    AppState.sedes = await getSedes();
+    let sedesData = await getSedes();
+    
+    // FILTRAR SEDES: Admin/Super ve todo, otros solo sedesAsignadas
+    if (AppState.user.rol !== 'Super_admin' && AppState.user.rol !== 'Admin') {
+        const permitidas = AppState.user.sedesAsignadas || [];
+        sedesData = sedesData.filter(s => permitidas.includes(s.codigoTerritorial));
+    }
+    AppState.sedes = sedesData;
     
     // Rellenar selectores
     const globalSelector = document.getElementById('global-sede-selector');
-    globalSelector.innerHTML = ''; // Limpiar
+    globalSelector.innerHTML = ''; 
     
     if (AppState.sedes.length > 0) {
         AppState.sedes.forEach(sede => {
@@ -33,31 +50,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         const opt = document.createElement('option');
         opt.value = "";
-        opt.textContent = "Error de conexión/Firebase";
+        opt.textContent = "Sin sedes asignadas";
         globalSelector.appendChild(opt);
     }
     
+    // Ocultar/Mostrar opciones del menú según permisos
+    document.getElementById('nav-item-generador').style.display = hasPermission('generar') ? 'block' : 'none';
+    document.getElementById('nav-item-impresion').style.display = hasPermission('ver_calendario') ? 'block' : 'none';
+
     // Escuchar cambios de sede global
     globalSelector.addEventListener('change', (e) => {
         AppState.sedeActivaId = e.target.value;
-        // Notificar a otras pantallas
         window.dispatchEvent(new CustomEvent('sedeChanged', { detail: AppState.sedeActivaId }));
     });
 
     // 3. Inicializar módulos
     setupGenerador(AppState);
-    renderCalendario(); // Render inicial (vacío)
+    renderCalendario(); 
     setupImpresion(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {
-        // Si estamos viendo el calendario, recargamos las citas
         const vistaActiva = document.querySelector('.view-section.active').id;
         if(vistaActiva === 'view-calendario') {
             loadCitasCalendario(e.detail);
         }
     });
-});
+
+    // Forzar vista inicial permitida si Generador está oculto
+    if (!hasPermission('generar')) {
+        document.querySelector('[data-target="view-calendario"]').click();
+    }
+}
 
 /**
  * Lógica base de la Single Page Application: Navigation
