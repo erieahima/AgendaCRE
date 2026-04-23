@@ -195,8 +195,8 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 .franja-item {
     display: flex;
-    gap: 1rem;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.5rem;
     background: var(--secondary);
     padding: 1rem;
     border-radius: var(--radius-md);
@@ -414,12 +414,18 @@ h3 { font-size: 1.25rem; font-weight: 600; }
     right: 4px;
     border-radius: 4px;
     padding: 4px 8px;
-    font-size: 0.75rem;
+    font-size: 0.70rem;
     cursor: pointer;
     border: 1px solid;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-all;
+    min-height: 28px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 .cita-evento.disponible {
     background-color: var(--success-bg);

@@ -126,11 +126,10 @@ async function renderDayView(grid) {
             const div = document.createElement('div');
             div.className = `cita-evento ${cita.estado}`;
             div.style.top = `${minutosDesdeOcho}px`;
-            div.style.height = `28px`; // Bloque fijo por simplicidad
             div.style.left = `calc(${anchoPx * idx}% + 4px)`;
             div.style.width = `calc(${anchoPx}% - 8px)`;
             
-            div.innerHTML = `${formatHoraToDisplay(cita.hora)}<br>${cita.codigo.slice(-5)}`; // Mostrar sufijo en bloque pequeño
+            div.innerHTML = `<strong>${formatHoraToDisplay(cita.hora)}</strong><br><span>${cita.codigo}</span>`;
             div.title = cita.codigo;
             
             div.addEventListener('click', () => openModal(cita));

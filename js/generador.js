@@ -31,16 +31,27 @@ function addFranjaHTMl(container, startVal, endVal) {
     div.dataset.id = franjaIdCounter++;
 
     div.innerHTML = `
-        <div style="flex:1;">
-            <label>Inicio:</label>
-            <input type="time" name="franja-inicio" class="input-modern w-full" value="${startVal}" required>
+        <div style="display: flex; gap: 1rem; width: 100%;">
+            <div style="flex:1;">
+                <label>Inicio:</label>
+                <input type="time" name="franja-inicio" class="input-modern w-full" value="${startVal}" required>
+            </div>
+            <div style="flex:1;">
+                <label>Fin:</label>
+                <input type="time" name="franja-fin" class="input-modern w-full" value="${endVal}" required>
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+                <button type="button" class="btn-icon btn-remove-franja">❌</button>
+            </div>
         </div>
-        <div style="flex:1;">
-            <label>Fin:</label>
-            <input type="time" name="franja-fin" class="input-modern w-full" value="${endVal}" required>
-        </div>
-        <div style="display:flex; align-items:flex-end;">
-            <button type="button" class="btn-icon btn-remove-franja">❌</button>
+        <div class="dias-checkboxes" style="margin-top: 0.5rem;">
+            <label><input type="checkbox" value="1" checked> L</label>
+            <label><input type="checkbox" value="2" checked> M</label>
+            <label><input type="checkbox" value="3" checked> X</label>
+            <label><input type="checkbox" value="4" checked> J</label>
+            <label><input type="checkbox" value="5" checked> V</label>
+            <label><input type="checkbox" value="6"> S</label>
+            <label><input type="checkbox" value="0"> D</label>
         </div>
     `;
 
@@ -62,15 +73,6 @@ async function handleGenerarSubmit(e) {
 
     const fechaInicio = document.getElementById('gen-fecha-inicio').value;
     const fechaFin = document.getElementById('gen-fecha-fin').value;
-    const diasCheckboxes = document.querySelectorAll('input[name="dia"]:checked');
-    
-    if (diasCheckboxes.length === 0) {
-        alert("Debes seleccionar al menos un día de la semana.");
-        return;
-    }
-
-    const diasActivos = Array.from(diasCheckboxes).map(cb => parseInt(cb.value));
-
     // Franjas
     const franjasDom = document.querySelectorAll('.franja-item');
     if (franjasDom.length === 0) {
@@ -79,11 +81,20 @@ async function handleGenerarSubmit(e) {
     }
 
     const franjas = Array.from(franjasDom).map(item => {
+        const checked = item.querySelectorAll('input[type="checkbox"]:checked');
         return {
             inicio: item.querySelector('input[name="franja-inicio"]').value,
-            fin: item.querySelector('input[name="franja-fin"]').value
+            fin: item.querySelector('input[name="franja-fin"]').value,
+            diasActivos: Array.from(checked).map(cb => parseInt(cb.value))
         };
     });
+
+    for (let f of franjas) {
+        if (f.diasActivos.length === 0) {
+            alert(`La franja de ${f.inicio} a ${f.fin} debe tener al menos un día activo seleccionado.`);
+            return;
+        }
+    }
 
     const intervalo = parseInt(document.getElementById('gen-intervalo').value);
     const puestos = parseInt(document.getElementById('gen-puestos').value);
@@ -91,7 +102,6 @@ async function handleGenerarSubmit(e) {
     const config = {
         fechaInicio,
         fechaFin,
-        diasActivos,
         franjas,
         intervalo,
         puestos

@@ -81,8 +81,7 @@ export function formatHoraToDisplay(horaStrClean) {
  * config = {
  *   fechaInicio: "YYYY-MM-DD",
  *   fechaFin: "YYYY-MM-DD",
- *   diasActivos: [0, 1, 2, 3, 4, 5, 6], // 0 dom, 1 lun...
- *   franjas: [{inicio: "09:00", fin: "14:00"}],
+ *   franjas: [{inicio: "09:00", fin: "14:00", diasActivos: [1, 2, 3, 4, 5]}],
  *   intervalo: 30, // en minutos
  *   puestos: 3
  * }
@@ -98,11 +97,11 @@ export function generarSlotsBatch(config) {
 
     while (currentDate <= finDate) {
         const dayOfWeek = currentDate.getDay();
-        if (config.diasActivos.includes(dayOfWeek)) {
-            const fechaStrYMD = formatearFecha(currentDate);
+        const fechaStrYMD = formatearFecha(currentDate);
 
-            // Procesar cada franja para este día
-            config.franjas.forEach(franja => {
+        // Procesar cada franja para este día
+        config.franjas.forEach(franja => {
+            if (franja.diasActivos.includes(dayOfWeek)) {
                 let currentHora = franja.inicio;
                 
                 // Mientras la hora actual + intervalo no exceda la hora de fin
@@ -126,8 +125,8 @@ export function generarSlotsBatch(config) {
 
                     currentHora = nextHora;
                 }
-            });
-        }
+            }
+        });
         currentDate.setDate(currentDate.getDate() + 1);
     }
     return slots;
