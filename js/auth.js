@@ -88,11 +88,11 @@ export function hasPermission(action) {
     
     // Mapeo de permisos por rol
     const permissions = {
-        'Super_admin': ['generar', 'ver_calendario', 'editar_cita', 'purgar'],
-        'Admin':       ['generar', 'ver_calendario', 'editar_cita', 'purgar'],
+        'Super_admin': ['generar', 'ver_calendario', 'editar_cita', 'purgar', 'ver_grabaciones'],
+        'Admin':       ['generar', 'ver_calendario', 'editar_cita', 'purgar', 'ver_grabaciones'],
         'Operador':    ['ver_calendario', 'editar_cita'],
         'Cita':        ['ver_calendario', 'editar_cita'],
-        'Grabador':    ['generar', 'ver_calendario'],
+        'Grabador':    ['generar', 'ver_calendario', 'ver_grabaciones'],
         'pantalla':    ['ver_calendario'] // Solo lectura
     };
 

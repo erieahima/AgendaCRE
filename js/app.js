@@ -5,6 +5,7 @@ import { setupGenerador } from './generador.js';
 import { setupImpresion } from './impresion.js';
 import { initAuth, hasPermission } from './auth.js';
 import { setupUsuarios } from './usuarios.js';
+import { setupGrabaciones, renderGrabacionesList } from './grabaciones.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -61,6 +62,9 @@ async function loadAuthenticatedApp() {
     
     const isSuper = AppState.user.rol === 'Super_admin';
     document.getElementById('nav-item-usuarios').style.display = isSuper ? 'block' : 'none';
+    
+    const canRecord = hasPermission('ver_grabaciones');
+    document.getElementById('nav-item-grabaciones').style.display = canRecord ? 'block' : 'none';
 
     // Escuchar cambios de sede global
     globalSelector.addEventListener('change', (e) => {
@@ -73,6 +77,7 @@ async function loadAuthenticatedApp() {
     renderCalendario(); 
     setupImpresion(AppState);
     if(isSuper) setupUsuarios(AppState);
+    if(canRecord) setupGrabaciones(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {
@@ -109,6 +114,8 @@ function setupNavigation() {
             // Hook específico onViewEnter
             if (targetId === 'view-calendario') {
                 loadCitasCalendario(AppState.sedeActivaId);
+            } else if (targetId === 'view-grabaciones') {
+                renderGrabacionesList();
             }
         });
     });

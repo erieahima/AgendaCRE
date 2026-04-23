@@ -207,9 +207,24 @@ export async function guardarPerfilUsuario(uid, data) {
     await setDoc(doc(db, "usuarios", uid), data);
 }
 
+export async function getCitasTerminadas() {
+    if (!isConfigured) return [];
+    const citasRef = collection(db, "citas");
+    // Filtramos por estado 'Terminada' y excluimos las que ya tienen estadoGrabacion 'Grabada'
+    const q = query(
+        citasRef, 
+        where("estado", "==", "Terminada"),
+        where("estadoGrabacion", "!=", "Grabada")
+    );
+    const snapshot = await getDocs(q);
+    const citas = [];
+    snapshot.forEach(docSnap => citas.push({ id: docSnap.id, ...docSnap.data() }));
+    return citas;
+}
+
 export async function borrarUsuarioData(uid) {
     const userRef = doc(db, "usuarios", uid);
     await writeBatch(db).delete(userRef).commit();
 }
 
-export { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth };
+export { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas };
