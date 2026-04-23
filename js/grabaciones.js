@@ -42,10 +42,11 @@ export async function renderGrabacionesList() {
                 <td>${cita.codigoUsuario || '---'}</td>
                 <td>${cita.observaciones || ''}</td>
                 <td>
-                    <select class="input-modern select-estado-grabacion" style="width: 130px;">
+                    <select class="input-modern select-estado-grabacion" style="width: 145px;">
                         <option value="Pendiente" ${cita.estadoGrabacion === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-                        <option value="Incidencia" ${cita.estadoGrabacion === 'Incidencia' ? 'selected' : ''}>Incidencia</option>
-                        <option value="Grabada" ${cita.estadoGrabacion === 'Grabada' ? 'selected' : ''}>Grabada</option>
+                        <option value="Inicia grabación" ${cita.estadoGrabacion === 'Inicia grabación' ? 'selected' : ''}>Inicia grabación 🟠</option>
+                        <option value="Incidencia" ${cita.estadoGrabacion === 'Incidencia' ? 'selected' : ''}>Incidencia 🔴</option>
+                        <option value="Grabada" ${cita.estadoGrabacion === 'Grabada' ? 'selected' : ''}>Grabada 🟢</option>
                     </select>
                 </td>
                 <td>
@@ -53,15 +54,13 @@ export async function renderGrabacionesList() {
                 </td>
             `;
 
+            // Aplicar color inicial si ya tiene un estado especial
+            aplicarColorCita(tr, cita.estadoGrabacion);
+
             // Estilos de fila dinámicos al cambiar el select (preview)
             const select = tr.querySelector('.select-estado-grabacion');
             select.addEventListener('change', (e) => {
-                tr.style.backgroundColor = ''; 
-                if (e.target.value === 'Incidencia') {
-                    tr.style.backgroundColor = '#fee2e2'; // Rojo suave
-                } else if (e.target.value === 'Grabada') {
-                    tr.style.backgroundColor = '#dcfce7'; // Verde suave
-                }
+                aplicarColorCita(tr, e.target.value);
             });
 
             // Evento Guardar
@@ -99,5 +98,20 @@ export async function renderGrabacionesList() {
         });
     } catch (err) {
         tbody.innerHTML = '<tr><td colspan="6">Error al cargar listado: ' + err.message + '</td></tr>';
+    }
+}
+
+function aplicarColorCita(tr, estado) {
+    tr.style.backgroundColor = ''; 
+    switch(estado) {
+        case 'Inicia grabación':
+            tr.style.backgroundColor = '#ffedd5'; // Naranja suave
+            break;
+        case 'Incidencia':
+            tr.style.backgroundColor = '#fee2e2'; // Rojo suave
+            break;
+        case 'Grabada':
+            tr.style.backgroundColor = '#dcfce7'; // Verde suave
+            break;
     }
 }
