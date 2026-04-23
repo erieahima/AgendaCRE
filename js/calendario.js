@@ -83,25 +83,25 @@ async function renderDayView(grid) {
     const yyyymmdd = formatearFecha(currentDate);
     const citasDelDia = await getCitasPorSedeYFecha(AppState.sedeActivaId, yyyymmdd);
     
-    let html = \`
+    let html = `
         <div class="cal-header">
             <div class="time-label-col"></div>
-            <div class="day-header">\${currentDate.toLocaleDateString('es-ES', {weekday: 'short', day: 'numeric'})}</div>
+            <div class="day-header">${currentDate.toLocaleDateString('es-ES', {weekday: 'short', day: 'numeric'})}</div>
         </div>
         <div class="cal-body" id="cal-body-container">
-    \`;
+    `;
 
     // Draw hours grid (08:00 - 20:00)
     for(let h=8; h<=20; h++) {
-        html += \`
-            <div style="position:absolute; top:\${(h-8)*60}px; left:0; right:0; height:60px; border-bottom:1px solid #e2e8f0;"></div>
-            <div style="position:absolute; top:\${(h-8)*60 - 10}px; left:0; width:50px; text-align:right; font-size:0.75rem; color:#64748b;">\${String(h).padStart(2,'0')}:00</div>
-        \`;
+        html += `
+            <div style="position:absolute; top:${(h-8)*60}px; left:0; right:0; height:60px; border-bottom:1px solid #e2e8f0;"></div>
+            <div style="position:absolute; top:${(h-8)*60 - 10}px; left:0; width:50px; text-align:right; font-size:0.75rem; color:#64748b;">${String(h).padStart(2,'0')}:00</div>
+        `;
     }
 
     // Contenedor principal de los eventos
-    html += \`<div id="events-area" style="position:absolute; top:0; left:60px; right:0; bottom:0; padding:4px;">\`;
-    html += \`</div></div>\`;
+    html += `<div id="events-area" style="position:absolute; top:0; left:60px; right:0; bottom:0; padding:4px;">`;
+    html += `</div></div>`;
     grid.innerHTML = html;
 
     const eventsArea = document.getElementById('events-area');
@@ -124,13 +124,13 @@ async function renderDayView(grid) {
         
         citasGrupo.forEach((cita, idx) => {
             const div = document.createElement('div');
-            div.className = \`cita-evento \${cita.estado}\`;
-            div.style.top = \`\${minutosDesdeOcho}px\`;
-            div.style.height = \`28px\`; // Bloque fijo por simplicidad
-            div.style.left = \`calc(\${anchoPx * idx}% + 4px)\`;
-            div.style.width = \`calc(\${anchoPx}% - 8px)\`;
+            div.className = `cita-evento ${cita.estado}`;
+            div.style.top = `${minutosDesdeOcho}px`;
+            div.style.height = `28px`; // Bloque fijo por simplicidad
+            div.style.left = `calc(${anchoPx * idx}% + 4px)`;
+            div.style.width = `calc(${anchoPx}% - 8px)`;
             
-            div.innerHTML = \`\${formatHoraToDisplay(cita.hora)}<br>\${cita.codigo.slice(-5)}\`; // Mostrar sufijo en bloque pequeño
+            div.innerHTML = `${formatHoraToDisplay(cita.hora)}<br>${cita.codigo.slice(-5)}`; // Mostrar sufijo en bloque pequeño
             div.title = cita.codigo;
             
             div.addEventListener('click', () => openModal(cita));
@@ -150,7 +150,7 @@ function setupModalControls() {
         if(!modalCitaActiva) return;
         
         const nuevoEstado = modalCitaActiva.estado === 'disponible' ? 'ocupada' : 'disponible';
-        const ok = confirm(\`¿Cambiar estado a: \${nuevoEstado}?\`);
+        const ok = confirm(`¿Cambiar estado a: ${nuevoEstado}?`);
         if(ok) {
             await actualizarEstadoCita(modalCitaActiva.codigo, nuevoEstado);
             modal.classList.add('hidden');
@@ -170,11 +170,11 @@ function openModal(cita) {
     document.getElementById('modal-codigo').textContent = cita.codigo;
     document.getElementById('modal-fecha').textContent = cita.fecha;
     document.getElementById('modal-hora').textContent = formatHoraToDisplay(cita.hora);
-    document.getElementById('modal-puesto').textContent = \`Puesto \${cita.puesto}\`;
+    document.getElementById('modal-puesto').textContent = `Puesto ${cita.puesto}`;
     
     const bdg = document.getElementById('modal-estado-label');
     bdg.textContent = cita.estado.toUpperCase();
-    bdg.className = \`badge \${cita.estado}\`;
+    bdg.className = `badge ${cita.estado}`;
     
     modal.classList.remove('hidden');
 }

@@ -39,7 +39,7 @@ async function loadImpresion() {
     // UI header config
     const sedeName = appStateRef.sedes.find(s => s.codigoTerritorial === appStateRef.sedeActivaId)?.nombre || appStateRef.sedeActivaId;
     document.getElementById('print-sede-name').textContent = sedeName;
-    document.getElementById('print-date-label').textContent = \`Fecha generada: \${fechaInput}\`;
+    document.getElementById('print-date-label').textContent = `Fecha generada: ${fechaInput}`;
     
     try {
         const citas = await getCitasPorSedeYFecha(appStateRef.sedeActivaId, yyyymmdd);
@@ -59,20 +59,20 @@ async function loadImpresion() {
                 tr.style.backgroundColor = '#fef2f2';
             }
 
-            tr.innerHTML = \`
-                <td><strong>\${formatHoraToDisplay(cita.hora)}</strong></td>
-                <td style="font-family: monospace; font-size: 1.1em;">\${cita.codigo}</td>
-                <td>Puesto \${cita.puesto}</td>
-                <td><span class="badge \${cita.estado}">\${cita.estado}</span></td>
+            tr.innerHTML = `
+                <td><strong>${formatHoraToDisplay(cita.hora)}</strong></td>
+                <td style="font-family: monospace; font-size: 1.1em;">${cita.codigo}</td>
+                <td>Puesto ${cita.puesto}</td>
+                <td><span class="badge ${cita.estado}">${cita.estado}</span></td>
                 <td><!-- Espacio observaciones papel --></td>
-            \`;
+            `;
             tbody.appendChild(tr);
         });
 
         document.getElementById('btn-print').disabled = false;
 
     } catch (e) {
-        tbody.innerHTML = \`<tr><td colspan="5" class="text-center" style="color:red">Error: \${e.message}</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:red">Error: ${e.message}</td></tr>`;
         document.getElementById('btn-print').disabled = true;
     }
 }

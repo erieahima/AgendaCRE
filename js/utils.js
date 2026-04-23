@@ -17,7 +17,7 @@ export function generarSufijo(longitud = 3) {
  * Formato: REG + COD_SEDE(5) + YYYYMMDD + HHMM + SUFIJO(3)
  */
 export function generarCodigo(codigoSede, fechaStr, horaStr, sufijo) {
-    return \`REG\${codigoSede}\${fechaStr}\${horaStr}\${sufijo}\`;
+    return `REG${codigoSede}${fechaStr}${horaStr}${sufijo}`;
 }
 
 /**
@@ -27,7 +27,7 @@ export function formatearFecha(date) {
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
-    return \`\${yyyy}\${mm}\${dd}\`;
+    return `${yyyy}${mm}${dd}`;
 }
 
 /**
@@ -37,7 +37,7 @@ export function dateToInputString(date) {
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const dd = String(date.getDate()).padStart(2, '0');
-    return \`\${yyyy}-\${mm}-\${dd}\`;
+    return `${yyyy}-${mm}-${dd}`;
 }
 
 /**
@@ -58,7 +58,7 @@ export function sumarMinutos(horaStr, minutosSuma) {
     const totalMinutos = h * 60 + m + minutosSuma;
     const newH = Math.floor(totalMinutos / 60) % 24;
     const newM = totalMinutos % 60;
-    return \`\${String(newH).padStart(2, '0')}:\${String(newM).padStart(2, '0')}\`;
+    return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
 }
 
 /**
@@ -73,7 +73,7 @@ export function cleanHora(horaStr) {
  */
 export function formatHoraToDisplay(horaStrClean) {
     if(horaStrClean.length !== 4) return horaStrClean;
-    return \`\${horaStrClean.slice(0, 2)}:\${horaStrClean.slice(2, 4)}\`;
+    return `${horaStrClean.slice(0, 2)}:${horaStrClean.slice(2, 4)}`;
 }
 
 /**

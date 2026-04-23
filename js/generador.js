@@ -30,19 +30,19 @@ function addFranjaHTMl(container, startVal, endVal) {
     div.className = 'franja-item';
     div.dataset.id = franjaIdCounter++;
 
-    div.innerHTML = \`
+    div.innerHTML = `
         <div style="flex:1;">
             <label>Inicio:</label>
-            <input type="time" name="franja-inicio" class="input-modern w-full" value="\${startVal}" required>
+            <input type="time" name="franja-inicio" class="input-modern w-full" value="${startVal}" required>
         </div>
         <div style="flex:1;">
             <label>Fin:</label>
-            <input type="time" name="franja-fin" class="input-modern w-full" value="\${endVal}" required>
+            <input type="time" name="franja-fin" class="input-modern w-full" value="${endVal}" required>
         </div>
         <div style="display:flex; align-items:flex-end;">
             <button type="button" class="btn-icon btn-remove-franja">❌</button>
         </div>
-    \`;
+    `;
 
     // Botón eliminar
     div.querySelector('.btn-remove-franja').addEventListener('click', () => {
@@ -116,7 +116,7 @@ async function handleGenerarSubmit(e) {
         };
     });
 
-    if(!confirm(\`Se van a generar \${citas.length} citas. ¿Deseas continuar?\`)) {
+    if(!confirm(`Se van a generar ${citas.length} citas. ¿Deseas continuar?`)) {
         return;
     }
 
@@ -144,7 +144,7 @@ async function executeBulkCreation(citas) {
         const guardadas = await guardarCitasBulk(citas);
 
         progressFill.style.width = '100%';
-        progressText.innerText = \`¡Éxito! Se han guardado \${guardadas} citas en la agenda.\`;
+        progressText.innerText = `¡Éxito! Se han guardado ${guardadas} citas en la agenda.`;
         
         // Reset después de unos segundos
         setTimeout(() => {
