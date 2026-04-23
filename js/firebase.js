@@ -314,7 +314,9 @@ export async function buscarCitasParaAsignar(sedeId) {
     // Traemos las últimas 1000 citas de la sede para filtrar en cliente (soporta substring)
     const q = query(citasRef, 
         where("sede", "==", sedeId),
-        limit(1000)
+        orderBy("fecha", "desc"),
+        orderBy("hora", "desc"),
+        limit(2000)
     );
 
     const results = [];
