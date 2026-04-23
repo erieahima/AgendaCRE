@@ -38,6 +38,23 @@ export function setupAsignar(appState) {
     window.addEventListener('sedeChanged', () => {
         allCitasCache = [];
     });
+
+    // Refrescar al guardar desde el modal
+    window.addEventListener('citaActualizada', async () => {
+        allCitasCache = []; // Forzar recarga
+        if (searchInput.value.trim().length >= 3) {
+            // Re-lanzar búsqueda para ver reflejado el cambio (ej. color azul)
+            const term = searchInput.value.trim().toUpperCase();
+            if (lastSedeId !== appState.sedeActivaId || allCitasCache.length === 0) {
+                allCitasCache = await buscarCitasParaAsignar(appState.sedeActivaId);
+                lastSedeId = appState.sedeActivaId;
+            }
+            const matches = allCitasCache.filter(cita => 
+                cita.codigo.toUpperCase().includes(term)
+            ).slice(0, 40);
+            renderResults(matches);
+        }
+    });
 }
 
 function renderResults(citas) {

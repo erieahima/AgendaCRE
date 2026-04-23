@@ -169,7 +169,12 @@ async function renderDayView(grid) {
 // -- Modal Logistics --
 let modalCitaActiva = null;
 
+let modalInitialized = false;
+
 function setupModalControls() {
+    if (modalInitialized) return;
+    modalInitialized = true;
+
     const modal = document.getElementById('cita-modal');
     modal.querySelector('.modal-close').addEventListener('click', () => modal.classList.add('hidden'));
     
@@ -180,13 +185,17 @@ function setupModalControls() {
         }
     });
 
-    document.getElementById('btn-save-cita').addEventListener('click', async () => {
+    const btnSave = document.getElementById('btn-save-cita');
+    btnSave.addEventListener('click', async () => {
         if(!modalCitaActiva) return;
         
         const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
         const iniciales = document.getElementById('modal-iniciales').value;
         const observaciones = document.getElementById('modal-observaciones').value;
         const estado = document.getElementById('modal-estado-select').value;
+
+        btnSave.disabled = true;
+        btnSave.textContent = "Guardando...";
 
         try {
             await actualizarCitaData(modalCitaActiva.id || modalCitaActiva.codigo, {
@@ -195,10 +204,22 @@ function setupModalControls() {
                 observaciones,
                 estado
             });
+            
             modal.classList.add('hidden');
-            updateCalendario(); 
+            
+            // Refrescar vistas
+            if (document.getElementById('view-calendario').classList.contains('active')) {
+                updateCalendario(); 
+            }
+            
+            // Disparar evento para que Asignar.js sepa que debe refrescar su caché
+            window.dispatchEvent(new CustomEvent('citaActualizada', { detail: modalCitaActiva.id || modalCitaActiva.codigo }));
+            
         } catch (err) {
             alert("Error al guardar: " + err.message);
+        } finally {
+            btnSave.disabled = false;
+            btnSave.textContent = "Guardar Cambios";
         }
     });
 
