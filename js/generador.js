@@ -1,6 +1,6 @@
 // js/generador.js
 import { generarSlotsBatch, generarCodigo, generarSufijo, dateToInputString } from './utils.js';
-import { guardarCitasBulk } from './firebase.js';
+import { guardarCitasBulk, getCitasPorSedeYRango, borrarCitasBulk } from './firebase.js';
 
 let appStateRef = null;
 let franjaIdCounter = 0;
@@ -23,6 +23,11 @@ export function setupGenerador(appState) {
     });
 
     form.addEventListener('submit', handleGenerarSubmit);
+    
+    const btnBorrar = document.getElementById('btn-borrar');
+    if(btnBorrar) {
+        btnBorrar.addEventListener('click', handleBorrarSubmit);
+    }
 }
 
 function addFranjaHTMl(container, startVal, endVal) {
@@ -169,4 +174,87 @@ async function executeBulkCreation(citas) {
         btnSubmit.disabled = false;
         alert("Error: " + e.message);
     }
+}
+
+async function handleBorrarSubmit(e) {
+    if(e) e.preventDefault();
+
+    if (!appStateRef.sedeActivaId) {
+        alert("Por favor, selecciona una sede arriba (si no carga, revisa la configuración de Firebase).");
+        return;
+    }
+
+    const form = document.getElementById('form-generador');
+    if (!form.reportValidity()) return; // Valida que fecha de incio y fin estén rellenas
+
+    const fechaInicio = document.getElementById('gen-fecha-inicio').value;
+    const fechaFin = document.getElementById('gen-fecha-fin').value;
+    
+    const franjasDom = document.querySelectorAll('.franja-item');
+    if (franjasDom.length === 0) {
+        alert("Debes añadir al menos una franja horaria.");
+        return;
+    }
+
+    const franjas = Array.from(franjasDom).map(item => {
+        const checked = item.querySelectorAll('input[type="checkbox"]:checked');
+        return {
+            inicio: item.querySelector('input[name="franja-inicio"]').value.replace(':', ''),
+            fin: item.querySelector('input[name="franja-fin"]').value.replace(':', ''),
+            diasActivos: Array.from(checked).map(cb => parseInt(cb.value))
+        };
+    });
+
+    for (let f of franjas) {
+        if (f.diasActivos.length === 0) {
+            alert(`La franja debe tener al menos un día activo seleccionado.`);
+            return;
+        }
+    }
+
+    const btnBorrar = document.getElementById('btn-borrar');
+    btnBorrar.disabled = true;
+
+    try {
+        const fechaInicioYMD = fechaInicio.replace(/-/g, '');
+        const fechaFinYMD = fechaFin.replace(/-/g, '');
+        
+        const citas = await getCitasPorSedeYRango(appStateRef.sedeActivaId, fechaInicioYMD, fechaFinYMD);
+        
+        const citasAEliminar = citas.filter(cita => {
+            const yyyy = parseInt(cita.fecha.substring(0, 4));
+            const mm = parseInt(cita.fecha.substring(4, 6)) - 1;
+            const dd = parseInt(cita.fecha.substring(6, 8));
+            const dateObj = new Date(yyyy, mm, dd);
+            const dayOfWeek = dateObj.getDay();
+
+            return franjas.some(franja => {
+                if (!franja.diasActivos.includes(dayOfWeek)) return false;
+                return cita.hora >= franja.inicio && cita.hora < franja.fin;
+            });
+        });
+
+        if (citasAEliminar.length === 0) {
+            alert("No se encontraron citas en Base de Datos que coincidan con este rango y franjas horarias.");
+            btnBorrar.disabled = false;
+            return;
+        }
+
+        if(!confirm(`⚠️ Se han encontrado ${citasAEliminar.length} citas que coinciden matemáticamente con este rango de fechas y franjas.\n\n¿Seguro que deseas ELIMINARLAS irrevocablemente?`)) {
+            btnBorrar.disabled = false;
+            return;
+        }
+
+        // Proceder al batch delete
+        const idsArray = citasAEliminar.map(c => c.id);
+        const borradas = await borrarCitasBulk(idsArray);
+        
+        alert(`✅ Éxito. Se han eliminado ${borradas} citas permanentemente de la sede.`);
+        
+    } catch (err) {
+        console.error(err);
+        alert("Error al borrar citas: " + err.message);
+    }
+    
+    btnBorrar.disabled = false;
 }

@@ -138,3 +138,45 @@ export async function actualizarEstadoCita(codigoCita, nuevoEstado) {
         estado: nuevoEstado
     });
 }
+
+export async function getCitasPorSedeYRango(codigoSede, fechaInicioYMD, fechaFinYMD) {
+    if (!isConfigured) return [];
+    
+    const citasRef = collection(db, "citas");
+    const q = query(
+        citasRef, 
+        where("sede", "==", codigoSede),
+        where("fecha", ">=", fechaInicioYMD),
+        where("fecha", "<=", fechaFinYMD)
+    );
+    const snapshot = await getDocs(q);
+    
+    const citas = [];
+    snapshot.forEach(docSnap => citas.push({ id: docSnap.id, ...docSnap.data() }));
+    return citas;
+}
+
+export async function borrarCitasBulk(citasPorBorrarIds) {
+    if (!isConfigured) {
+        console.warn("Firebase no const, simulando: ", citasPorBorrarIds.length, " citas a borrar.");
+        return new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const maxBatchSize = 500;
+    const chunks = [];
+    for (let i = 0; i < citasPorBorrarIds.length; i += maxBatchSize) {
+        chunks.push(citasPorBorrarIds.slice(i, i + maxBatchSize));
+    }
+
+    let borradasCount = 0;
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        for (const id of chunk) {
+            const docRef = doc(db, "citas", id);
+            batch.delete(docRef);
+            borradasCount++;
+        }
+        await batch.commit();
+    }
+    return borradasCount;
+}
