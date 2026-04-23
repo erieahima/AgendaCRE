@@ -270,16 +270,14 @@ export async function buscarCitasHistorico(sedeId, term) {
     if (!isConfigured || !sedeId || term.length < 3) return [];
     const citasRef = collection(db, "citas");
     
-    // Simplificamos: buscamos coincidencia exacta en código o códigoUsuario
+    // Buscamos coincidencia exacta en código o códigoUsuario (sin filtrar por estado para máxima fiabilidad)
     const q1 = query(citasRef, 
         where("sede", "==", sedeId), 
-        where("codigo", "==", term),
-        where("estadoGrabacion", "==", "Grabada")
+        where("codigo", "==", term)
     );
     const q2 = query(citasRef, 
         where("sede", "==", sedeId), 
-        where("codigoUsuario", "==", term),
-        where("estadoGrabacion", "==", "Grabada")
+        where("codigoUsuario", "==", term)
     );
 
     const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);

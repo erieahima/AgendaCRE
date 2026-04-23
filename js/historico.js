@@ -46,6 +46,14 @@ async function loadHistorico() {
         return;
     }
 
+    const term = document.getElementById('hist-search').value.trim();
+    
+    // Si hay búsqueda activa, ignoramos fechas y buscamos globalmente
+    if (term.length >= 2) {
+        filtrarEnPantalla(term);
+        return;
+    }
+
     const start = document.getElementById('hist-fecha-inicio').value.replace(/-/g, '');
     const end = document.getElementById('hist-fecha-fin').value.replace(/-/g, '');
     
