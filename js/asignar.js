@@ -1,6 +1,8 @@
 import { buscarCitasParaAsignar } from './firebase.js';
 import { formatearFechaHumana, formatearHoraHumana } from './utils.js';
 
+let allCitasCache = [];
+let lastSedeId = null;
 let appStateRef = null;
 
 export function setupAsignar(appState) {
@@ -11,14 +13,30 @@ export function setupAsignar(appState) {
     if (!searchInput) return;
 
     searchInput.addEventListener('input', async (e) => {
-        const term = e.target.value.trim();
+        const term = e.target.value.trim().toUpperCase();
+        
         if (term.length < 3) {
             resultsContainer.innerHTML = '';
             return;
         }
 
-        const matches = await buscarCitasParaAsignar(appState.sedeActivaId, term);
+        // Recargar caché si cambia la sede o está vacío
+        if (lastSedeId !== appState.sedeActivaId || allCitasCache.length === 0) {
+            allCitasCache = await buscarCitasParaAsignar(appState.sedeActivaId);
+            lastSedeId = appState.sedeActivaId;
+        }
+
+        // Filtrar localmente (soporta substring en cualquier parte)
+        const matches = allCitasCache.filter(cita => 
+            cita.codigo.toUpperCase().includes(term)
+        ).slice(0, 40); // Limitar a 40 para rendimiento UI
+
         renderResults(matches);
+    });
+
+    // Limpiar caché al cambiar de sede
+    window.addEventListener('sedeChanged', () => {
+        allCitasCache = [];
     });
 }
 

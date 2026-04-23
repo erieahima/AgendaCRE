@@ -307,19 +307,14 @@ export async function buscarCitasHistorico(sedeId, term) {
     return Array.from(results.values());
 }
 
-export async function buscarCitasParaAsignar(sedeId, term) {
-    if (!isConfigured || !sedeId || term.length < 3) return [];
+export async function buscarCitasParaAsignar(sedeId) {
+    if (!isConfigured || !sedeId) return [];
     
-    const termClean = term.trim().toUpperCase();
     const citasRef = collection(db, "citas");
-    
-    // Buscamos por prefijo de Código de Cita en la sede actual
+    // Traemos las últimas 1000 citas de la sede para filtrar en cliente (soporta substring)
     const q = query(citasRef, 
         where("sede", "==", sedeId),
-        orderBy("codigo"), 
-        startAt(termClean), 
-        endAt(termClean + "\uf8ff"), 
-        limit(20)
+        limit(1000)
     );
 
     const results = [];
@@ -327,7 +322,7 @@ export async function buscarCitasParaAsignar(sedeId, term) {
         const snap = await getDocs(q);
         snap.forEach(d => results.push({id: d.id, ...d.data()}));
     } catch (e) {
-        console.error("Error en búsqueda para asignar:", e);
+        console.error("Error cargando citas para asignar:", e);
     }
     
     return results;
