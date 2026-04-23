@@ -207,7 +207,7 @@ export async function guardarPerfilUsuario(uid, data) {
     await setDoc(doc(db, "usuarios", uid), data);
 }
 
-export async function getCitasTerminadas() {
+async function getCitasTerminadas() {
     if (!isConfigured) return [];
     const citasRef = collection(db, "citas");
     // Filtramos por estado 'Terminada' y excluimos las que ya tienen estadoGrabacion 'Grabada'
