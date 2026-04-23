@@ -49,9 +49,17 @@ function renderGrabacionesList(citas) {
         aplicarClaseFila(tr, cita.estadoGrabacion);
 
         tr.innerHTML = `
-            <td><div style="font-weight: 600; color: var(--text-main);">${formatearFechaLarga(cita.fecha)}</div><div style="font-size: 0.8rem; color: var(--text-muted);">${cita.hora}h</div></td>
+            <td>
+                <div style="font-weight: 600; color: var(--text-main);">${formatearFechaPro(cita.fecha)}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraPro(cita.hora)}</div>
+            </td>
             <td><span class="badge" style="background: #f1f5f9; color: #475569; font-family: monospace;">${cita.codigo}</span></td>
-            <td><strong>${cita.codigoUsuario || '---'}</strong></td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <strong id="user-code-${cita.id}">${cita.codigoUsuario || '---'}</strong>
+                    ${cita.codigoUsuario ? `<button class="btn-copy-code" data-code="${cita.codigoUsuario}" style="background:none; border:none; cursor:pointer; font-size: 1rem; padding: 2px;" title="Copiar código">📋</button>` : ''}
+                </div>
+            </td>
             <td style="max-width: 250px; font-size: 0.85rem; color: #64748b; line-height: 1.4;">${cita.observaciones || '<i style="color:#cbd5e1">Sin observaciones</i>'}</td>
             <td>
                 <select class="input-modern select-estado-grabacion" style="width: 160px; font-weight: 500;">
@@ -66,6 +74,18 @@ function renderGrabacionesList(citas) {
             </td>
         `;
 
+        // Lógica de copia
+        const btnCopy = tr.querySelector('.btn-copy-code');
+        if (btnCopy) {
+            btnCopy.addEventListener('click', () => {
+                const code = btnCopy.getAttribute('data-code');
+                navigator.clipboard.writeText(code);
+                const originalText = btnCopy.textContent;
+                btnCopy.textContent = '✅';
+                setTimeout(() => { btnCopy.textContent = originalText; }, 1500);
+            });
+        }
+
         const select = tr.querySelector('.select-estado-grabacion');
         
         // Cambio inmediato para "Inicia grabación" (Coordinación)
@@ -76,7 +96,6 @@ function renderGrabacionesList(citas) {
             if (nuevoEstado === 'Inicia grabación') {
                 try {
                     await actualizarCitaData(cita.codigo, { estadoGrabacion: nuevoEstado });
-                    // No hace falta alert, el onSnapshot actualizará a los demás
                 } catch (err) {
                     console.error("Error sincronizando inicio:", err);
                 }
@@ -91,7 +110,7 @@ function renderGrabacionesList(citas) {
             saveBtn.textContent = "...";
 
             try {
-                await actualizarCitaData(cita.codigo, { estadoGrabacion: nuevoEstado });
+                await actualizarCitaData(cita.id, { estadoGrabacion: nuevoEstado });
                 if (nuevoEstado === 'Grabada') {
                     // El listener lo quitará de la vista automáticamente
                 } else {
@@ -119,19 +138,34 @@ function aplicarClaseFila(tr, estado) {
     }
 }
 
-function formatearFechaLarga(fechaStr) {
+// FORMATO: DD/MM/YYYY
+function formatearFechaPro(fechaStr) {
     if (!fechaStr || typeof fechaStr !== 'string') return '---';
-    const parts = fechaStr.split('-');
-    if (parts.length !== 3) return fechaStr; 
     
-    const y = parseInt(parts[0]);
-    const m = parseInt(parts[1]);
-    const d = parseInt(parts[2]);
+    let y, m, d;
+    
+    if (fechaStr.includes('-')) {
+        [y, m, d] = fechaStr.split('-');
+    } else if (fechaStr.length === 8) {
+        y = fechaStr.substring(0, 4);
+        m = fechaStr.substring(4, 6);
+        d = fechaStr.substring(6, 8);
+    } else {
+        return fechaStr;
+    }
 
-    if (isNaN(y) || isNaN(m) || isNaN(d)) return fechaStr;
+    return `${d}/${m}/${y}`;
+}
 
-    const fecha = new Date(y, m - 1, d);
-    if (isNaN(fecha.getTime())) return fechaStr;
-
-    return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+// FORMATO: HH:mmh
+function formatearHoraPro(horaStr) {
+    if (!horaStr || typeof horaStr !== 'string') return '---';
+    
+    if (horaStr.includes(':')) return horaStr + 'h';
+    
+    if (horaStr.length === 4) {
+        return `${horaStr.substring(0,2)}:${horaStr.substring(2,4)}h`;
+    }
+    
+    return horaStr + 'h';
 }
