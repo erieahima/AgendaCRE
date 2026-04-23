@@ -7,20 +7,31 @@ let currentView = 'dia'; // 'dia', 'semana', 'mes'
 let currentDate = new Date();
 let citasData = []; // Cache en memoria para la vista actual
 
+let controlsInitialized = false;
+
 export function renderCalendario() {
-    setupControls();
+    if (!controlsInitialized) {
+        setupControls();
+        controlsInitialized = true;
+    }
     updateCalendario();
 }
 
 export async function loadCitasCalendario(sedeId) {
-    // Si estamos en vista de semana necesitaríamos cargar múltiples días.
-    // Para simplificar esta demo full-stack, en 'dia' carga un día.
-    // 'semana' y 'mes' también buscarán en un rango (simplificaremos iterando getCitasPorSedeYFecha por cada día a pintar, o mock)
-    // En produccion se haría una query >= y <= fecha
     updateCalendario();
 }
 
 function setupControls() {
+    // Evitar registros duplicados si por alguna razón la bandera falla
+    const prevBtn = document.getElementById('cal-prev');
+    const nextBtn = document.getElementById('cal-next');
+    
+    // Clonar para limpiar listeners previos si existieran (doble seguridad)
+    const newPrev = prevBtn.cloneNode(true);
+    const newNext = nextBtn.cloneNode(true);
+    prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+    nextBtn.parentNode.replaceChild(newNext, nextBtn);
+
     document.querySelector('.view-toggles').addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
             document.querySelectorAll('.view-toggles .btn-toggle').forEach(b => b.classList.remove('active'));
@@ -30,13 +41,13 @@ function setupControls() {
         }
     });
 
-    document.getElementById('cal-prev').addEventListener('click', () => {
+    newPrev.addEventListener('click', () => {
         if(currentView === 'dia') currentDate.setDate(currentDate.getDate() - 1);
         if(currentView === 'mes') currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendario();
     });
 
-    document.getElementById('cal-next').addEventListener('click', () => {
+    newNext.addEventListener('click', () => {
         if(currentView === 'dia') currentDate.setDate(currentDate.getDate() + 1);
         if(currentView === 'mes') currentDate.setMonth(currentDate.getMonth() + 1);
         updateCalendario();
@@ -195,7 +206,6 @@ function openModal(cita) {
     document.getElementById('modal-codigo').textContent = cita.codigo;
     document.getElementById('modal-fecha').textContent = cita.fecha;
     document.getElementById('modal-hora').textContent = formatHoraToDisplay(cita.hora);
-    document.getElementById('modal-puesto').textContent = `Puesto ${cita.puesto}`;
     
     document.getElementById('modal-codigo-usuario').value = cita.codigoUsuario || "";
     document.getElementById('modal-observaciones').value = cita.observaciones || "";

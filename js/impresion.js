@@ -31,7 +31,7 @@ async function loadImpresion() {
     const yyyymmdd = fechaInput.replace(/-/g, '');
     
     const tbody = document.getElementById('print-tbody');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Cargando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Cargando...</td></tr>';
     
     const printArea = document.getElementById('print-area');
     printArea.classList.remove('hidden');
@@ -45,7 +45,7 @@ async function loadImpresion() {
         const citas = await getCitasPorSedeYFecha(appStateRef.sedeActivaId, yyyymmdd);
         
         if(citas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay citas generadas para esta sede y fecha.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay citas generadas para esta sede y fecha.</td></tr>';
             document.getElementById('btn-print').disabled = true;
             return;
         }
@@ -62,7 +62,6 @@ async function loadImpresion() {
             tr.innerHTML = `
                 <td><strong>${formatHoraToDisplay(cita.hora)}</strong></td>
                 <td style="font-family: monospace; font-size: 1.1em;">${cita.codigo}</td>
-                <td>Puesto ${cita.puesto}</td>
                 <td><span class="badge ${cita.estado}">${cita.estado}</span></td>
                 <td><!-- Espacio observaciones papel --></td>
             `;
@@ -72,7 +71,7 @@ async function loadImpresion() {
         document.getElementById('btn-print').disabled = false;
 
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:red">Error: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color:red">Error: ${e.message}</td></tr>`;
         document.getElementById('btn-print').disabled = true;
     }
 }
