@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de Citas Institucional</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Firebase SDK (Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+        window.firebaseApp = initializeApp;
+        window.getFirestore = getFirestore;
+    </script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>Agenda Web</h2>
+            </div>
+            
+            <div class="sede-selector-container">
+                <label for="global-sede-selector">Sede activa:</label>
+                <select id="global-sede-selector" class="input-modern">
+                    <option value="" disabled selected>Cargando sedes...</option>
+                </select>
+            </div>
+
+            <ul class="nav-links">
+                <li><button class="nav-btn active" data-target="view-generador">⚙️ Generador</button></li>
+                <li><button class="nav-btn" data-target="view-calendario">📅 Calendario</button></li>
+                <li><button class="nav-btn" data-target="view-impresion">🖨️ Impresión</button></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- VIEW: Generador -->
+            <section id="view-generador" class="view-section active">
+                <div class="header-section">
+                    <h1>Generador de Citas</h1>
+                    <p class="subtitle">Configura y crea bloques de citas para la sede seleccionada.</p>
+                </div>
+                
+                <div class="card">
+                    <form id="form-generador" class="grid-form">
+                        <div class="form-group row-span-full">
+                            <h3 class="group-title">Rango de Fechas</h3>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Inicio:</label>
+                            <input type="date" id="gen-fecha-inicio" required class="input-modern">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Fin:</label>
+                            <input type="date" id="gen-fecha-fin" required class="input-modern">
+                        </div>
+
+                        <div class="form-group row-span-full">
+                            <h3 class="group-title">Días Activos</h3>
+                            <div class="dias-checkboxes">
+                                <label><input type="checkbox" name="dia" value="1" checked> Lunes</label>
+                                <label><input type="checkbox" name="dia" value="2" checked> Martes</label>
+                                <label><input type="checkbox" name="dia" value="3" checked> Miércoles</label>
+                                <label><input type="checkbox" name="dia" value="4" checked> Jueves</label>
+                                <label><input type="checkbox" name="dia" value="5" checked> Viernes</label>
+                                <label><input type="checkbox" name="dia" value="6"> Sábado</label>
+                                <label><input type="checkbox" name="dia" value="0"> Domingo</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group row-span-full">
+                            <h3 class="group-title flex-between">
+                                Franjas Horarias
+                                <button type="button" id="btn-add-franja" class="btn-small btn-secondary">+ Añadir franja</button>
+                            </h3>
+                            <div id="franjas-container" class="franjas-list">
+                                <!-- Las franjas se añaden aquí JS -->
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Intervalo entre citas (minutos):</label>
+                            <select id="gen-intervalo" required class="input-modern">
+                                <option value="15">15 min</option>
+                                <option value="20">20 min</option>
+                                <option value="30" selected>30 min</option>
+                                <option value="45">45 min</option>
+                                <option value="60">60 min</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Puestos de atención simultánea:</label>
+                            <input type="number" id="gen-puestos" required min="1" max="100" value="1" class="input-modern">
+                        </div>
+                        
+                        <div class="form-actions row-span-full">
+                            <button type="submit" id="btn-generar" class="btn-primary btn-large">Generar Citas</button>
+                        </div>
+                        
+                        <div id="progress-container" class="progress-bar-container hidden row-span-full">
+                            <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+                            <p id="progress-text" class="text-center mt-2">Generando...</p>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- VIEW: Calendario -->
+            <section id="view-calendario" class="view-section">
+                <div class="header-section">
+                    <h1>Calendario</h1>
+                    <div class="calendar-controls">
+                        <div class="view-toggles">
+                            <button class="btn-toggle active" data-view="dia">Día</button>
+                            <button class="btn-toggle" data-view="semana">Semana</button>
+                            <button class="btn-toggle" data-view="mes">Mes</button>
+                        </div>
+                        <div class="nav-controls">
+                            <button id="cal-prev" class="btn-icon">◀</button>
+                            <h2 id="cal-current-date-label" class="calendar-label">Cargando...</h2>
+                            <button id="cal-next" class="btn-icon">▶</button>
+                            <button id="cal-today" class="btn-secondary">Hoy</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card calendar-card">
+                    <div id="calendar-grid" class="calendar-grid">
+                        <!-- Dynamic calendar injection -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Impresión -->
+            <section id="view-impresion" class="view-section">
+                <div class="header-section no-print">
+                    <h1>Impresión de Citas</h1>
+                    <p class="subtitle">Genera un listado de citas para su versión en papel.</p>
+                </div>
+
+                <div class="card no-print">
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Fecha:</label>
+                            <input type="date" id="print-fecha" class="input-modern">
+                        </div>
+                        <div class="form-actions" style="align-items: flex-end;">
+                            <button id="btn-load-print" class="btn-secondary">Cargar Vista Previa</button>
+                            <button id="btn-print" class="btn-primary" disabled>🖨️ Imprimir Listado</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="print-area" class="print-area mt-4 hidden">
+                    <div class="print-header">
+                        <h2>Listado de Citas - <span id="print-sede-name"></span></h2>
+                        <h3 id="print-date-label"></h3>
+                    </div>
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Código</th>
+                                <th>Puesto</th>
+                                <th>Estado</th>
+                                <th style="width: 40%">Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="print-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal Detalles Cita -->
+    <div id="cita-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalle de Cita</h2>
+                <button class="btn-close modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="codigo-display">
+                    <span id="modal-codigo">REGXXXXX...</span>
+                </div>
+                <div class="detail-grid">
+                    <div><strong>Fecha:</strong> <span id="modal-fecha"></span></div>
+                    <div><strong>Hora:</strong> <span id="modal-hora"></span></div>
+                    <div><strong>Puesto:</strong> <span id="modal-puesto"></span></div>
+                    <div><strong>Estado actual:</strong> <span id="modal-estado-label" class="badge"></span></div>
+                </div>
+                <div class="modal-actions mt-4">
+                    <button id="btn-toggle-estado" class="btn-primary w-full">Marcar como Ocupada/Disponible</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/firebase.js"></script>
+    <script type="module" src="js/generador.js"></script>
+    <script type="module" src="js/calendario.js"></script>
+    <script type="module" src="js/impresion.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
