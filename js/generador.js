@@ -228,10 +228,7 @@ async function handleBorrarSubmit(e) {
             const dateObj = new Date(yyyy, mm, dd);
             const dayOfWeek = dateObj.getDay();
 
-            return franjas.some(franja => {
-                if (!franja.diasActivos.includes(dayOfWeek)) return false;
-                return cita.hora >= franja.inicio && cita.hora < franja.fin;
-            });
+            return franjas.some(franja => franja.diasActivos.includes(dayOfWeek));
         });
 
         if (citasAEliminar.length === 0) {
@@ -240,7 +237,7 @@ async function handleBorrarSubmit(e) {
             return;
         }
 
-        if(!confirm(`⚠️ Se han encontrado ${citasAEliminar.length} citas que coinciden matemáticamente con este rango de fechas y franjas.\n\n¿Seguro que deseas ELIMINARLAS irrevocablemente?`)) {
+        if(!confirm(`⚠️ Se van a eliminar TODAS LAS CITAS de los días seleccionados en tu rango de fechas.\n\nSe han encontrado ${citasAEliminar.length} citas que ocurren en esos días (sin importar el horario y sede).\n\n¿Seguro que deseas ELIMINARLAS irrevocablemente?`)) {
             btnBorrar.disabled = false;
             return;
         }
