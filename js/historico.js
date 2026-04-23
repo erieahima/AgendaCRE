@@ -1,5 +1,5 @@
 import { getHistoricoGrabaciones, buscarCitasHistorico } from './firebase.js';
-import { dateToInputString } from './utils.js';
+import { dateToInputString, formatearFechaHumana, formatearHoraHumana } from './utils.js';
 
 let appStateRef = null;
 let historicalData = [];
@@ -131,8 +131,8 @@ function renderTable(data, termHighlight = "") {
 
         tr.innerHTML = `
             <td>
-                <div style="font-weight: 600;">${formatearFechaLocal(cita.fecha)}</div>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraLocal(cita.hora)}</div>
+                <div style="font-weight: 600;">${formatearFechaHumana(cita.fecha)}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraHumana(cita.hora)}</div>
             </td>
             <td><span class="badge" style="background:#f1f5f9; color:#475569">${cita.codigo}</span></td>
             <td><strong>${cita.iniciales || '---'}</strong></td>
@@ -156,14 +156,4 @@ function renderEstadoBadge(estado) {
     else if (estado === "asignada") { bg = "#eff6ff"; color = "#1e40af"; }
 
     return `<span class="badge" style="background:${bg}; color:${color}">${texto}</span>`;
-}
-
-function formatearFechaLocal(s) {
-    if(!s || s.length !== 8) return s;
-    return `${s.substring(6,8)}/${s.substring(4,6)}/${s.substring(0,4)}`;
-}
-
-function formatearHoraLocal(s) {
-    if(!s || s.length !== 4) return s + 'h';
-    return `${s.substring(0,2)}:${s.substring(2,4)}h`;
 }

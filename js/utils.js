@@ -131,3 +131,19 @@ export function generarSlotsBatch(config) {
     }
     return slots;
 }
+
+/**
+ * Convierte YYYYMMDD -> DD/MM/YYYY
+ */
+export function formatearFechaHumana(s) {
+    if(!s || s.length !== 8) return s;
+    return `${s.substring(6,8)}/${s.substring(4,6)}/${s.substring(0,4)}`;
+}
+
+/**
+ * Convierte HHMM -> HH:MMh
+ */
+export function formatearHoraHumana(s) {
+    if(!s || s.length !== 4) return s + 'h';
+    return `${s.substring(0,2)}:${s.substring(2,4)}h`;
+}

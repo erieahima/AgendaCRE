@@ -1,7 +1,7 @@
 // js/calendario.js
 import { AppState } from './app.js';
 import { getCitasPorSedeYFecha, getCitasPorSedeYRango, actualizarCitaData } from './firebase.js';
-import { formatHoraToDisplay, formatearFecha } from './utils.js';
+import { formatHoraToDisplay, formatearFecha, formatearFechaHumana, formatearHoraHumana } from './utils.js';
 
 let currentView = 'dia'; // 'dia', 'semana', 'mes'
 let currentDate = new Date();
@@ -213,8 +213,8 @@ function openModal(cita) {
     const modal = document.getElementById('cita-modal');
     
     document.getElementById('modal-codigo').textContent = cita.codigo;
-    document.getElementById('modal-fecha').textContent = cita.fecha;
-    document.getElementById('modal-hora').textContent = formatHoraToDisplay(cita.hora);
+    document.getElementById('modal-fecha').textContent = formatearFechaHumana(cita.fecha);
+    document.getElementById('modal-hora').textContent = formatearHoraHumana(cita.hora);
     
     document.getElementById('modal-codigo-usuario').value = cita.codigoUsuario || "";
     document.getElementById('modal-iniciales').value = cita.iniciales || "";

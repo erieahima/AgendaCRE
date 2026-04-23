@@ -1,4 +1,5 @@
 import { listenCitasTerminadas, actualizarCitaData } from './firebase.js';
+import { formatearFechaHumana, formatearHoraHumana } from './utils.js';
 
 let appStateRef = null;
 let unsubscribeGrabaciones = null;
@@ -50,8 +51,8 @@ function renderGrabacionesList(citas) {
 
         tr.innerHTML = `
             <td>
-                <div style="font-weight: 600; color: var(--text-main);">${formatearFechaPro(cita.fecha)}</div>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraPro(cita.hora)}</div>
+                <div style="font-weight: 600; color: var(--text-main);">${formatearFechaHumana(cita.fecha)}</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraHumana(cita.hora)}</div>
             </td>
             <td><span class="badge" style="background: #f1f5f9; color: #475569; font-family: monospace;">${cita.codigo}</span></td>
             <td><strong>${cita.iniciales || '---'}</strong></td>
@@ -137,36 +138,4 @@ function aplicarClaseFila(tr, estado) {
         case 'Grabada': tr.className = 'row-grabada'; break;
         default: tr.className = 'row-pend'; break;
     }
-}
-
-// FORMATO: DD/MM/YYYY
-function formatearFechaPro(fechaStr) {
-    if (!fechaStr || typeof fechaStr !== 'string') return '---';
-    
-    let y, m, d;
-    
-    if (fechaStr.includes('-')) {
-        [y, m, d] = fechaStr.split('-');
-    } else if (fechaStr.length === 8) {
-        y = fechaStr.substring(0, 4);
-        m = fechaStr.substring(4, 6);
-        d = fechaStr.substring(6, 8);
-    } else {
-        return fechaStr;
-    }
-
-    return `${d}/${m}/${y}`;
-}
-
-// FORMATO: HH:mmh
-function formatearHoraPro(horaStr) {
-    if (!horaStr || typeof horaStr !== 'string') return '---';
-    
-    if (horaStr.includes(':')) return horaStr + 'h';
-    
-    if (horaStr.length === 4) {
-        return `${horaStr.substring(0,2)}:${horaStr.substring(2,4)}h`;
-    }
-    
-    return horaStr + 'h';
 }
