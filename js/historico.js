@@ -33,6 +33,11 @@ export function setupHistorico(appState) {
             loadHistorico();
         }
     });
+
+    // Cargar automáticamente al iniciar si hay sede
+    if (appState.sedeActivaId) {
+        loadHistorico(); 
+    }
 }
 
 async function loadHistorico() {
