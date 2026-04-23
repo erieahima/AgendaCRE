@@ -133,14 +133,6 @@ function renderTable(data, termHighlight = "") {
     });
 }
 
-function filtrarEnPantalla(term) {
-    const filtered = historicalData.filter(c => {
-        return (c.codigoUsuario || "").toLowerCase().includes(term) || 
-               c.codigo.toLowerCase().includes(term);
-    });
-    renderTable(filtered);
-}
-
 function formatearFechaLocal(s) {
     if(!s || s.length !== 8) return s;
     return `${s.substring(6,8)}/${s.substring(4,6)}/${s.substring(0,4)}`;
