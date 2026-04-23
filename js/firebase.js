@@ -1,5 +1,11 @@
-// js/firebase.js
 import { firebaseConfig } from '../firebase-config.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+import { 
+    getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc 
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+import { 
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 // No cargar Firebase real si faltan las credenciales reales
 const isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "TU_API_KEY";
@@ -8,20 +14,12 @@ let db = null;
 let auth = null;
 
 if (isConfigured) {
-    const app = window.firebaseApp(firebaseConfig);
-    db = window.getFirestore(app);
-    auth = window.firebaseAuth.getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
 } else {
     console.error("Firebase no está configurado. Revisa firebase-config.js");
 }
-
-import { 
-    collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc 
-} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
-
-import { 
-    signInWithEmailAndPassword, signOut, onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 // -- SEDES --
 const SEDES_INICIALES = [
