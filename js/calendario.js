@@ -173,16 +173,25 @@ function setupModalControls() {
     const modal = document.getElementById('cita-modal');
     modal.querySelector('.modal-close').addEventListener('click', () => modal.classList.add('hidden'));
     
+    // Auto-asignar al poner iniciales
+    document.getElementById('modal-iniciales').addEventListener('input', (e) => {
+        if (e.target.value.trim() !== "") {
+            document.getElementById('modal-estado-select').value = 'asignada';
+        }
+    });
+
     document.getElementById('btn-save-cita').addEventListener('click', async () => {
         if(!modalCitaActiva) return;
         
         const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
+        const iniciales = document.getElementById('modal-iniciales').value;
         const observaciones = document.getElementById('modal-observaciones').value;
         const estado = document.getElementById('modal-estado-select').value;
 
         try {
-            await actualizarCitaData(modalCitaActiva.codigo, {
+            await actualizarCitaData(modalCitaActiva.id || modalCitaActiva.codigo, {
                 codigoUsuario,
+                iniciales,
                 observaciones,
                 estado
             });
@@ -208,6 +217,7 @@ function openModal(cita) {
     document.getElementById('modal-hora').textContent = formatHoraToDisplay(cita.hora);
     
     document.getElementById('modal-codigo-usuario').value = cita.codigoUsuario || "";
+    document.getElementById('modal-iniciales').value = cita.iniciales || "";
     document.getElementById('modal-observaciones').value = cita.observaciones || "";
     document.getElementById('modal-estado-select').value = cita.estado || "pendiente";
     

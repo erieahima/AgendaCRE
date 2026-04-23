@@ -135,6 +135,7 @@ function renderTable(data, termHighlight = "") {
                 <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraLocal(cita.hora)}</div>
             </td>
             <td><span class="badge" style="background:#f1f5f9; color:#475569">${cita.codigo}</span></td>
+            <td><strong>${cita.iniciales || '---'}</strong></td>
             <td><strong style="${matches ? 'color:#ef4444' : ''}">${cita.codigoUsuario || '---'}</strong></td>
             <td style="font-size:0.85rem">${cita.observaciones || '---'}</td>
             <td>${appStateRef.sedes.find(s => s.codigoTerritorial === cita.sede)?.nombre || cita.sede}</td>
@@ -152,6 +153,7 @@ function renderEstadoBadge(estado) {
     if (estado === "Grabada") { bg = "#dcfce7"; color = "#166534"; }
     else if (estado === "Incidencia") { bg = "#fee2e2"; color = "#991b1b"; }
     else if (estado === "Inicia grabación") { bg = "#ffedd5"; color = "#9a3412"; }
+    else if (estado === "asignada") { bg = "#eff6ff"; color = "#1e40af"; }
 
     return `<span class="badge" style="background:${bg}; color:${color}">${texto}</span>`;
 }

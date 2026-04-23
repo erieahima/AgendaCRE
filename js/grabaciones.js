@@ -54,6 +54,7 @@ function renderGrabacionesList(citas) {
                 <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraPro(cita.hora)}</div>
             </td>
             <td><span class="badge" style="background: #f1f5f9; color: #475569; font-family: monospace;">${cita.codigo}</span></td>
+            <td><strong>${cita.iniciales || '---'}</strong></td>
             <td>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <strong id="user-code-${cita.id}">${cita.codigoUsuario || '---'}</strong>

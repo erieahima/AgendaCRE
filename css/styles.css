@@ -520,6 +520,12 @@ h3 { font-size: 1.25rem; font-weight: 600; }
     color: #991b1b;
 }
 
+.cita-evento.asignada {
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e40af;
+}
+
 /* Impresion (Print styles) */
 .print-area {
     background: white;
@@ -643,6 +649,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .row-inicia { background-color: #fff7ed; border-left: 4px solid #f97316 !important; }
 .row-incid { background-color: #fef2f2; border-left: 4px solid #ef4444 !important; }
 .row-grabada { background-color: #f0fdf4; }
+.row-asig { background-color: #eff6ff; border-left: 4px solid #3b82f6 !important; }
 
 .status-badge {
     display: inline-flex;
@@ -658,6 +665,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .status-badge.incid { background: #fee2e2; color: #991b1b; }
 .status-badge.grabada { background: #dcfce7; color: #166534; }
 .status-badge.pend { background: #f1f5f9; color: #475569; }
+.status-badge.asignada { background: #eff6ff; color: #1e40af; }
 
 .grabaciones-table tr {
     transition: all 0.2s ease;
