@@ -48,7 +48,18 @@ async function loadAuthenticatedApp() {
             opt.textContent = sede.nombre;
             globalSelector.appendChild(opt);
         });
-        AppState.sedeActivaId = AppState.sedes[0].codigoTerritorial;
+
+        // PERSISTENCIA DE SEDE: Recuperar última sede guardada
+        const lastSede = localStorage.getItem('last_sede_id');
+        const sedeExiste = AppState.sedes.find(s => s.codigoTerritorial === lastSede);
+        
+        if (lastSede && sedeExiste) {
+            AppState.sedeActivaId = lastSede;
+            globalSelector.value = lastSede;
+        } else {
+            AppState.sedeActivaId = AppState.sedes[0].codigoTerritorial;
+            globalSelector.value = AppState.sedeActivaId;
+        }
     } else {
         const opt = document.createElement('option');
         opt.value = "";
@@ -61,14 +72,18 @@ async function loadAuthenticatedApp() {
     document.getElementById('nav-item-impresion').style.display = hasPermission('ver_calendario') ? 'block' : 'none';
     
     const isSuper = AppState.user.rol === 'Super_admin';
+    const isAdmin = AppState.user.rol === 'Admin';
+    const isOperador = AppState.user.rol === 'Operador';
+
     document.getElementById('nav-item-usuarios').style.display = isSuper ? 'block' : 'none';
     
     const canRecord = hasPermission('ver_grabaciones');
     document.getElementById('nav-item-grabaciones').style.display = canRecord ? 'block' : 'none';
 
-    // Escuchar cambios de sede global
+    // Escuchar cambios de sede global y guardar en localStorage
     globalSelector.addEventListener('change', (e) => {
         AppState.sedeActivaId = e.target.value;
+        localStorage.setItem('last_sede_id', AppState.sedeActivaId);
         window.dispatchEvent(new CustomEvent('sedeChanged', { detail: AppState.sedeActivaId }));
     });
 
@@ -81,15 +96,17 @@ async function loadAuthenticatedApp() {
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {
-        const vistaActiva = document.querySelector('.view-section.active').id;
+        const activeSection = document.querySelector('.view-section.active');
+        const vistaActiva = activeSection ? activeSection.id : '';
         if(vistaActiva === 'view-calendario') {
             loadCitasCalendario(e.detail);
         }
     });
 
-    // Forzar vista inicial permitida si Generador está oculto
-    if (!hasPermission('generar')) {
-        document.querySelector('[data-target="view-calendario"]').click();
+    // VISTA INICIAL INTELIGENTE
+    if (isSuper || isAdmin || isOperador || !hasPermission('generar')) {
+        const calBtn = document.querySelector('[data-target="view-calendario"]');
+        if (calBtn) calBtn.click();
     }
 }
 
