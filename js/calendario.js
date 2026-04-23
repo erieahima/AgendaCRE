@@ -190,10 +190,13 @@ function setupModalControls() {
             document.getElementById('modal-estado-select').value = 'asignada';
         }
     });
-
     const btnSave = document.getElementById('btn-save-cita');
     btnSave.addEventListener('click', async () => {
-        if(!modalCitaActiva) return;
+        alert("DEPURACIÓN: Click en Guardar detectado");
+        if(!modalCitaActiva) {
+            alert("DEPURACIÓN: Error - No hay cita activa");
+            return;
+        }
         
         const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
         const iniciales = document.getElementById('modal-iniciales').value;
@@ -203,6 +206,7 @@ function setupModalControls() {
         btnSave.disabled = true;
         btnSave.textContent = "Guardando...";
         console.log("Iniciando guardado de cita:", modalCitaActiva.id || modalCitaActiva.codigo);
+        alert("DEPURACIÓN: Intentando actualizar ID: " + (modalCitaActiva.id || modalCitaActiva.codigo));
 
         try {
             await actualizarCitaData(modalCitaActiva.id || modalCitaActiva.codigo, {
@@ -212,6 +216,7 @@ function setupModalControls() {
                 estado
             });
             
+            alert("DEPURACIÓN: Guardado con éxito en Firebase");
             modal.classList.add('hidden');
             
             // Refrescar vistas
@@ -222,9 +227,10 @@ function setupModalControls() {
             // Disparar evento para que Asignar.js sepa que debe refrescar su caché
             window.dispatchEvent(new CustomEvent('citaActualizada', { detail: modalCitaActiva.id || modalCitaActiva.codigo }));
             console.log("Cita guardada con éxito.");
+            
         } catch (err) {
             console.error("Error al guardar cita:", err);
-            alert("Error al guardar: " + err.message);
+            alert("DEPURACIÓN: ERROR EN FIREBASE: " + err.message);
         } finally {
             btnSave.disabled = false;
             btnSave.textContent = "Guardar Cambios";
