@@ -174,72 +174,84 @@ async function renderDayView(grid) {
 
 // -- Modal Logistics --
 let modalCitaActiva = null;
-
 let modalInitialized = false;
+
+alert("DEPURACIÓN: Calendario.js cargado v2.2.6");
 
 function setupModalControls() {
     if (modalInitialized) return;
     modalInitialized = true;
+    
+    alert("DEPURACIÓN: setupModalControls ejecutándose");
 
     const modal = document.getElementById('cita-modal');
-    modal.querySelector('.modal-close').addEventListener('click', () => modal.classList.add('hidden'));
+    
+    // Delegación delegada para cerrar
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-close')) {
+            modal.classList.add('hidden');
+        }
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
     
     // Auto-asignar al poner iniciales
-    document.getElementById('modal-iniciales').addEventListener('input', (e) => {
-        if (e.target.value.trim() !== "") {
-            document.getElementById('modal-estado-select').value = 'asignada';
-        }
-    });
-    const btnSave = document.getElementById('btn-save-cita');
-    btnSave.addEventListener('click', async () => {
-        alert("DEPURACIÓN: Click en Guardar detectado");
-        if(!modalCitaActiva) {
-            alert("DEPURACIÓN: Error - No hay cita activa");
-            return;
-        }
-        
-        const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
-        const iniciales = document.getElementById('modal-iniciales').value;
-        const observaciones = document.getElementById('modal-observaciones').value;
-        const estado = document.getElementById('modal-estado-select').value;
-
-        btnSave.disabled = true;
-        btnSave.textContent = "Guardando...";
-        console.log("Iniciando guardado de cita:", modalCitaActiva.id || modalCitaActiva.codigo);
-        alert("DEPURACIÓN: Intentando actualizar ID: " + (modalCitaActiva.id || modalCitaActiva.codigo));
-
-        try {
-            await actualizarCitaData(modalCitaActiva.id || modalCitaActiva.codigo, {
-                codigoUsuario,
-                iniciales,
-                observaciones,
-                estado
-            });
-            
-            alert("DEPURACIÓN: Guardado con éxito en Firebase");
-            modal.classList.add('hidden');
-            
-            // Refrescar vistas
-            if (document.getElementById('view-calendario').classList.contains('active')) {
-                updateCalendario(); 
+    const inputInit = document.getElementById('modal-iniciales');
+    if (inputInit) {
+        inputInit.addEventListener('input', (e) => {
+            if (e.target.value.trim() !== "") {
+                document.getElementById('modal-estado-select').value = 'asignada';
             }
-            
-            // Disparar evento para que Asignar.js sepa que debe refrescar su caché
-            window.dispatchEvent(new CustomEvent('citaActualizada', { detail: modalCitaActiva.id || modalCitaActiva.codigo }));
-            console.log("Cita guardada con éxito.");
-            
-        } catch (err) {
-            console.error("Error al guardar cita:", err);
-            alert("DEPURACIÓN: ERROR EN FIREBASE: " + err.message);
-        } finally {
-            btnSave.disabled = false;
-            btnSave.textContent = "Guardar Cambios";
-        }
-    });
+        });
+    }
 
-    // Cerrar si hace click fuera
-    modal.addEventListener('click', (e) => {
-        if(e.target === modal) modal.classList.add('hidden');
+    // DELEGACIÓN GLOBAL PARA GUARDAR (A PRUEBA DE FALLOS)
+    document.addEventListener('click', async (e) => {
+        if (e.target.id === 'btn-save-cita') {
+            const btnSave = e.target;
+            alert("DEPURACIÓN: Click en GUARDAR (Delegado)");
+            
+            if(!modalCitaActiva) {
+                alert("Error: No hay cita activa para guardar.");
+                return;
+            }
+
+            const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
+            const iniciales = document.getElementById('modal-iniciales').value;
+            const observaciones = document.getElementById('modal-observaciones').value;
+            const estado = document.getElementById('modal-estado-select').value;
+
+            btnSave.disabled = true;
+            const oldText = btnSave.textContent;
+            btnSave.textContent = "Guardando...";
+
+            try {
+                const idDocumento = modalCitaActiva.id || modalCitaActiva.codigo;
+                alert("DEPURACIÓN: Intentando actualizar ID: " + idDocumento);
+                
+                await actualizarCitaData(idDocumento, {
+                    codigoUsuario,
+                    iniciales,
+                    observaciones,
+                    estado
+                });
+                
+                alert("Felicidades: ¡Guardado en Firebase!");
+                modal.classList.add('hidden');
+                
+                if (document.getElementById('view-calendario')?.classList.contains('active')) {
+                    updateCalendario(); 
+                }
+                
+                window.dispatchEvent(new CustomEvent('citaActualizada', { detail: idDocumento }));
+            } catch (err) {
+                alert("ERROR CRÍTICO: " + err.message);
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = oldText;
+            }
+        }
     });
 }
 
