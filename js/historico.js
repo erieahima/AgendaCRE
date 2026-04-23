@@ -61,30 +61,32 @@ async function loadHistorico() {
 }
 
 async function filtrarEnPantalla(term) {
-    if (!term) {
+    if (!term || term.length < 2) {
         renderTable(historicalData);
         return;
     }
 
-    // 1. Filtrado local (lo que ya está cargado)
+    const termLower = term.toLowerCase();
+
+    // 1. Filtrado local (lo que ya está cargado en la semana) - Búsqueda PARCIAL
     const locales = historicalData.filter(c => {
-        return (c.codigoUsuario || "").toLowerCase().includes(term) || 
-               c.codigo.toLowerCase().includes(term);
+        return (c.codigoUsuario || "").toLowerCase().includes(termLower) || 
+               (c.codigo || "").toLowerCase().includes(termLower);
     });
 
-    // 2. Si el término es largo (ej: DNI o código completo), buscamos globalmente
-    if (term.length >= 6) {
+    // 2. Si el término es suficiente, buscamos globalmente (EXACTA o casi exacta)
+    if (term.length >= 4) {
         try {
-            const globales = await buscarCitasHistorico(appStateRef.sedeActivaId, term.toUpperCase());
+            // Buscamos exacto en mayúsculas (códigos)
+            const globales = await buscarCitasHistorico(appStateRef.sedeActivaId, term.trim().toUpperCase());
             
-            // Combinar evitando duplicados
-            const combinadosMap = new Map();
-            locales.forEach(c => combinadosMap.set(c.id, c));
-            globales.forEach(c => combinadosMap.set(c.id, c));
+            // Combinar evitando duplicados por ID
+            const mapResultados = new Map();
+            locales.forEach(c => mapResultados.set(c.id, c));
+            globales.forEach(c => mapResultados.set(c.id, c));
             
-            renderTable(Array.from(combinadosMap.values()), term);
+            renderTable(Array.from(mapResultados.values()), term);
         } catch (err) {
-            console.error("Error en búsqueda global:", err);
             renderTable(locales, term);
         }
     } else {
