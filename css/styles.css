@@ -408,10 +408,20 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 }
 
 /* Eventos del calendario */
-.cita-evento {
+.citas-row {
     position: absolute;
-    left: 4px;
-    right: 4px;
+    left: 60px;
+    right: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 4px;
+}
+
+.cita-evento {
+    position: relative;
+    flex: 1 1 120px;
+    max-width: 100%;
     border-radius: 4px;
     padding: 4px 8px;
     font-size: 0.70rem;
@@ -426,7 +436,16 @@ h3 { font-size: 1.25rem; font-weight: 600; }
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    transition: all 0.2s ease;
 }
+
+.cita-evento.highlighted {
+    border: 2px solid var(--danger);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    z-index: 10;
+    transform: scale(1.05);
+}
+
 .cita-evento.disponible {
     background-color: var(--success-bg);
     border-color: #a7f3d0;
@@ -477,3 +496,61 @@ h3 { font-size: 1.25rem; font-weight: 600; }
     .grid-form { grid-template-columns: 1fr; }
     .calendar-controls { flex-direction: column; gap: 1rem; align-items: flex-start; }
 }
+
+/* --- Week and Month Views --- */
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(200px, 1fr));
+    overflow-x: auto;
+    position: relative;
+    border-top: 1px solid var(--border);
+}
+.week-col {
+    position: relative;
+    border-right: 1px solid var(--border);
+    min-height: 800px;
+}
+.week-header {
+    text-align: center;
+    padding: 8px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 5;
+}
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+}
+.month-cell {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    min-height: 100px;
+    padding: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.month-cell:hover {
+    background-color: var(--secondary);
+}
+.month-cell-header {
+    text-align: right;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.month-badge {
+    font-size: 0.75rem;
+    padding: 4px;
+    border-radius: 4px;
+    display: block;
+    margin-top: 4px;
+    font-weight: 500;
+    text-align: center;
+}
+.month-badge.disp { background: var(--success-bg); color: #065f46; border: 1px solid #a7f3d0; }
+.month-badge.ocup { background: var(--danger-bg); color: #991b1b; border: 1px solid #fecaca; }

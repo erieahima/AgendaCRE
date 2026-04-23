@@ -1,6 +1,6 @@
 // js/calendario.js
 import { AppState } from './app.js';
-import { getCitasPorSedeYFecha, actualizarEstadoCita } from './firebase.js';
+import { getCitasPorSedeYFecha, getCitasPorSedeYRango, actualizarEstadoCita } from './firebase.js';
 import { formatHoraToDisplay, formatearFecha } from './utils.js';
 
 let currentView = 'dia'; // 'dia', 'semana', 'mes'
@@ -49,6 +49,27 @@ function setupControls() {
         updateCalendario();
     });
 
+    const searchInput = document.getElementById('search-cita');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.cita-evento').forEach(el => {
+                if(!term) {
+                    el.classList.remove('highlighted');
+                    el.style.opacity = '1';
+                    return;
+                }
+                if(el.textContent.toLowerCase().includes(term)) {
+                    el.classList.add('highlighted');
+                    el.style.opacity = '1';
+                } else {
+                    el.classList.remove('highlighted');
+                    el.style.opacity = '0.3';
+                }
+            });
+        });
+    }
+
     setupModalControls();
 }
 
@@ -64,13 +85,14 @@ async function updateCalendario() {
         await renderDayView(grid);
     } 
     else if (currentView === 'semana') {
-        label.textContent = "Semana del " + currentDate.toLocaleDateString('es-ES');
-        grid.innerHTML = '<div style="text-align:center; padding: 2rem;">Vista semana (Simplificada) - Selecciona Día para editar citas. Para demo, la estructura se mantiene sencilla.</div>';
+        const diaFormat = currentDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+        label.textContent = "Semana - " + diaFormat.charAt(0).toUpperCase() + diaFormat.slice(1);
+        await renderWeekView(grid);
     } 
     else if (currentView === 'mes') {
         const mesFmt = currentDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
-        label.textContent = mesFmt.charAt(0).toUpperCase() + mesFmt.slice(1);
-        grid.innerHTML = '<div style="text-align:center; padding: 2rem;">Vista mes (Simplificada).</div>';
+        label.textContent = "Mes - " + mesFmt.charAt(0).toUpperCase() + mesFmt.slice(1);
+        await renderMonthView(grid);
     }
 }
 
@@ -120,21 +142,22 @@ async function renderDayView(grid) {
         const mStr = horaStr.slice(2, 4);
         const minutosDesdeOcho = (parseInt(hStr) - 8) * 60 + parseInt(mStr);
         
-        const anchoPx = 100 / citasGrupo.length; // Porcentaje de ancho para dividirlas
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'citas-row';
+        rowDiv.style.top = `${minutosDesdeOcho}px`;
         
-        citasGrupo.forEach((cita, idx) => {
+        citasGrupo.forEach((cita) => {
             const div = document.createElement('div');
             div.className = `cita-evento ${cita.estado}`;
-            div.style.top = `${minutosDesdeOcho}px`;
-            div.style.left = `calc(${anchoPx * idx}% + 4px)`;
-            div.style.width = `calc(${anchoPx}% - 8px)`;
             
             div.innerHTML = `<strong>${formatHoraToDisplay(cita.hora)}</strong><br><span>${cita.codigo}</span>`;
             div.title = cita.codigo;
             
             div.addEventListener('click', () => openModal(cita));
-            eventsArea.appendChild(div);
+            rowDiv.appendChild(div);
         });
+
+        eventsArea.appendChild(rowDiv);
     }
 }
 
@@ -176,4 +199,152 @@ function openModal(cita) {
     bdg.className = `badge ${cita.estado}`;
     
     modal.classList.remove('hidden');
+}
+
+async function renderWeekView(grid) {
+    if (!AppState.sedeActivaId) {
+        grid.innerHTML = '<div style="text-align:center; padding: 2rem;">Selecciona una sede</div>';
+        return;
+    }
+
+    // Determinar lunes a domingo de la semana de currentDate
+    const dayOfWeek = currentDate.getDay() === 0 ? 7 : currentDate.getDay(); 
+    const lunes = new Date(currentDate);
+    lunes.setDate(currentDate.getDate() - dayOfWeek + 1);
+    const domingo = new Date(lunes);
+    domingo.setDate(lunes.getDate() + 6);
+
+    const inicioStr = formatearFecha(lunes);
+    const finStr = formatearFecha(domingo);
+
+    const citasSemana = await getCitasPorSedeYRango(AppState.sedeActivaId, inicioStr, finStr);
+
+    let html = '<div class="week-grid">';
+    
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const targetDate = new Date(lunes);
+        targetDate.setDate(lunes.getDate() + dayOffset);
+        
+        html += `<div class="week-col">
+            <div class="week-header">${targetDate.toLocaleDateString('es-ES', {weekday: 'short', day: 'numeric'})}</div>`;
+
+        for(let h=8; h<=20; h++) {
+            html += `<div style="position:absolute; top:${(h-8)*60 + 40}px; left:0; right:0; height:60px; border-bottom:1px solid #e2e8f0;"></div>`;
+            if(dayOffset === 0) { // Etiqueta de horas solo en la columna de la izquierda (lunes)
+                html += `<div class="week-time-label" style="top:${(h-8)*60 + 30}px;">${String(h).padStart(2,'0')}:00</div>`;
+            }
+        }
+
+        html += `<div class="events-area-week" id="events-week-${dayOffset}" style="position:absolute; top:40px; left:0; right:0; bottom:0;"></div>`;
+        html += `</div>`; 
+    }
+    html += '</div>';
+    grid.innerHTML = html;
+
+    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const targetDate = new Date(lunes);
+        targetDate.setDate(lunes.getDate() + dayOffset);
+        const yyyymmdd = formatearFecha(targetDate);
+        const citasDelDia = citasSemana.filter(c => c.fecha === yyyymmdd);
+        
+        const agrupadasPorHora = {};
+        citasDelDia.forEach(c => {
+            if(!agrupadasPorHora[c.hora]) agrupadasPorHora[c.hora] = [];
+            agrupadasPorHora[c.hora].push(c);
+        });
+
+        const evArea = document.getElementById(`events-week-${dayOffset}`);
+        
+        for(let horaStr in agrupadasPorHora) {
+            const hStr = horaStr.slice(0, 2);
+            const mStr = horaStr.slice(2, 4);
+            const mins = (parseInt(hStr) - 8) * 60 + parseInt(mStr);
+            
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'citas-row';
+            rowDiv.style.top = `${mins}px`;
+            
+            if(dayOffset !== 0) rowDiv.style.left = '4px';
+
+            agrupadasPorHora[horaStr].forEach(cita => {
+                const div = document.createElement('div');
+                div.className = `cita-evento ${cita.estado}`;
+                div.innerHTML = `<strong>${formatHoraToDisplay(cita.hora)}</strong><br><span>${cita.codigo}</span>`;
+                div.title = cita.codigo;
+                div.addEventListener('click', () => openModal(cita));
+                rowDiv.appendChild(div);
+            });
+            evArea.appendChild(rowDiv);
+        }
+    }
+}
+
+async function renderMonthView(grid) {
+    if (!AppState.sedeActivaId) {
+        grid.innerHTML = '<div style="text-align:center; padding: 2rem;">Selecciona una sede</div>';
+        return;
+    }
+
+    const yyyy = currentDate.getFullYear();
+    const mm = currentDate.getMonth();
+
+    const inicioMes = new Date(yyyy, mm, 1);
+    const finMes = new Date(yyyy, mm + 1, 0);
+
+    const inicioMesStr = formatearFecha(inicioMes);
+    const finMesStr = formatearFecha(finMes);
+
+    const citasMes = await getCitasPorSedeYRango(AppState.sedeActivaId, inicioMesStr, finMesStr);
+
+    let html = '<div class="month-grid">';
+    
+    // Headers L V M
+    const dNombres = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    for(let d=0; d<7; d++) {
+        html += `<div style="text-align:center; font-weight:bold; padding: 8px; border-right:1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; background:var(--surface);">${dNombres[d]}</div>`;
+    }
+
+    const startDayOfWeek = inicioMes.getDay() === 0 ? 7 : inicioMes.getDay(); 
+    
+    for(let i = 1; i < startDayOfWeek; i++) {
+        html += `<div class="month-cell" style="background:#f8fafc;"></div>`;
+    }
+
+    for(let dia = 1; dia <= finMes.getDate(); dia++) {
+        const iterDate = new Date(yyyy, mm, dia);
+        const yyyymmdd = formatearFecha(iterDate);
+        const delDia = citasMes.filter(c => c.fecha === yyyymmdd);
+        
+        const disp = delDia.filter(c => c.estado === 'disponible').length;
+        const ocup = delDia.filter(c => c.estado === 'ocupada').length;
+
+        html += `<div class="month-cell" id="mc-${yyyymmdd}">
+            <div class="month-cell-header">${dia}</div>
+            ${disp > 0 ? `<div class="month-badge disp">${disp} Libres</div>` : ''}
+            ${ocup > 0 ? `<div class="month-badge ocup">${ocup} Ocup</div>` : ''}
+        </div>`;
+    }
+
+    const totalCells = (startDayOfWeek - 1) + finMes.getDate();
+    const remain = 7 - (totalCells % 7);
+    if(remain < 7) {
+        for(let i=0; i<remain; i++) {
+            html += `<div class="month-cell" style="background:#f8fafc;"></div>`;
+        }
+    }
+
+    html += '</div>';
+    grid.innerHTML = html;
+
+    for(let dia = 1; dia <= finMes.getDate(); dia++) {
+        const iterDate = new Date(yyyy, mm, dia);
+        const yyyymmdd = formatearFecha(iterDate);
+        const mc = document.getElementById(`mc-${yyyymmdd}`);
+        if(mc) {
+            mc.addEventListener('click', () => {
+                currentDate = iterDate;
+                document.querySelector('[data-view="dia"]').click();
+            });
+        }
+    }
 }
