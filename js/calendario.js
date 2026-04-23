@@ -17,6 +17,14 @@ export function renderCalendario() {
     updateCalendario();
 }
 
+/**
+ * Inicialización única de los controles del modal, 
+ * independiente de si el calendario está renderizado o no.
+ */
+export function initCalendarioModal() {
+    setupModalControls();
+}
+
 export async function loadCitasCalendario(sedeId) {
     updateCalendario();
 }
@@ -80,7 +88,8 @@ function setupControls() {
         });
     }
 
-    setupModalControls();
+        });
+    }
 }
 
 async function updateCalendario() {
@@ -196,6 +205,7 @@ function setupModalControls() {
 
         btnSave.disabled = true;
         btnSave.textContent = "Guardando...";
+        console.log("Iniciando guardado de cita:", modalCitaActiva.id || modalCitaActiva.codigo);
 
         try {
             await actualizarCitaData(modalCitaActiva.id || modalCitaActiva.codigo, {
@@ -214,8 +224,9 @@ function setupModalControls() {
             
             // Disparar evento para que Asignar.js sepa que debe refrescar su caché
             window.dispatchEvent(new CustomEvent('citaActualizada', { detail: modalCitaActiva.id || modalCitaActiva.codigo }));
-            
+            console.log("Cita guardada con éxito.");
         } catch (err) {
+            console.error("Error al guardar cita:", err);
             alert("Error al guardar: " + err.message);
         } finally {
             btnSave.disabled = false;

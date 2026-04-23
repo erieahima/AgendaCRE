@@ -128,7 +128,7 @@ export async function getCitasPorSedeYFecha(codigoSede, fechaStr) {
     const snapshot = await getDocs(q);
     
     const citas = [];
-    snapshot.forEach(doc => citas.push(doc.data()));
+    snapshot.forEach(docSnap => citas.push({ id: docSnap.id, ...docSnap.data() }));
     // Ordenar por hora y luego por puesto
     citas.sort((a, b) => {
         if(a.hora === b.hora) return a.puesto - b.puesto;

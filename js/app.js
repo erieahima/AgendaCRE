@@ -1,6 +1,6 @@
 // js/app.js
 import { getSedes, inicializarSedes } from './firebase.js';
-import { renderCalendario, loadCitasCalendario } from './calendario.js';
+import { renderCalendario, loadCitasCalendario, initCalendarioModal } from './calendario.js';
 import { setupGenerador } from './generador.js';
 import { setupImpresion } from './impresion.js';
 import { initAuth, hasPermission } from './auth.js';
@@ -90,6 +90,7 @@ async function loadAuthenticatedApp() {
     });
 
     // 3. Inicializar módulos
+    initCalendarioModal();
     setupGenerador(AppState);
     renderCalendario(); 
     setupImpresion(AppState);
