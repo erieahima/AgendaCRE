@@ -212,4 +212,4 @@ export async function borrarUsuarioData(uid) {
     await writeBatch(db).delete(userRef).commit();
 }
 
-export { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp };
+export { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth };
