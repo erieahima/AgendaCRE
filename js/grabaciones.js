@@ -120,7 +120,18 @@ function aplicarClaseFila(tr, estado) {
 }
 
 function formatearFechaLarga(fechaStr) {
-    const [y, m, d] = fechaStr.split('-');
+    if (!fechaStr || typeof fechaStr !== 'string') return '---';
+    const parts = fechaStr.split('-');
+    if (parts.length !== 3) return fechaStr; 
+    
+    const y = parseInt(parts[0]);
+    const m = parseInt(parts[1]);
+    const d = parseInt(parts[2]);
+
+    if (isNaN(y) || isNaN(m) || isNaN(d)) return fechaStr;
+
     const fecha = new Date(y, m - 1, d);
+    if (isNaN(fecha.getTime())) return fechaStr;
+
     return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }

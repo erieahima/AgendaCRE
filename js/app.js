@@ -101,10 +101,11 @@ async function loadAuthenticatedApp() {
         }
     });
 
-    // VISTA INICIAL INTELIGENTE
-    if (isSuper || isAdmin || isOperador || !hasPermission('generar')) {
-        const calBtn = document.querySelector('[data-target="view-calendario"]');
-        if (calBtn) calBtn.click();
+    // VISTA INICIAL INTELIGENTE: Hacer clic en el primer botón visible para este rol
+    const firstVisibleBtn = Array.from(document.querySelectorAll('.nav-links .nav-btn'))
+                                 .find(btn => btn.parentElement.style.display !== 'none');
+    if (firstVisibleBtn) {
+        firstVisibleBtn.click();
     }
 }
 
