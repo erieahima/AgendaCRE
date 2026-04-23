@@ -108,61 +108,57 @@ async function renderDayView(grid) {
     
     let html = `
         <div class="cal-header">
-            <div class="time-label-col"></div>
-            <div class="day-header">${currentDate.toLocaleDateString('es-ES', {weekday: 'short', day: 'numeric'})}</div>
+            <div style="width: 60px; border-right: 1px solid var(--border);"></div>
+            <div class="day-header" style="flex:1;">${currentDate.toLocaleDateString('es-ES', {weekday: 'long', day: 'numeric', month: 'short'})}</div>
         </div>
         <div class="cal-body" id="cal-body-container">
     `;
 
-    // Draw hours grid (08:00 - 20:00)
-    for(let h=8; h<=20; h++) {
-        html += `
-            <div style="position:absolute; top:${(h-8)*60}px; left:0; right:0; height:60px; border-bottom:1px solid #e2e8f0;"></div>
-            <div style="position:absolute; top:${(h-8)*60 - 10}px; left:0; width:50px; text-align:right; font-size:0.75rem; color:#64748b;">${String(h).padStart(2,'0')}:00</div>
-        `;
-    }
+    // Map appointments by hour to the nearest integer hour for the grid
+    const groupedByHourInt = {};
+    for(let h=8; h<=20; h++) groupedByHourInt[h] = [];
 
-    // Contenedor principal de los eventos
-    html += `<div id="events-area" style="position:absolute; top:0; left:60px; right:0; bottom:0; padding:4px;">`;
-    html += `</div></div>`;
-    grid.innerHTML = html;
-
-    const eventsArea = document.getElementById('events-area');
-
-    // Mapear cada cita en el display
-    // Agrupamos citas que compartan la misma hora para distribuirlas horizontalmente
-    const agrupadasPorHora = {};
     citasDelDia.forEach(c => {
-        if(!agrupadasPorHora[c.hora]) agrupadasPorHora[c.hora] = [];
-        agrupadasPorHora[c.hora].push(c);
+        const hInt = parseInt(c.hora.substring(0, 2));
+        if (hInt >= 8 && hInt <= 20) {
+            groupedByHourInt[hInt].push(c);
+        }
     });
 
-    for(let horaStr in agrupadasPorHora) {
-        const citasGrupo = agrupadasPorHora[horaStr];
-        const hStr = horaStr.slice(0, 2);
-        const mStr = horaStr.slice(2, 4);
-        const minutosDesdeOcho = (parseInt(hStr) - 8) * 60 + parseInt(mStr);
+    for(let h=8; h<=20; h++) {
+        html += `
+            <div class="cal-row-hour">
+                <div class="hour-indicator">${String(h).padStart(2,'0')}:00</div>
+                <div class="citas-container-flex" id="hour-row-${h}">
+                </div>
+            </div>
+        `;
+    }
+    html += `</div>`;
+    grid.innerHTML = html;
+
+    // Inject appointments into their rows
+    for(let h=8; h<=20; h++) {
+        const container = document.getElementById(`hour-row-${h}`);
+        const appointments = groupedByHourInt[h];
         
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'citas-row';
-        rowDiv.style.top = `${minutosDesdeOcho}px`;
-        
-        citasGrupo.forEach((cita) => {
+        appointments.forEach(cita => {
             const div = document.createElement('div');
             div.className = `cita-evento ${cita.estado}`;
             div.dataset.codigo = cita.codigo;
             
-            div.innerHTML = `<strong>${formatHoraToDisplay(cita.hora)}</strong><br><span>${cita.codigo}</span>`;
+            div.innerHTML = `
+                <strong>${formatHoraToDisplay(cita.hora)}</strong>
+                <span>${cita.codigo}</span>
+            `;
             div.title = cita.codigo;
             
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
                 openModal(cita);
             });
-            rowDiv.appendChild(div);
+            container.appendChild(div);
         });
-
-        eventsArea.appendChild(rowDiv);
     }
 }
 

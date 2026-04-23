@@ -386,57 +386,72 @@ h3 { font-size: 1.25rem; font-weight: 600; }
     background: var(--bg-main);
 }
 .cal-body {
-    display: grid;
+    display: flex;
+    flex-direction: column;
     flex: 1;
     overflow-y: auto;
+    background: var(--surface);
+}
+
+.cal-row-hour {
+    display: flex;
+    min-height: 60px;
+    border-bottom: 1px solid var(--border);
     position: relative;
 }
-.cal-col {
-    border-right: 1px solid var(--border);
-    position: relative;
-}
-.cal-col:last-child { border-right: none; }
-.time-label-col {
+
+.hour-indicator {
     width: 60px;
-    border-right: 1px solid var(--border);
+    min-width: 60px;
+    padding: 10px 8px;
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--text-muted);
     background: var(--bg-main);
-}
-.day-header {
-    padding: 1rem;
-    text-align: center;
+    border-right: 1px solid var(--border);
     font-weight: 500;
 }
 
-/* Eventos del calendario */
-.citas-row {
-    position: absolute;
-    left: 60px;
-    right: 0;
+.citas-container-flex {
+    flex: 1;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    padding: 0 4px;
+    gap: 8px;
+    padding: 8px;
+    align-items: flex-start;
 }
 
+/* Eventos del calendario */
 .cita-evento {
     position: relative;
-    flex: 1 1 120px;
+    flex: 1 1 180px;
+    min-width: 160px;
     max-width: 100%;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 0.70rem;
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 0.75rem;
     cursor: pointer;
     border: 1px solid;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: normal;
     word-break: break-all;
-    min-height: 28px;
+    min-height: 45px;
     height: auto;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.cita-evento strong {
+    font-size: 0.85rem;
+    margin-bottom: 2px;
+}
+
+.cita-evento span {
+    font-family: monospace;
+    font-size: 0.7rem;
+    opacity: 0.9;
 }
 
 .cita-evento.highlighted {
