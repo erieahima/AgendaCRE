@@ -87,9 +87,6 @@ function setupControls() {
             });
         });
     }
-
-        });
-    }
 }
 
 async function updateCalendario() {
