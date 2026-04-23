@@ -5,7 +5,7 @@ import { setupGenerador } from './generador.js';
 import { setupImpresion } from './impresion.js';
 import { initAuth, hasPermission } from './auth.js';
 import { setupUsuarios } from './usuarios.js';
-import { setupGrabaciones, renderGrabacionesList } from './grabaciones.js';
+import { setupGrabaciones } from './grabaciones.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -115,7 +115,7 @@ function setupNavigation() {
             if (targetId === 'view-calendario') {
                 loadCitasCalendario(AppState.sedeActivaId);
             } else if (targetId === 'view-grabaciones') {
-                renderGrabacionesList();
+                // El listener de tiempo real ya mantiene la lista actualizada
             }
         });
     });
