@@ -138,10 +138,22 @@ function renderTable(data, termHighlight = "") {
             <td><strong style="${matches ? 'color:#ef4444' : ''}">${cita.codigoUsuario || '---'}</strong></td>
             <td style="font-size:0.85rem">${cita.observaciones || '---'}</td>
             <td>${appStateRef.sedes.find(s => s.codigoTerritorial === cita.sede)?.nombre || cita.sede}</td>
-            <td><span class="badge" style="background:#dcfce7; color:#166534">Grabada</span></td>
+            <td>${renderEstadoBadge(cita.estadoGrabacion)}</td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+function renderEstadoBadge(estado) {
+    let color = "#475569";
+    let bg = "#f1f5f9";
+    let texto = estado || "Pendiente";
+
+    if (estado === "Grabada") { bg = "#dcfce7"; color = "#166534"; }
+    else if (estado === "Incidencia") { bg = "#fee2e2"; color = "#991b1b"; }
+    else if (estado === "Inicia grabación") { bg = "#ffedd5"; color = "#9a3412"; }
+
+    return `<span class="badge" style="background:${bg}; color:${color}">${texto}</span>`;
 }
 
 function formatearFechaLocal(s) {

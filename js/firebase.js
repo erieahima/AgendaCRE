@@ -273,16 +273,18 @@ export async function buscarCitasHistorico(sedeId, term) {
     const termClean = term.trim().toUpperCase();
     const citasRef = collection(db, "citas");
     
-    // Buscamos por prefijo de Código de Cita
+    // Buscamos por prefijo de Código de Cita + Grabada
     const q1 = query(citasRef, 
+        where("estadoGrabacion", "==", "Grabada"),
         orderBy("codigo"), 
         startAt(termClean), 
         endAt(termClean + "\uf8ff"), 
         limit(20)
     );
     
-    // Buscamos por prefijo de Código de Usuario
+    // Buscamos por prefijo de Código de Usuario + Grabada
     const q2 = query(citasRef, 
+        where("estadoGrabacion", "==", "Grabada"),
         orderBy("codigoUsuario"), 
         startAt(termClean), 
         endAt(termClean + "\uf8ff"), 
