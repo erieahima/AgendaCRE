@@ -267,23 +267,30 @@ export async function getHistoricoGrabaciones(sedeId, fechaInicio, fechaFin) {
 }
 
 export async function buscarCitasHistorico(sedeId, term) {
-    if (!isConfigured || !sedeId || term.length < 3) return [];
+    if (!isConfigured || term.length < 3) return [];
     const citasRef = collection(db, "citas");
+    const termClean = term.trim();
     
-    // Buscamos coincidencia exacta en código o códigoUsuario (sin filtrar por estado para máxima fiabilidad)
-    const q1 = query(citasRef, 
-        where("sede", "==", sedeId), 
-        where("codigo", "==", term)
-    );
-    const q2 = query(citasRef, 
-        where("sede", "==", sedeId), 
-        where("codigoUsuario", "==", term)
-    );
+    // Consultas paralelas para cubrir todas las posibilidades de campo y formato
+    const queries = [
+        query(citasRef, where("codigo", "==", termClean), limit(20)),
+        query(citasRef, where("codigoUsuario", "==", termClean), limit(20)),
+        query(citasRef, where("codigoUsuario", "==", termClean.toUpperCase()), limit(20)),
+        query(citasRef, where("codigoUsuario", "==", termClean.toLowerCase()), limit(20))
+    ];
 
-    const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
     const results = new Map();
-    s1.forEach(d => results.set(d.id, {id: d.id, ...d.data()}));
-    s2.forEach(d => results.set(d.id, {id: d.id, ...d.data()}));
+    const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+    
+    snapshots.forEach(snap => {
+        snap.forEach(d => {
+            // Solo devolvemos si coincide con la sede (si quieres mantener la restriccion de sede, la aplicamos aqui en JS)
+            const data = d.data();
+            if (data.sede === sedeId) {
+                results.set(d.id, {id: d.id, ...data});
+            }
+        });
+    });
     
     return Array.from(results.values());
 }

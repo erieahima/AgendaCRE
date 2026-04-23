@@ -83,10 +83,10 @@ async function filtrarEnPantalla(term) {
     });
 
     // 2. Si el término es suficiente, buscamos globalmente (EXACTA o casi exacta)
-    if (term.length >= 4) {
+    if (term.length >= 3) {
         try {
-            // Buscamos exacto en mayúsculas (códigos)
-            const globales = await buscarCitasHistorico(appStateRef.sedeActivaId, term.trim().toUpperCase());
+            // Enviamos el término tal cual, firebase.js probará varias combinaciones
+            const globales = await buscarCitasHistorico(appStateRef.sedeActivaId, term.trim());
             
             // Combinar evitando duplicados por ID
             const mapResultados = new Map();
@@ -95,6 +95,7 @@ async function filtrarEnPantalla(term) {
             
             renderTable(Array.from(mapResultados.values()), term);
         } catch (err) {
+            console.error("Error global search:", err);
             renderTable(locales, term);
         }
     } else {
