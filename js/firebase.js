@@ -2,7 +2,7 @@
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { 
-    getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot, enableIndexedDbPersistence, limit 
+    initializeFirestore, persistentLocalCache, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot, limit 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { 
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword
@@ -16,17 +16,13 @@ let auth = null;
 
 if (isConfigured) {
     const app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-
-    // Habilitar persistencia local para ahorrar lecturas (Caché en disco)
-    enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code == 'failed-precondition') {
-            console.warn("La persistencia falló: Múltiples pestañas abiertas.");
-        } else if (err.code == 'unimplemented') {
-            console.warn("La persistencia no es compatible con este navegador.");
-        }
+    
+    // Nueva forma de habilitar persistencia en Firestore v10+
+    db = initializeFirestore(app, {
+        localCache: persistentLocalCache({})
     });
+    
+    auth = getAuth(app);
 } else {
     console.error("Firebase no está configurado. Revisa firebase-config.js");
 }
