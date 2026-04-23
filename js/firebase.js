@@ -210,9 +210,10 @@ export async function guardarPerfilUsuario(uid, data) {
 async function getCitasTerminadas() {
     if (!isConfigured) return [];
     const citasRef = collection(db, "citas");
+    // Buscamos tanto en minúscula como con la primera en mayúscula por si acaso
     const q = query(
         citasRef, 
-        where("estado", "==", "Terminada")
+        where("estado", "in", ["terminada", "Terminada"])
     );
     const snapshot = await getDocs(q);
     const citas = [];
