@@ -338,7 +338,6 @@ async function renderMonthView(grid) {
 
         html += `</div></div>`;
     }
-    }
 
     const totalCells = (startDayOfWeek - 1) + finMes.getDate();
     const remain = 7 - (totalCells % 7);
