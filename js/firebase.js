@@ -1,7 +1,7 @@
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { 
-    getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc 
+    getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { 
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword
@@ -226,4 +226,18 @@ export async function borrarUsuarioData(uid) {
     await writeBatch(db).delete(userRef).commit();
 }
 
-export { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas };
+export function listenCitasTerminadas(callback) {
+    if (!isConfigured) return () => {};
+    const citasRef = collection(db, "citas");
+    const q = query(
+        citasRef, 
+        where("estado", "in", ["terminada", "Terminada"])
+    );
+    return onSnapshot(q, (snapshot) => {
+        const citas = [];
+        snapshot.forEach(docSnap => citas.push({ id: docSnap.id, ...docSnap.data() }));
+        callback(citas);
+    });
+}
+
+export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas };

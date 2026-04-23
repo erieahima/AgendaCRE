@@ -622,4 +622,48 @@ h3 { font-size: 1.25rem; font-weight: 600; }
     text-align: center;
 }
 .month-badge.disp { background: var(--success-bg); color: #065f46; border: 1px solid #a7f3d0; }
+
+/* Grabaciones Styles */
+.grabaciones-table th {
+    background: #f8fafc;
+    text-transform: uppercase;
+    font-size: 0.70rem;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    padding: 1rem;
+}
+
+.grabaciones-table td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.row-pend { background-color: white; }
+.row-inicia { background-color: #fff7ed; border-left: 4px solid #f97316 !important; }
+.row-incid { background-color: #fef2f2; border-left: 4px solid #ef4444 !important; }
+.row-grabada { background-color: #f0fdf4; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.inicia { background: #ffedd5; color: #9a3412; }
+.status-badge.incid { background: #fee2e2; color: #991b1b; }
+.status-badge.grabada { background: #dcfce7; color: #166534; }
+.status-badge.pend { background: #f1f5f9; color: #475569; }
+
+.grabaciones-table tr {
+    transition: all 0.2s ease;
+}
+
+.grabaciones-table tr:hover {
+    filter: brightness(0.98);
+}
 .month-badge.ocup { background: var(--danger-bg); color: #991b1b; border: 1px solid #fecaca; }
