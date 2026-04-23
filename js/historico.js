@@ -1,4 +1,4 @@
-import { getHistoricoGrabaciones } from './firebase.js';
+import { getHistoricoGrabaciones, buscarCitasHistorico } from './firebase.js';
 import { dateToInputString } from './utils.js';
 
 let appStateRef = null;
@@ -60,24 +60,71 @@ async function loadHistorico() {
     }
 }
 
-function renderTable(data) {
+async function filtrarEnPantalla(term) {
+    if (!term) {
+        renderTable(historicalData);
+        return;
+    }
+
+    // 1. Filtrado local (lo que ya está cargado)
+    const locales = historicalData.filter(c => {
+        return (c.codigoUsuario || "").toLowerCase().includes(term) || 
+               c.codigo.toLowerCase().includes(term);
+    });
+
+    // 2. Si el término es largo (ej: DNI o código completo), buscamos globalmente
+    if (term.length >= 6) {
+        try {
+            const globales = await buscarCitasHistorico(appStateRef.sedeActivaId, term.toUpperCase());
+            
+            // Combinar evitando duplicados
+            const combinadosMap = new Map();
+            locales.forEach(c => combinadosMap.set(c.id, c));
+            globales.forEach(c => combinadosMap.set(c.id, c));
+            
+            renderTable(Array.from(combinadosMap.values()), term);
+        } catch (err) {
+            console.error("Error en búsqueda global:", err);
+            renderTable(locales, term);
+        }
+    } else {
+        renderTable(locales, term);
+    }
+}
+
+function renderTable(data, termHighlight = "") {
     const tbody = document.getElementById('historico-tbody');
     tbody.innerHTML = '';
 
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay registros grabados en este rango.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron coincidencias.</td></tr>';
         return;
     }
 
+    // Ordenar por fecha descendente
+    data.sort((a,b) => b.fecha.localeCompare(a.fecha) || b.hora.localeCompare(a.hora));
+
     data.forEach(cita => {
         const tr = document.createElement('tr');
+        
+        // Marcamos en rojo si coincide con el término de búsqueda
+        const matches = termHighlight && (
+            (cita.codigoUsuario || "").toLowerCase().includes(termHighlight.toLowerCase()) ||
+            cita.codigo.toLowerCase().includes(termHighlight.toLowerCase())
+        );
+
+        if (matches) {
+            tr.style.backgroundColor = '#fef2f2';
+            tr.style.borderLeft = '4px solid #ef4444';
+        }
+
         tr.innerHTML = `
             <td>
                 <div style="font-weight: 600;">${formatearFechaLocal(cita.fecha)}</div>
                 <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraLocal(cita.hora)}</div>
             </td>
             <td><span class="badge" style="background:#f1f5f9; color:#475569">${cita.codigo}</span></td>
-            <td><strong>${cita.codigoUsuario || '---'}</strong></td>
+            <td><strong style="${matches ? 'color:#ef4444' : ''}">${cita.codigoUsuario || '---'}</strong></td>
             <td style="font-size:0.85rem">${cita.observaciones || '---'}</td>
             <td>${appStateRef.sedes.find(s => s.codigoTerritorial === cita.sede)?.nombre || cita.sede}</td>
             <td><span class="badge" style="background:#dcfce7; color:#166534">Grabada</span></td>

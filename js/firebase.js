@@ -266,4 +266,28 @@ export async function getHistoricoGrabaciones(sedeId, fechaInicio, fechaFin) {
     return citas;
 }
 
+export async function buscarCitasHistorico(sedeId, term) {
+    if (!isConfigured || !sedeId || term.length < 3) return [];
+    const citasRef = collection(db, "citas");
+    
+    // Simplificamos: buscamos coincidencia exacta en código o códigoUsuario
+    const q1 = query(citasRef, 
+        where("sede", "==", sedeId), 
+        where("codigo", "==", term),
+        where("estadoGrabacion", "==", "Grabada")
+    );
+    const q2 = query(citasRef, 
+        where("sede", "==", sedeId), 
+        where("codigoUsuario", "==", term),
+        where("estadoGrabacion", "==", "Grabada")
+    );
+
+    const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+    const results = new Map();
+    s1.forEach(d => results.set(d.id, {id: d.id, ...d.data()}));
+    s2.forEach(d => results.set(d.id, {id: d.id, ...d.data()}));
+    
+    return Array.from(results.values());
+}
+
 export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas };
