@@ -59,7 +59,8 @@ function setupControls() {
                     el.style.opacity = '1';
                     return;
                 }
-                if(el.textContent.toLowerCase().includes(term)) {
+                const codigoCita = (el.dataset.codigo || el.textContent).toLowerCase();
+                if(codigoCita.includes(term)) {
                     el.classList.add('highlighted');
                     el.style.opacity = '1';
                 } else {
@@ -149,11 +150,15 @@ async function renderDayView(grid) {
         citasGrupo.forEach((cita) => {
             const div = document.createElement('div');
             div.className = `cita-evento ${cita.estado}`;
+            div.dataset.codigo = cita.codigo;
             
             div.innerHTML = `<strong>${formatHoraToDisplay(cita.hora)}</strong><br><span>${cita.codigo}</span>`;
             div.title = cita.codigo;
             
-            div.addEventListener('click', () => openModal(cita));
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openModal(cita);
+            });
             rowDiv.appendChild(div);
         });
 
@@ -200,6 +205,8 @@ function openModal(cita) {
     
     modal.classList.remove('hidden');
 }
+
+window.openCitaDesdeMes = (cita) => openModal(cita);
 
 async function renderWeekView(grid) {
     if (!AppState.sedeActivaId) {
@@ -268,10 +275,13 @@ async function renderWeekView(grid) {
 
             agrupadasPorHora[horaStr].forEach(cita => {
                 const div = document.createElement('div');
-                div.className = `cita-evento ${cita.estado}`;
-                div.innerHTML = `<strong>${formatHoraToDisplay(cita.hora)}</strong><br><span>${cita.codigo}</span>`;
-                div.title = cita.codigo;
-                div.addEventListener('click', () => openModal(cita));
+                div.className = `cita-evento compact ${cita.estado}`;
+                div.dataset.codigo = cita.codigo;
+                div.title = `${formatHoraToDisplay(cita.hora)} - ${cita.codigo}`;
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openModal(cita);
+                });
                 rowDiv.appendChild(div);
             });
             evArea.appendChild(rowDiv);
@@ -315,14 +325,23 @@ async function renderMonthView(grid) {
         const yyyymmdd = formatearFecha(iterDate);
         const delDia = citasMes.filter(c => c.fecha === yyyymmdd);
         
-        const disp = delDia.filter(c => c.estado === 'disponible').length;
-        const ocup = delDia.filter(c => c.estado === 'ocupada').length;
+        const dispCitas = delDia.filter(c => c.estado === 'disponible');
+        const ocupCitas = delDia.filter(c => c.estado === 'ocupada');
 
         html += `<div class="month-cell" id="mc-${yyyymmdd}">
             <div class="month-cell-header">${dia}</div>
-            ${disp > 0 ? `<div class="month-badge disp">${disp} Libres</div>` : ''}
-            ${ocup > 0 ? `<div class="month-badge ocup">${ocup} Ocup</div>` : ''}
-        </div>`;
+            <div class="month-events-container">`;
+        
+        delDia.forEach(cita => {
+            html += `<div class="cita-evento compact ${cita.estado}" 
+                          data-codigo="${cita.codigo}" 
+                          title="${formatHoraToDisplay(cita.hora)} - ${cita.codigo}"
+                          onclick="event.stopPropagation(); window.openCitaDesdeMes(${JSON.stringify(cita).replace(/"/g, '&quot;')})">
+                     </div>`;
+        });
+
+        html += `</div></div>`;
+    }
     }
 
     const totalCells = (startDayOfWeek - 1) + finMes.getDate();
