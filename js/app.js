@@ -67,18 +67,16 @@ async function loadAuthenticatedApp() {
         globalSelector.appendChild(opt);
     }
     
-    // Ocultar/Mostrar opciones del menú según permisos
+    // Ocultar/Mostrar opciones del menú según permisos (V.1.8.0)
+    document.getElementById('nav-item-calendario').style.display = hasPermission('ver_calendario') ? 'block' : 'none';
+    document.getElementById('nav-item-grabaciones').style.display = hasPermission('ver_grabaciones') ? 'block' : 'none';
     document.getElementById('nav-item-generador').style.display = hasPermission('generar') ? 'block' : 'none';
-    document.getElementById('nav-item-impresion').style.display = hasPermission('ver_calendario') ? 'block' : 'none';
+    document.getElementById('nav-item-impresion').style.display = hasPermission('ver_impresion') ? 'block' : 'none';
+    document.getElementById('nav-item-usuarios').style.display = hasPermission('admin_usuarios') ? 'block' : 'none';
     
     const isSuper = AppState.user.rol === 'Super_admin';
     const isAdmin = AppState.user.rol === 'Admin';
     const isOperador = AppState.user.rol === 'Operador';
-
-    document.getElementById('nav-item-usuarios').style.display = isSuper ? 'block' : 'none';
-    
-    const canRecord = hasPermission('ver_grabaciones');
-    document.getElementById('nav-item-grabaciones').style.display = canRecord ? 'block' : 'none';
 
     // Escuchar cambios de sede global y guardar en localStorage
     globalSelector.addEventListener('change', (e) => {
@@ -91,8 +89,8 @@ async function loadAuthenticatedApp() {
     setupGenerador(AppState);
     renderCalendario(); 
     setupImpresion(AppState);
-    if(isSuper) setupUsuarios(AppState);
-    if(canRecord) setupGrabaciones(AppState);
+    if(hasPermission('admin_usuarios')) setupUsuarios(AppState); 
+    if(hasPermission('ver_grabaciones')) setupGrabaciones(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {

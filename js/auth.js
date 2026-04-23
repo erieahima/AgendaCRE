@@ -84,16 +84,14 @@ export function hasPermission(action) {
     if (!currentUserProfile) return false;
     const role = currentUserProfile.rol;
     
-    if (role === 'Super_admin' || role === 'Admin') return true;
-    
-    // Mapeo de permisos por rol
+    // Mapeo de permisos estrictos por rol (V.1.8.0)
     const permissions = {
-        'Super_admin': ['generar', 'ver_calendario', 'editar_cita', 'purgar', 'ver_grabaciones'],
-        'Admin':       ['generar', 'ver_calendario', 'editar_cita', 'purgar', 'ver_grabaciones'],
-        'Operador':    ['ver_calendario', 'editar_cita'],
-        'Cita':        ['ver_calendario', 'editar_cita'],
-        'Grabador':    ['generar', 'ver_calendario', 'ver_grabaciones'],
-        'pantalla':    ['ver_calendario'] // Solo lectura
+        'Super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios'],
+        'Admin':       ['ver_calendario', 'ver_grabaciones'],
+        'Operador':    ['ver_calendario'],
+        'Grabador':    ['ver_grabaciones'],
+        'Cita':        ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios'],
+        'pantalla':    ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios']
     };
 
     return permissions[role]?.includes(action) || false;
