@@ -210,11 +210,9 @@ export async function guardarPerfilUsuario(uid, data) {
 async function getCitasTerminadas() {
     if (!isConfigured) return [];
     const citasRef = collection(db, "citas");
-    // Filtramos por estado 'Terminada' y excluimos las que ya tienen estadoGrabacion 'Grabada'
     const q = query(
         citasRef, 
-        where("estado", "==", "Terminada"),
-        where("estadoGrabacion", "!=", "Grabada")
+        where("estado", "==", "Terminada")
     );
     const snapshot = await getDocs(q);
     const citas = [];

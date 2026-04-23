@@ -14,8 +14,12 @@ export async function renderGrabacionesList() {
     tbody.innerHTML = '<tr><td colspan="6">Cargando citas terminadas...</td></tr>';
 
     try {
-        const citas = await getCitasTerminadas();
+        let citas = await getCitasTerminadas();
         
+        // Filtro en cliente: Excluimos las que ya están grabadas 
+        // (Esto evita problemas con documentos antiguos que no tienen el campo)
+        citas = citas.filter(c => c.estadoGrabacion !== 'Grabada');
+
         // Ordenar por fecha (YYYY-MM-DD) y hora
         citas.sort((a, b) => {
             const dateCompare = a.fecha.localeCompare(b.fecha);
