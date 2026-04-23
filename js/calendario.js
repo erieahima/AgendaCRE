@@ -176,14 +176,10 @@ async function renderDayView(grid) {
 let modalCitaActiva = null;
 let modalInitialized = false;
 
-alert("DEPURACIÓN: Calendario.js cargado v2.2.6");
-
 function setupModalControls() {
     if (modalInitialized) return;
     modalInitialized = true;
     
-    alert("DEPURACIÓN: setupModalControls ejecutándose");
-
     const modal = document.getElementById('cita-modal');
     
     // Delegación delegada para cerrar
@@ -206,16 +202,12 @@ function setupModalControls() {
         });
     }
 
-    // DELEGACIÓN GLOBAL PARA GUARDAR (A PRUEBA DE FALLOS)
+    // DELEGACIÓN GLOBAL PARA GUARDAR
     document.addEventListener('click', async (e) => {
         if (e.target.id === 'btn-save-cita') {
             const btnSave = e.target;
-            alert("DEPURACIÓN: Click en GUARDAR (Delegado)");
             
-            if(!modalCitaActiva) {
-                alert("Error: No hay cita activa para guardar.");
-                return;
-            }
+            if(!modalCitaActiva) return;
 
             const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
             const iniciales = document.getElementById('modal-iniciales').value;
@@ -228,7 +220,6 @@ function setupModalControls() {
 
             try {
                 const idDocumento = modalCitaActiva.id || modalCitaActiva.codigo;
-                alert("DEPURACIÓN: Intentando actualizar ID: " + idDocumento);
                 
                 await actualizarCitaData(idDocumento, {
                     codigoUsuario,
@@ -237,7 +228,6 @@ function setupModalControls() {
                     estado
                 });
                 
-                alert("Felicidades: ¡Guardado en Firebase!");
                 modal.classList.add('hidden');
                 
                 if (document.getElementById('view-calendario')?.classList.contains('active')) {
@@ -246,7 +236,8 @@ function setupModalControls() {
                 
                 window.dispatchEvent(new CustomEvent('citaActualizada', { detail: idDocumento }));
             } catch (err) {
-                alert("ERROR CRÍTICO: " + err.message);
+                console.error("Error al guardar cita:", err);
+                alert("Error al guardar: " + err.message);
             } finally {
                 btnSave.disabled = false;
                 btnSave.textContent = oldText;
