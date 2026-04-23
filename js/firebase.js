@@ -2,7 +2,7 @@
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { 
-    initializeFirestore, persistentLocalCache, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot, limit 
+    initializeFirestore, persistentLocalCache, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot, limit, orderBy, startAt, endAt 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { 
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword
@@ -268,29 +268,39 @@ export async function getHistoricoGrabaciones(sedeId, fechaInicio, fechaFin) {
 
 export async function buscarCitasHistorico(sedeId, term) {
     if (!isConfigured || term.length < 3) return [];
-    const citasRef = collection(db, "citas");
-    const termClean = term.trim();
     
-    // Consultas paralelas para cubrir todas las posibilidades de campo y formato
-    const queries = [
-        query(citasRef, where("codigo", "==", termClean), limit(20)),
-        query(citasRef, where("codigoUsuario", "==", termClean), limit(20)),
-        query(citasRef, where("codigoUsuario", "==", termClean.toUpperCase()), limit(20)),
-        query(citasRef, where("codigoUsuario", "==", termClean.toLowerCase()), limit(20))
-    ];
+    // NOTA: Para buscar por prefijo (starts with) en Firestore usamos orderBy + startAt + endAt
+    const termClean = term.trim().toUpperCase();
+    const citasRef = collection(db, "citas");
+    
+    // Buscamos por prefijo de Código de Cita
+    const q1 = query(citasRef, 
+        orderBy("codigo"), 
+        startAt(termClean), 
+        endAt(termClean + "\uf8ff"), 
+        limit(20)
+    );
+    
+    // Buscamos por prefijo de Código de Usuario
+    const q2 = query(citasRef, 
+        orderBy("codigoUsuario"), 
+        startAt(termClean), 
+        endAt(termClean + "\uf8ff"), 
+        limit(20)
+    );
 
     const results = new Map();
-    const snapshots = await Promise.all(queries.map(q => getDocs(q)));
-    
-    snapshots.forEach(snap => {
-        snap.forEach(d => {
-            // Solo devolvemos si coincide con la sede (si quieres mantener la restriccion de sede, la aplicamos aqui en JS)
-            const data = d.data();
-            if (data.sede === sedeId) {
-                results.set(d.id, {id: d.id, ...data});
-            }
-        });
-    });
+    try {
+        const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+        s1.forEach(d => results.set(d.id, {id: d.id, ...d.data()}));
+        s2.forEach(d => results.set(d.id, {id: d.id, ...d.data()}));
+    } catch (e) {
+        console.error("Error en búsqueda por prefijo:", e);
+        // Fallback a búsqueda exacta si hay problemas de índices de ordenación
+        const q3 = query(citasRef, where("codigoUsuario", "==", termClean), limit(20));
+        const s3 = await getDocs(q3);
+        s3.forEach(d => results.set(d.id, {id: d.id, ...d.data()}));
+    }
     
     return Array.from(results.values());
 }
