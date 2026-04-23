@@ -1,7 +1,8 @@
+// js/firebase.js
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { 
-    getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot 
+    getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot, enableIndexedDbPersistence, limit 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { 
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword
@@ -17,6 +18,15 @@ if (isConfigured) {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
+
+    // Habilitar persistencia local para ahorrar lecturas (Caché en disco)
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn("La persistencia falló: Múltiples pestañas abiertas.");
+        } else if (err.code == 'unimplemented') {
+            console.warn("La persistencia no es compatible con este navegador.");
+        }
+    });
 } else {
     console.error("Firebase no está configurado. Revisa firebase-config.js");
 }
@@ -213,7 +223,8 @@ async function getCitasTerminadas() {
     // Buscamos tanto en minúscula como con la primera en mayúscula por si acaso
     const q = query(
         citasRef, 
-        where("estado", "in", ["terminada", "Terminada"])
+        where("estado", "in", ["terminada", "Terminada"]),
+        limit(200)
     );
     const snapshot = await getDocs(q);
     const citas = [];
@@ -226,12 +237,14 @@ export async function borrarUsuarioData(uid) {
     await writeBatch(db).delete(userRef).commit();
 }
 
-export function listenCitasTerminadas(callback) {
-    if (!isConfigured) return () => {};
+export function listenCitasTerminadas(sedeId, callback) {
+    if (!isConfigured || !sedeId) return () => {};
     const citasRef = collection(db, "citas");
     const q = query(
         citasRef, 
-        where("estado", "in", ["terminada", "Terminada"])
+        where("sede", "==", sedeId),
+        where("estado", "in", ["terminada", "Terminada"]),
+        limit(200)
     );
     return onSnapshot(q, (snapshot) => {
         const citas = [];

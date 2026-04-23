@@ -6,10 +6,19 @@ let unsubscribeGrabaciones = null;
 export function setupGrabaciones(appState) {
     appStateRef = appState;
     
-    // Iniciar listener en tiempo real
+    // Iniciar listener en tiempo real filtrado por sede
+    conectarListenerPorSede(appState.sedeActivaId);
+
+    // Escuchar cambios de sede para reiniciar el listener
+    window.addEventListener('sedeChanged', (e) => {
+        conectarListenerPorSede(e.detail);
+    });
+}
+
+function conectarListenerPorSede(sedeId) {
     if (unsubscribeGrabaciones) unsubscribeGrabaciones();
     
-    unsubscribeGrabaciones = listenCitasTerminadas((citas) => {
+    unsubscribeGrabaciones = listenCitasTerminadas(sedeId, (citas) => {
         renderGrabacionesList(citas);
     });
 }
