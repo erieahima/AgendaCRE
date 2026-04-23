@@ -4,7 +4,7 @@ import {
     getFirestore, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { 
-    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 // No cargar Firebase real si faltan las credenciales reales
@@ -193,4 +193,23 @@ export async function getUsuarioData(uid) {
     return null;
 }
 
-export { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged };
+export async function getTodosLosUsuarios() {
+    if (!isConfigured) return [];
+    const usuarios = [];
+    const snap = await getDocs(collection(db, "usuarios"));
+    snap.forEach(doc => {
+        usuarios.push({ ...doc.data(), uid: doc.id });
+    });
+    return usuarios;
+}
+
+export async function guardarPerfilUsuario(uid, data) {
+    await setDoc(doc(db, "usuarios", uid), data);
+}
+
+export async function borrarUsuarioData(uid) {
+    const userRef = doc(db, "usuarios", uid);
+    await writeBatch(db).delete(userRef).commit();
+}
+
+export { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp };

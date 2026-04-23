@@ -55,6 +55,7 @@
                 <li id="nav-item-generador"><button class="nav-btn active" data-target="view-generador">⚙️ Generador</button></li>
                 <li id="nav-item-calendario"><button class="nav-btn" data-target="view-calendario">📅 Calendario</button></li>
                 <li id="nav-item-impresion"><button class="nav-btn" data-target="view-impresion">🖨️ Impresión</button></li>
+                <li id="nav-item-usuarios"><button class="nav-btn" data-target="view-usuarios">👥 Usuarios</button></li>
             </ul>
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
@@ -196,6 +197,29 @@
                 </div>
             </section>
 
+            <!-- Sección Gestión de Usuarios -->
+            <section id="view-usuarios" class="view-section hidden">
+                <div class="section-header">
+                    <h1>Gestión de Usuarios</h1>
+                    <button id="btn-show-add-user" class="btn-primary">+ Nuevo Usuario</button>
+                </div>
+
+                <div class="card mt-4">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Sedes Asignadas</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -239,6 +263,49 @@
         </div>
     </div>
 
+    <!-- Modal Nuevo Usuario -->
+    <div id="user-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Crear Nuevo Usuario</h2>
+                <button class="btn-close user-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-new-user">
+                    <div class="form-group">
+                        <label>Email Corporativo:</label>
+                        <input type="email" id="new-user-email" required class="input-modern w-full" placeholder="ejemplo@cruzroja.es">
+                    </div>
+                    <div class="form-group mt-2">
+                        <label>Contraseña Temporal:</label>
+                        <input type="password" id="new-user-pass" required class="input-modern w-full" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="form-group mt-2">
+                        <label>Perfil (Rol):</label>
+                        <select id="new-user-rol" required class="input-modern w-full">
+                            <option value="Super_admin">Super_admin</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Operador">Operador (Mantenimiento)</option>
+                            <option value="Cita">Cita (Gestión)</option>
+                            <option value="Grabador">Grabador (Solo huellas)</option>
+                            <option value="pantalla">Pantalla (Solo lectura)</option>
+                        </select>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label>Sedes Permitidas (Mantén pulsado Ctrl para varias):</label>
+                        <select id="new-user-sedes" multiple class="input-modern w-full" style="height: 100px;">
+                            <!-- Sedes inyectadas por JS -->
+                        </select>
+                        <small style="color: var(--text-muted);">Los Admin ven todas las sedes automáticamente.</small>
+                    </div>
+                    <div class="modal-actions mt-6">
+                        <button type="submit" class="btn-primary w-full">Crear Usuario</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="module" src="firebase-config.js"></script>
     <script type="module" src="js/utils.js"></script>
@@ -246,6 +313,7 @@
     <script type="module" src="js/auth.js"></script>
     <script type="module" src="js/generador.js"></script>
     <script type="module" src="js/calendario.js"></script>
+    <script type="module" src="js/usuarios.js"></script>
     <script type="module" src="js/impresion.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>

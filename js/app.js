@@ -4,6 +4,7 @@ import { renderCalendario, loadCitasCalendario } from './calendario.js';
 import { setupGenerador } from './generador.js';
 import { setupImpresion } from './impresion.js';
 import { initAuth, hasPermission } from './auth.js';
+import { setupUsuarios } from './usuarios.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -57,6 +58,9 @@ async function loadAuthenticatedApp() {
     // Ocultar/Mostrar opciones del menú según permisos
     document.getElementById('nav-item-generador').style.display = hasPermission('generar') ? 'block' : 'none';
     document.getElementById('nav-item-impresion').style.display = hasPermission('ver_calendario') ? 'block' : 'none';
+    
+    const isSuper = AppState.user.rol === 'Super_admin';
+    document.getElementById('nav-item-usuarios').style.display = isSuper ? 'block' : 'none';
 
     // Escuchar cambios de sede global
     globalSelector.addEventListener('change', (e) => {
@@ -68,6 +72,7 @@ async function loadAuthenticatedApp() {
     setupGenerador(AppState);
     renderCalendario(); 
     setupImpresion(AppState);
+    if(isSuper) setupUsuarios(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {

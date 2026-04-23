@@ -1,6 +1,27 @@
-import { auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, getUsuarioData } from './firebase.js';
+import { 
+    auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, getUsuarioData, 
+    firebaseConfig, initializeApp, getAuth, createUserWithEmailAndPassword 
+} from './firebase.js';
 
 let currentUserProfile = null;
+
+/**
+ * Crea un usuario en Firebase Auth sin cerrar la sesión actual de Admin.
+ * Usa una instancia secundaria de Firebase App.
+ */
+export async function crearUsuarioAutenticacion(email, password) {
+    const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp_" + Date.now());
+    const secondaryAuth = getAuth(secondaryApp);
+    try {
+        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        const uid = userCredential.user.uid;
+        // Cerrar sesión del secundario inmediatamente
+        await signOut(secondaryAuth);
+        return uid;
+    } catch (error) {
+        throw error;
+    }
+}
 
 export function initAuth(onUserReady) {
     onAuthStateChanged(auth, async (user) => {
