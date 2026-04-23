@@ -128,15 +128,13 @@ export async function getCitasPorSedeYFecha(codigoSede, fechaStr) {
     return citas;
 }
 
-export async function actualizarEstadoCita(codigoCita, nuevoEstado) {
+export async function actualizarCitaData(codigoCita, data) {
     if (!isConfigured) {
-        console.log("Simulando update:", codigoCita, nuevoEstado);
+        console.log("Simulando update completo:", codigoCita, data);
         return;
     }
     const citaRef = doc(db, "citas", codigoCita);
-    await updateDoc(citaRef, {
-        estado: nuevoEstado
-    });
+    await updateDoc(citaRef, data);
 }
 
 export async function getCitasPorSedeYRango(codigoSede, fechaInicioYMD, fechaFinYMD) {

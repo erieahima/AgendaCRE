@@ -127,7 +127,7 @@ async function handleGenerarSubmit(e) {
             ...slot,
             codigo: cod,
             sede: appStateRef.sedeActivaId,
-            estado: "disponible" // Todas nacen disponibles
+            estado: "pendiente" // Todas nacen pendientes
         };
     });
 

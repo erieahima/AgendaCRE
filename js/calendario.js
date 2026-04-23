@@ -1,6 +1,6 @@
 // js/calendario.js
 import { AppState } from './app.js';
-import { getCitasPorSedeYFecha, getCitasPorSedeYRango, actualizarEstadoCita } from './firebase.js';
+import { getCitasPorSedeYFecha, getCitasPorSedeYRango, actualizarCitaData } from './firebase.js';
 import { formatHoraToDisplay, formatearFecha } from './utils.js';
 
 let currentView = 'dia'; // 'dia', 'semana', 'mes'
@@ -32,14 +32,12 @@ function setupControls() {
 
     document.getElementById('cal-prev').addEventListener('click', () => {
         if(currentView === 'dia') currentDate.setDate(currentDate.getDate() - 1);
-        if(currentView === 'semana') currentDate.setDate(currentDate.getDate() - 7);
         if(currentView === 'mes') currentDate.setMonth(currentDate.getMonth() - 1);
         updateCalendario();
     });
 
     document.getElementById('cal-next').addEventListener('click', () => {
         if(currentView === 'dia') currentDate.setDate(currentDate.getDate() + 1);
-        if(currentView === 'semana') currentDate.setDate(currentDate.getDate() + 7);
         if(currentView === 'mes') currentDate.setMonth(currentDate.getMonth() + 1);
         updateCalendario();
     });
@@ -84,11 +82,6 @@ async function updateCalendario() {
         const diaFormat = currentDate.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         label.textContent = diaFormat.charAt(0).toUpperCase() + diaFormat.slice(1);
         await renderDayView(grid);
-    } 
-    else if (currentView === 'semana') {
-        const diaFormat = currentDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
-        label.textContent = "Semana - " + diaFormat.charAt(0).toUpperCase() + diaFormat.slice(1);
-        await renderWeekView(grid);
     } 
     else if (currentView === 'mes') {
         const mesFmt = currentDate.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
@@ -169,15 +162,23 @@ function setupModalControls() {
     const modal = document.getElementById('cita-modal');
     modal.querySelector('.modal-close').addEventListener('click', () => modal.classList.add('hidden'));
     
-    document.getElementById('btn-toggle-estado').addEventListener('click', async () => {
+    document.getElementById('btn-save-cita').addEventListener('click', async () => {
         if(!modalCitaActiva) return;
         
-        const nuevoEstado = modalCitaActiva.estado === 'disponible' ? 'ocupada' : 'disponible';
-        const ok = confirm(`¿Cambiar estado a: ${nuevoEstado}?`);
-        if(ok) {
-            await actualizarEstadoCita(modalCitaActiva.codigo, nuevoEstado);
+        const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
+        const observaciones = document.getElementById('modal-observaciones').value;
+        const estado = document.getElementById('modal-estado-select').value;
+
+        try {
+            await actualizarCitaData(modalCitaActiva.codigo, {
+                codigoUsuario,
+                observaciones,
+                estado
+            });
             modal.classList.add('hidden');
-            updateCalendario(); // Reload
+            updateCalendario(); 
+        } catch (err) {
+            alert("Error al guardar: " + err.message);
         }
     });
 
@@ -190,100 +191,20 @@ function setupModalControls() {
 function openModal(cita) {
     modalCitaActiva = cita;
     const modal = document.getElementById('cita-modal');
+    
     document.getElementById('modal-codigo').textContent = cita.codigo;
     document.getElementById('modal-fecha').textContent = cita.fecha;
     document.getElementById('modal-hora').textContent = formatHoraToDisplay(cita.hora);
     document.getElementById('modal-puesto').textContent = `Puesto ${cita.puesto}`;
     
-    const bdg = document.getElementById('modal-estado-label');
-    bdg.textContent = cita.estado.toUpperCase();
-    bdg.className = `badge ${cita.estado}`;
+    document.getElementById('modal-codigo-usuario').value = cita.codigoUsuario || "";
+    document.getElementById('modal-observaciones').value = cita.observaciones || "";
+    document.getElementById('modal-estado-select').value = cita.estado || "pendiente";
     
     modal.classList.remove('hidden');
 }
 
 window.openCitaDesdeMes = (cita) => openModal(cita);
-
-async function renderWeekView(grid) {
-    if (!AppState.sedeActivaId) {
-        grid.innerHTML = '<div style="text-align:center; padding: 2rem;">Selecciona una sede</div>';
-        return;
-    }
-
-    // Determinar lunes a domingo de la semana de currentDate
-    const dayOfWeek = currentDate.getDay() === 0 ? 7 : currentDate.getDay(); 
-    const lunes = new Date(currentDate);
-    lunes.setDate(currentDate.getDate() - dayOfWeek + 1);
-    const domingo = new Date(lunes);
-    domingo.setDate(lunes.getDate() + 6);
-
-    const inicioStr = formatearFecha(lunes);
-    const finStr = formatearFecha(domingo);
-
-    const citasSemana = await getCitasPorSedeYRango(AppState.sedeActivaId, inicioStr, finStr);
-
-    let html = '<div class="week-grid">';
-    
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-        const targetDate = new Date(lunes);
-        targetDate.setDate(lunes.getDate() + dayOffset);
-        
-        html += `<div class="week-col">
-            <div class="week-header">${targetDate.toLocaleDateString('es-ES', {weekday: 'short', day: 'numeric'})}</div>`;
-
-        for(let h=8; h<=20; h++) {
-            html += `<div style="position:absolute; top:${(h-8)*60 + 40}px; left:0; right:0; height:60px; border-bottom:1px solid #e2e8f0;"></div>`;
-            if(dayOffset === 0) { // Etiqueta de horas solo en la columna de la izquierda (lunes)
-                html += `<div class="week-time-label" style="top:${(h-8)*60 + 30}px;">${String(h).padStart(2,'0')}:00</div>`;
-            }
-        }
-
-        html += `<div class="events-area-week" id="events-week-${dayOffset}" style="position:absolute; top:40px; left:0; right:0; bottom:0;"></div>`;
-        html += `</div>`; 
-    }
-    html += '</div>';
-    grid.innerHTML = html;
-
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-        const targetDate = new Date(lunes);
-        targetDate.setDate(lunes.getDate() + dayOffset);
-        const yyyymmdd = formatearFecha(targetDate);
-        const citasDelDia = citasSemana.filter(c => c.fecha === yyyymmdd);
-        
-        const agrupadasPorHora = {};
-        citasDelDia.forEach(c => {
-            if(!agrupadasPorHora[c.hora]) agrupadasPorHora[c.hora] = [];
-            agrupadasPorHora[c.hora].push(c);
-        });
-
-        const evArea = document.getElementById(`events-week-${dayOffset}`);
-        
-        for(let horaStr in agrupadasPorHora) {
-            const hStr = horaStr.slice(0, 2);
-            const mStr = horaStr.slice(2, 4);
-            const mins = (parseInt(hStr) - 8) * 60 + parseInt(mStr);
-            
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'citas-row';
-            rowDiv.style.top = `${mins}px`;
-            
-            if(dayOffset !== 0) rowDiv.style.left = '4px';
-
-            agrupadasPorHora[horaStr].forEach(cita => {
-                const div = document.createElement('div');
-                div.className = `cita-evento compact ${cita.estado}`;
-                div.dataset.codigo = cita.codigo;
-                div.title = `${formatHoraToDisplay(cita.hora)} - ${cita.codigo}`;
-                div.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openModal(cita);
-                });
-                rowDiv.appendChild(div);
-            });
-            evArea.appendChild(rowDiv);
-        }
-    }
-}
 
 async function renderMonthView(grid) {
     if (!AppState.sedeActivaId) {
@@ -293,7 +214,6 @@ async function renderMonthView(grid) {
 
     const yyyy = currentDate.getFullYear();
     const mm = currentDate.getMonth();
-
     const inicioMes = new Date(yyyy, mm, 1);
     const finMes = new Date(yyyy, mm + 1, 0);
 
@@ -304,7 +224,6 @@ async function renderMonthView(grid) {
 
     let html = '<div class="month-grid">';
     
-    // Headers L V M
     const dNombres = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     for(let d=0; d<7; d++) {
         html += `<div style="text-align:center; font-weight:bold; padding: 8px; border-right:1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; background:var(--surface);">${dNombres[d]}</div>`;
@@ -321,26 +240,15 @@ async function renderMonthView(grid) {
         const yyyymmdd = formatearFecha(iterDate);
         const delDia = citasMes.filter(c => c.fecha === yyyymmdd);
         
-        const dispCitas = delDia.filter(c => c.estado === 'disponible');
-        const ocupCitas = delDia.filter(c => c.estado === 'ocupada');
-
         html += `<div class="month-cell" id="mc-${yyyymmdd}">
             <div class="month-cell-header">${dia}</div>
-            <div class="month-events-container">`;
-        
-        delDia.forEach(cita => {
-            html += `<div class="cita-evento compact ${cita.estado}" 
-                          data-codigo="${cita.codigo}" 
-                          title="${formatHoraToDisplay(cita.hora)} - ${cita.codigo}"
-                          onclick="event.stopPropagation(); window.openCitaDesdeMes(${JSON.stringify(cita).replace(/"/g, '&quot;')})">
-                     </div>`;
-        });
-
-        html += `</div></div>`;
+            <div style="text-align:center; margin-top:10px;">
+                <span style="font-size:0.8rem; font-weight:600; color:var(--primary);">${delDia.length > 0 ? delDia.length + ' Citas' : ''}</span>
+            </div>
+        </div>`;
     }
 
-    const totalCells = (startDayOfWeek - 1) + finMes.getDate();
-    const remain = 7 - (totalCells % 7);
+    const remain = 7 - (((startDayOfWeek - 1) + finMes.getDate()) % 7);
     if(remain < 7) {
         for(let i=0; i<remain; i++) {
             html += `<div class="month-cell" style="background:#f8fafc;"></div>`;
@@ -357,7 +265,11 @@ async function renderMonthView(grid) {
         if(mc) {
             mc.addEventListener('click', () => {
                 currentDate = iterDate;
-                document.querySelector('[data-view="dia"]').click();
+                currentView = 'dia';
+                document.querySelectorAll('.view-toggles .btn-toggle').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-view') === 'dia');
+                });
+                updateCalendario();
             });
         }
     }
