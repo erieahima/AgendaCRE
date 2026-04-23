@@ -54,6 +54,7 @@
             <ul class="nav-links">
                 <li id="nav-item-calendario"><button class="nav-btn active" data-target="view-calendario">📅 Calendario</button></li>
                 <li id="nav-item-grabaciones"><button class="nav-btn" data-target="view-grabaciones">🎥 Grabaciones</button></li>
+                <li id="nav-item-historico"><button class="nav-btn" data-target="view-historico">📚 Histórico</button></li>
                 <li id="nav-item-generador"><button class="nav-btn" data-target="view-generador">⚙️ Generador de citas</button></li>
                 <li id="nav-item-impresion"><button class="nav-btn" data-target="view-impresion">🖨️ Impresión</button></li>
                 <li id="nav-item-usuarios"><button class="nav-btn" data-target="view-usuarios">👥 Usuarios</button></li>
@@ -61,7 +62,7 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border);">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger);">🚪 Cerrar Sesión</button>
-                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 10px;">V.1.8.3</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 10px;">V.1.9.0</div>
             </div>
         </nav>
 
@@ -223,6 +224,52 @@
                 </div>
             </section>
 
+            <!-- Sección Histórico -->
+            <section id="view-historico" class="view-section">
+                <div class="section-header">
+                    <h1>Historial de Citas Grabadas</h1>
+                    <p class="text-muted">Consulta registros finalizados y grabados.</p>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="header-filters" style="flex-wrap: wrap; gap: 1rem;">
+                        <div class="form-group" style="margin:0">
+                            <label style="font-size: 0.75rem;">Desde:</label>
+                            <input type="date" id="hist-fecha-inicio" class="input-modern">
+                        </div>
+                        <div class="form-group" style="margin:0">
+                            <label style="font-size: 0.75rem;">Hasta:</label>
+                            <input type="date" id="hist-fecha-fin" class="input-modern">
+                        </div>
+                        <div class="form-group" style="margin:0; flex-grow: 1;">
+                            <label style="font-size: 0.75rem;">Buscador (Código o Usuario):</label>
+                            <input type="text" id="hist-search" class="input-modern" placeholder="Ej: 12345678X o Código cita...">
+                        </div>
+                        <div class="form-group" style="margin:0; display: flex; align-items: flex-end;">
+                            <button id="btn-load-historico" class="btn-primary" style="height: 42px;">🔍 Filtrar</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container mt-4">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Código Cita</th>
+                                    <th>Usuario</th>
+                                    <th>Observaciones</th>
+                                    <th>Sede</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historico-tbody">
+                                <!-- Inyectado por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <!-- Sección Gestión de Usuarios -->
             <section id="view-usuarios" class="view-section">
                 <div class="section-header">
@@ -332,15 +379,16 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="firebase-config.js?v=1.8.3"></script>
-    <script type="module" src="js/utils.js?v=1.8.3"></script>
-    <script type="module" src="js/firebase.js?v=1.8.3"></script>
-    <script type="module" src="js/auth.js?v=1.8.3"></script>
-    <script type="module" src="js/generador.js?v=1.8.3"></script>
-    <script type="module" src="js/calendario.js?v=1.8.3"></script>
-    <script type="module" src="js/usuarios.js?v=1.8.3"></script>
-    <script type="module" src="js/grabaciones.js?v=1.8.3"></script>
-    <script type="module" src="js/impresion.js?v=1.8.3"></script>
-    <script type="module" src="js/app.js?v=1.8.3"></script>
+    <script type="module" src="firebase-config.js?v=1.9.0"></script>
+    <script type="module" src="js/utils.js?v=1.9.0"></script>
+    <script type="module" src="js/firebase.js?v=1.9.0"></script>
+    <script type="module" src="js/auth.js?v=1.9.0"></script>
+    <script type="module" src="js/generador.js?v=1.9.0"></script>
+    <script type="module" src="js/calendario.js?v=1.9.0"></script>
+    <script type="module" src="js/usuarios.js?v=1.9.0"></script>
+    <script type="module" src="js/grabaciones.js?v=1.9.0"></script>
+    <script type="module" src="js/historico.js?v=1.9.0"></script>
+    <script type="module" src="js/impresion.js?v=1.9.0"></script>
+    <script type="module" src="js/app.js?v=1.9.0"></script>
 </body>
 </html>

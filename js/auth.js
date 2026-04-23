@@ -84,14 +84,14 @@ export function hasPermission(action) {
     if (!currentUserProfile) return false;
     const role = currentUserProfile.rol;
     
-    // Mapeo de permisos estrictos por rol (V.1.8.0)
+    // Mapeo de permisos estrictos por rol (V.1.9.0)
     const permissions = {
-        'Super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios'],
-        'Admin':       ['ver_calendario', 'ver_grabaciones'],
+        'Super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico'],
+        'Admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico'],
         'Operador':    ['ver_calendario'],
         'Grabador':    ['ver_grabaciones'],
-        'Cita':        ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios'],
-        'pantalla':    ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios']
+        'Cita':        ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico'],
+        'pantalla':    ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico']
     };
 
     return permissions[role]?.includes(action) || false;

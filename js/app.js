@@ -6,6 +6,7 @@ import { setupImpresion } from './impresion.js';
 import { initAuth, hasPermission } from './auth.js';
 import { setupUsuarios } from './usuarios.js';
 import { setupGrabaciones } from './grabaciones.js';
+import { setupHistorico } from './historico.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -67,9 +68,10 @@ async function loadAuthenticatedApp() {
         globalSelector.appendChild(opt);
     }
     
-    // Ocultar/Mostrar opciones del menú según permisos (V.1.8.0)
+    // Ocultar/Mostrar opciones del menú según permisos (V.1.9.0)
     document.getElementById('nav-item-calendario').style.display = hasPermission('ver_calendario') ? 'block' : 'none';
     document.getElementById('nav-item-grabaciones').style.display = hasPermission('ver_grabaciones') ? 'block' : 'none';
+    document.getElementById('nav-item-historico').style.display = hasPermission('ver_historico') ? 'block' : 'none';
     document.getElementById('nav-item-generador').style.display = hasPermission('generar') ? 'block' : 'none';
     document.getElementById('nav-item-impresion').style.display = hasPermission('ver_impresion') ? 'block' : 'none';
     document.getElementById('nav-item-usuarios').style.display = hasPermission('admin_usuarios') ? 'block' : 'none';
@@ -91,6 +93,7 @@ async function loadAuthenticatedApp() {
     setupImpresion(AppState);
     if(hasPermission('admin_usuarios')) setupUsuarios(AppState); 
     if(hasPermission('ver_grabaciones')) setupGrabaciones(AppState);
+    if(hasPermission('ver_historico')) setupHistorico(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {

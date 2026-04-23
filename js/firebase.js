@@ -249,4 +249,21 @@ export function listenCitasTerminadas(sedeId, callback) {
     });
 }
 
+export async function getHistoricoGrabaciones(sedeId, fechaInicio, fechaFin) {
+    if (!isConfigured || !sedeId) return [];
+    const citasRef = collection(db, "citas");
+    const q = query(
+        citasRef,
+        where("sede", "==", sedeId),
+        where("fecha", ">=", fechaInicio),
+        where("fecha", "<=", fechaFin),
+        where("estadoGrabacion", "==", "Grabada")
+    );
+    
+    const snapshot = await getDocs(q);
+    const citas = [];
+    snapshot.forEach(docSnap => citas.push({ id: docSnap.id, ...docSnap.data() }));
+    return citas;
+}
+
 export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas };
