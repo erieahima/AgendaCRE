@@ -86,12 +86,12 @@ export function hasPermission(action) {
     
     // Mapeo de permisos estrictos por rol (V.1.9.0)
     const permissions = {
-        'Super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico'],
-        'Admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico'],
+        'Super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita'],
+        'Admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico', 'asignar_cita'],
         'Operador':    ['ver_calendario'],
         'Grabador':    ['ver_grabaciones'],
-        'Cita':        ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico'],
-        'pantalla':    ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico']
+        'Cita':        ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita'],
+        'pantalla':    ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita']
     };
 
     return permissions[role]?.includes(action) || false;

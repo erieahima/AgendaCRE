@@ -7,6 +7,7 @@ import { initAuth, hasPermission } from './auth.js';
 import { setupUsuarios } from './usuarios.js';
 import { setupGrabaciones } from './grabaciones.js';
 import { setupHistorico } from './historico.js';
+import { setupAsignar } from './asignar.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -73,6 +74,7 @@ async function loadAuthenticatedApp() {
     document.getElementById('nav-item-grabaciones').style.display = hasPermission('ver_grabaciones') ? 'block' : 'none';
     document.getElementById('nav-item-historico').style.display = hasPermission('ver_historico') ? 'block' : 'none';
     document.getElementById('nav-item-generador').style.display = hasPermission('generar') ? 'block' : 'none';
+    document.getElementById('nav-item-asignar').style.display = hasPermission('asignar_cita') ? 'block' : 'none';
     document.getElementById('nav-item-impresion').style.display = hasPermission('ver_impresion') ? 'block' : 'none';
     document.getElementById('nav-item-usuarios').style.display = hasPermission('admin_usuarios') ? 'block' : 'none';
     
@@ -94,6 +96,7 @@ async function loadAuthenticatedApp() {
     if(hasPermission('admin_usuarios')) setupUsuarios(AppState); 
     if(hasPermission('ver_grabaciones')) setupGrabaciones(AppState);
     if(hasPermission('ver_historico')) setupHistorico(AppState);
+    if(hasPermission('asignar_cita')) setupAsignar(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {

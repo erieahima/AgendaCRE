@@ -208,7 +208,7 @@ function setupModalControls() {
     });
 }
 
-function openModal(cita) {
+function openModal(cita, isRestricted = false) {
     modalCitaActiva = cita;
     const modal = document.getElementById('cita-modal');
     
@@ -216,14 +216,31 @@ function openModal(cita) {
     document.getElementById('modal-fecha').textContent = formatearFechaHumana(cita.fecha);
     document.getElementById('modal-hora').textContent = formatearHoraHumana(cita.hora);
     
-    document.getElementById('modal-codigo-usuario').value = cita.codigoUsuario || "";
-    document.getElementById('modal-iniciales').value = cita.iniciales || "";
-    document.getElementById('modal-observaciones').value = cita.observaciones || "";
-    document.getElementById('modal-estado-select').value = cita.estado || "pendiente";
+    const inputUser = document.getElementById('modal-codigo-usuario');
+    const inputInit = document.getElementById('modal-iniciales');
+    const inputObs = document.getElementById('modal-observaciones');
+    const selectEstado = document.getElementById('modal-estado-select');
+
+    inputUser.value = cita.codigoUsuario || "";
+    inputInit.value = cita.iniciales || "";
+    inputObs.value = cita.observaciones || "";
+    selectEstado.value = cita.estado || "pendiente";
+
+    // Si es modo restringido (Asignar Cita), solo habilitamos iniciales
+    if (isRestricted) {
+        inputUser.disabled = true;
+        inputObs.disabled = true;
+        selectEstado.disabled = true;
+    } else {
+        inputUser.disabled = false;
+        inputObs.disabled = false;
+        selectEstado.disabled = false;
+    }
     
     modal.classList.remove('hidden');
 }
 
+window.openCitaDesdeAsignar = (cita) => openModal(cita, true);
 window.openCitaDesdeMes = (cita) => openModal(cita);
 
 async function renderMonthView(grid) {

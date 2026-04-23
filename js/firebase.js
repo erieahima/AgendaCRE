@@ -307,4 +307,30 @@ export async function buscarCitasHistorico(sedeId, term) {
     return Array.from(results.values());
 }
 
+export async function buscarCitasParaAsignar(sedeId, term) {
+    if (!isConfigured || !sedeId || term.length < 3) return [];
+    
+    const termClean = term.trim().toUpperCase();
+    const citasRef = collection(db, "citas");
+    
+    // Buscamos por prefijo de Código de Cita en la sede actual
+    const q = query(citasRef, 
+        where("sede", "==", sedeId),
+        orderBy("codigo"), 
+        startAt(termClean), 
+        endAt(termClean + "\uf8ff"), 
+        limit(20)
+    );
+
+    const results = [];
+    try {
+        const snap = await getDocs(q);
+        snap.forEach(d => results.push({id: d.id, ...d.data()}));
+    } catch (e) {
+        console.error("Error en búsqueda para asignar:", e);
+    }
+    
+    return results;
+}
+
 export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas };
