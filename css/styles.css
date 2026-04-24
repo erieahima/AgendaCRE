@@ -675,3 +675,210 @@ h3 { font-size: 1.25rem; font-weight: 600; }
     filter: brightness(0.98);
 }
 .month-badge.ocup { background: var(--danger-bg); color: #991b1b; border: 1px solid #fecaca; }
+
+/* --- NUEVOS ESTILOS: SISTEMA DE COLAS Y PUESTOS --- */
+
+/* Green dot for attendance */
+.asistencia-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    margin-right: 5px;
+    box-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
+    border: 2px solid white;
+}
+
+/* Position indicator in the corner of a card/event */
+.asistencia-dot-absolute {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 14px;
+    height: 14px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+    z-index: 5;
+}
+
+/* Custom Switch Toggle */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--primary);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--primary);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Pantalla Layout */
+.pantalla-layout {
+    background: #0f172a;
+    color: white;
+    min-height: 90vh;
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+}
+
+.pantalla-header {
+    background: #1e293b;
+    padding: 1.5rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #334155;
+}
+
+.pantalla-logo {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+
+.pantalla-time {
+    font-size: 1.5rem;
+    font-family: monospace;
+    color: #94a3b8;
+}
+
+.pantalla-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+}
+
+.llamada-principal {
+    padding: 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-right: 2px solid #1e293b;
+}
+
+.llamada-principal .label {
+    font-size: 2rem;
+    color: #38bdf8;
+    font-weight: 700;
+}
+
+.llamada-principal .codigo {
+    font-size: 10rem;
+    font-weight: 900;
+    line-height: 1;
+    margin: 2rem 0;
+    color: #f8fafc;
+}
+
+.llamada-principal .mesa {
+    font-size: 4rem;
+    font-weight: 600;
+    color: #fbbf24;
+}
+
+.llamadas-recientes {
+    background: #111827;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.llamadas-recientes h3 {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.llamada-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: #1e293b;
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.llamada-item .codigo {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.llamada-item .mesa {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #fbbf24;
+}
+
+.pantalla-footer {
+    padding: 2rem;
+    text-align: center;
+    background: #1e293b;
+    font-size: 1.25rem;
+    color: #94a3b8;
+}
+
+@media (max-width: 1024px) {
+    .pantalla-content { grid-template-columns: 1fr; }
+    .llamada-principal { border-right: none; border-bottom: 2px solid #1e293b; padding: 2rem; }
+    .llamada-principal .codigo { font-size: 6rem; }
+}

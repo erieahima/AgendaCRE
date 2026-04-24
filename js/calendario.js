@@ -62,8 +62,11 @@ function setupControls() {
     });
 
     document.getElementById('cal-today').addEventListener('click', () => {
-        currentDate = new Date();
         updateCalendario();
+    });
+
+    document.getElementById('cal-llamar-siguiente').addEventListener('click', async () => {
+        await llamarSiguienteCita();
     });
 
     const searchInput = document.getElementById('search-cita');
@@ -158,6 +161,7 @@ async function renderDayView(grid) {
             div.dataset.codigo = cita.codigo;
             
             div.innerHTML = `
+                ${cita.asistencia ? '<div class="asistencia-dot-absolute"></div>' : ''}
                 <strong>${formatHoraToDisplay(cita.hora)}</strong>
                 <span>${cita.codigo}</span>
             `;
@@ -213,6 +217,12 @@ function setupModalControls() {
             const iniciales = document.getElementById('modal-iniciales').value;
             const observaciones = document.getElementById('modal-observaciones').value;
             const estado = document.getElementById('modal-estado-select').value;
+            let asistencia = document.getElementById('modal-asistencia-switch').checked;
+
+            // Lógica de reset de asistencia según estado (Usuario: terminado, pendiente o anulada quitan el punto)
+            if (['terminada', 'pendiente', 'anulada'].includes(estado)) {
+                asistencia = false;
+            }
 
             btnSave.disabled = true;
             const oldText = btnSave.textContent;
@@ -220,12 +230,12 @@ function setupModalControls() {
 
             try {
                 const idDocumento = modalCitaActiva.id || modalCitaActiva.codigo;
-                
                 await actualizarCitaData(idDocumento, {
                     codigoUsuario,
                     iniciales,
                     observaciones,
-                    estado
+                    estado,
+                    asistencia
                 });
                 
                 modal.classList.add('hidden');
@@ -258,21 +268,25 @@ function openModal(cita, isRestricted = false) {
     const inputInit = document.getElementById('modal-iniciales');
     const inputObs = document.getElementById('modal-observaciones');
     const selectEstado = document.getElementById('modal-estado-select');
+    const switchAsistencia = document.getElementById('modal-asistencia-switch');
 
     inputUser.value = cita.codigoUsuario || "";
     inputInit.value = cita.iniciales || "";
     inputObs.value = cita.observaciones || "";
     selectEstado.value = cita.estado || "pendiente";
+    switchAsistencia.checked = cita.asistencia || false;
 
-    // Si es modo restringido (Asignar Cita), solo habilitamos iniciales
+    // Si es modo restringido (Asignar Cita), solo habilitamos iniciales y asistencia
     if (isRestricted) {
         inputUser.disabled = true;
         inputObs.disabled = true;
         selectEstado.disabled = true;
+        switchAsistencia.disabled = false; // Permitir marcar asistencia desde Asignar
     } else {
         inputUser.disabled = false;
         inputObs.disabled = false;
         selectEstado.disabled = false;
+        switchAsistencia.disabled = false;
     }
     
     modal.classList.remove('hidden');
@@ -346,6 +360,44 @@ async function renderMonthView(grid) {
                 });
                 updateCalendario();
             });
+        }
+    }
+    }
+}
+
+async function llamarSiguienteCita() {
+    if (!AppState.sedeActivaId) return;
+
+    // 1. Obtener config del puesto
+    const { getPuestoConfig, getNextCitaParaLlamar, actualizarCitaData, Timestamp } = await import('./firebase.js');
+    const config = await getPuestoConfig(AppState.user.uid);
+
+    if (!config || !config.activo || !config.nombre) {
+        alert("Primero debes configurar y activar tu puesto en 'Configurar Puesto'.");
+        return;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const siguiente = await getNextCitaParaLlamar(AppState.sedeActivaId, todayStr);
+
+    if (!siguiente) {
+        alert("No hay pacientes esperando asistencia para hoy.");
+        return;
+    }
+
+    if (confirm(`¿Llamar a ${siguiente.codigo} (${formatHoraToDisplay(siguiente.hora)}) a la ${config.nombre}?`)) {
+        try {
+            await actualizarCitaData(siguiente.id, {
+                llamada: {
+                    puesto: config.nombre,
+                    timestamp: Timestamp.now()
+                }
+            });
+            alert("Llamada realizada y enviada a pantalla.");
+            updateCalendario();
+        } catch (e) {
+            console.error(e);
+            alert("Error al realizar la llamada: " + e.message);
         }
     }
 }

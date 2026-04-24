@@ -79,6 +79,7 @@ function renderResults(citas) {
         aplicarEstiloEstado(card, cita.estado);
 
         card.innerHTML = `
+            ${cita.asistencia ? '<div class="asistencia-dot-absolute" style="top:5px; right:5px;"></div>' : ''}
             <div style="display:flex; justify-content:space-between; align-items:start;">
                 <strong>${cita.codigo}</strong>
                 <span class="badge ${cita.estado || 'pendiente'}">${(cita.estado || 'pendiente').toUpperCase()}</span>

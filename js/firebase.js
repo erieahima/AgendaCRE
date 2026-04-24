@@ -95,7 +95,9 @@ export async function guardarCitasBulk(citasList) {
                 hora: cita.horaStrClean,
                 fechaHoraTimestamp: timestamp,
                 puesto: cita.puesto,
-                estado: cita.estado
+                estado: cita.estado,
+                asistencia: false,
+                llamada: null
             };
             batch.set(docRef, citaToSave, { merge: true }); // Merge para no sobreescribir si ya existe
             guardadasCount++;
@@ -330,4 +332,84 @@ export async function buscarCitasParaAsignar(sedeId) {
     return results;
 }
 
-export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas };
+// -- CONFIGURACION DE PUESTO --
+
+/**
+ * Obtiene la configuración de puesto de un usuario
+ */
+export async function getPuestoConfig(uid) {
+    if (!isConfigured) return { nombre: "", activo: false };
+    const userRef = doc(db, "usuarios", uid);
+    const snap = await getDoc(userRef);
+    if (snap.exists() && snap.data().puestoConfig) {
+        return snap.data().puestoConfig;
+    }
+    return { nombre: "", activo: false };
+}
+
+/**
+ * Guarda la configuración de puesto de un usuario
+ */
+export async function guardarPuestoConfig(uid, config) {
+    if (!isConfigured) return;
+    const userRef = doc(db, "usuarios", uid);
+    await updateDoc(userRef, { puestoConfig: config });
+}
+
+// -- LOGICA DE LLAMADAS --
+
+/**
+ * Busca la cita más antigua de hoy que ha marcado asistencia y no ha sido llamada
+ */
+export async function getNextCitaParaLlamar(sedeId, fechaStr) {
+    if (!isConfigured) return null;
+    
+    const citasRef = collection(db, "citas");
+    const q = query(citasRef, 
+        where("sede", "==", sedeId),
+        where("fecha", "==", fechaStr),
+        where("asistencia", "==", true),
+        where("llamada", "==", null),
+        orderBy("hora", "asc"),
+        limit(1)
+    );
+    
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    
+    const docSnap = snapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() };
+}
+
+/**
+ * Escucha las últimas llamadas en tiempo real
+ */
+export function listenLlamadasRecientes(sedeId, callback) {
+    if (!isConfigured || !sedeId) return () => {};
+    
+    const citasRef = collection(db, "citas");
+    // Filtramos por citas que tienen el campo llamada no-nulo
+    // Firestore no permite '!= null' fácilmente con orderBy si hay otros filtros complejos,
+    // pero podemos filtrar por citas llamadas hoy.
+    const hoy = new Date().toISOString().split('T')[0];
+    const q = query(
+        citasRef, 
+        where("sede", "==", sedeId),
+        where("fecha", "==", hoy),
+        where("llamada", "!=", null),
+        limit(15)
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+        const llamadas = [];
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            llamadas.push({ id: docSnap.id, ...data });
+        });
+        // Ordenar por el timestamp de la llamada descendente
+        llamadas.sort((a, b) => (b.llamada.timestamp?.seconds || 0) - (a.llamada.timestamp?.seconds || 0));
+        callback(llamadas);
+    });
+}
+
+export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas, Timestamp };
