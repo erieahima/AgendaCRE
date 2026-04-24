@@ -400,8 +400,8 @@ async function llamarSiguienteCita() {
                     timestamp: Timestamp.now()
                 }
             });
-            alert("Llamada realizada y enviada a pantalla.");
             updateCalendario();
+            openModal(siguiente); // Abrir modal automáticamente para atender al paciente
         } catch (e) {
             console.error(e);
             alert("Error al realizar la llamada: " + e.message);
