@@ -261,6 +261,38 @@ function setupModalControls() {
                 btnSave.textContent = oldText;
             }
         }
+
+        if (e.target.id === 'btn-llamar-modal') {
+            if (!modalCitaActiva) return;
+            const btn = e.target;
+            btn.disabled = true;
+
+            const { getPuestoConfig, actualizarCitaData, Timestamp } = await import('./firebase.js');
+            const config = await getPuestoConfig(AppState.user.uid);
+
+            if (!config || !config.activo || !config.nombre) {
+                alert("Primero debes configurar y activar tu puesto.");
+                btn.disabled = false;
+                return;
+            }
+
+            try {
+                const idDocumento = modalCitaActiva.id || modalCitaActiva.codigo;
+                await actualizarCitaData(idDocumento, {
+                    llamada: {
+                        puesto: config.nombre,
+                        timestamp: Timestamp.now()
+                    }
+                });
+                alert(`Llamada enviada: ${modalCitaActiva.codigo} a la ${config.nombre}`);
+                updateCalendario();
+            } catch (err) {
+                console.error(err);
+                alert("Error al llamar: " + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
     });
 }
 
@@ -283,6 +315,20 @@ function openModal(cita, isRestricted = false) {
     inputObs.value = cita.observaciones || "";
     selectEstado.value = cita.estado || "pendiente";
     switchAsistencia.checked = cita.asistencia || false;
+
+    // Control del botón de llamar en el modal
+    const btnLlamarModal = document.getElementById('btn-llamar-modal');
+    if (btnLlamarModal) {
+        // Consultar config del puesto para ver si mostramos el botón
+        import('./firebase.js').then(async ({ getPuestoConfig }) => {
+            const config = await getPuestoConfig(AppState.user.uid);
+            if (config && config.activo && config.nombre) {
+                btnLlamarModal.classList.remove('hidden');
+            } else {
+                btnLlamarModal.classList.add('hidden');
+            }
+        });
+    }
 
     // Si es modo restringido (Asignar Cita), solo habilitamos iniciales y asistencia
     if (isRestricted) {
