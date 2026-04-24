@@ -362,7 +362,6 @@ async function renderMonthView(grid) {
             });
         }
     }
-    }
 }
 
 async function llamarSiguienteCita() {
