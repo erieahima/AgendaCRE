@@ -319,28 +319,30 @@ function openModal(cita, isRestricted = false) {
     // Control del botón de llamar en el modal
     const btnLlamarModal = document.getElementById('btn-llamar-modal');
     if (btnLlamarModal) {
-        // Consultar config del puesto para ver si mostramos el botón
-        import('./firebase.js').then(async ({ getPuestoConfig }) => {
-            const config = await getPuestoConfig(AppState.user.uid);
-            if (config && config.activo && config.nombre) {
-                btnLlamarModal.classList.remove('hidden');
-            } else {
-                btnLlamarModal.classList.add('hidden');
-            }
-        });
+        if (isRestricted) {
+            btnLlamarModal.classList.add('hidden');
+        } else {
+            // Consultar config del puesto para ver si mostramos el botón
+            import('./firebase.js').then(async ({ getPuestoConfig }) => {
+                const config = await getPuestoConfig(AppState.user.uid);
+                if (config && config.activo && config.nombre) {
+                    btnLlamarModal.classList.remove('hidden');
+                } else {
+                    btnLlamarModal.classList.add('hidden');
+                }
+            });
+        }
     }
 
-    // Si es modo restringido (Asignar Cita), solo habilitamos iniciales y asistencia
+    // Si es modo restringido (Asignar Cita), deshabilitamos campos
     if (isRestricted) {
         inputUser.disabled = true;
         inputObs.disabled = true;
         selectEstado.disabled = true;
-        switchAsistencia.disabled = false; // Permitir marcar asistencia desde Asignar
     } else {
         inputUser.disabled = false;
         inputObs.disabled = false;
         selectEstado.disabled = false;
-        switchAsistencia.disabled = false;
     }
     
     modal.classList.remove('hidden');
