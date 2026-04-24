@@ -83,15 +83,15 @@ export function getCurrentUser() {
 
 export function hasPermission(action) {
     if (!currentUserProfile) return false;
-    const role = currentUserProfile.rol;
+    const role = (currentUserProfile.rol || '').toLowerCase();
     
-    // Mapeo de permisos estrictos por rol (V.1.9.0)
+    // Mapeo detallado de permisos por rol (V.3.0.0)
     const permissions = {
-        'Super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
-        'Admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
-        'Operador':    ['ver_calendario', 'config_puesto', 'ver_pantalla', 'ver_espera'],
-        'Grabador':    ['ver_grabaciones'],
-        'Cita':        ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
+        'super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
+        'admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
+        'operador':    ['ver_calendario', 'asignar_cita', 'ver_espera', 'config_puesto', 'ver_pantalla'],
+        'cita':        ['asignar_cita'],
+        'grabador':    ['ver_grabaciones'],
         'pantalla':    ['ver_pantalla']
     };
 
