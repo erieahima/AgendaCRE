@@ -10,6 +10,7 @@ import { setupHistorico } from './historico.js';
 import { setupAsignar } from './asignar.js';
 import { setupPuesto } from './puesto.js';
 import { setupPantalla } from './pantalla.js';
+import { setupEspera } from './espera.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -81,6 +82,7 @@ async function loadAuthenticatedApp() {
     document.getElementById('nav-item-usuarios').style.display = hasPermission('admin_usuarios') ? 'block' : 'none';
     document.getElementById('nav-item-config-puesto').style.display = hasPermission('config_puesto') ? 'block' : 'none';
     document.getElementById('nav-item-pantalla-citas').style.display = hasPermission('ver_pantalla') ? 'block' : 'none';
+    document.getElementById('nav-item-espera').style.display = hasPermission('ver_espera') ? 'block' : 'none';
     
     const isSuper = AppState.user.rol === 'Super_admin';
     const isAdmin = AppState.user.rol === 'Admin';
@@ -104,6 +106,7 @@ async function loadAuthenticatedApp() {
     if(hasPermission('asignar_cita')) setupAsignar(AppState);
     if(hasPermission('config_puesto')) setupPuesto(AppState);
     if(hasPermission('ver_pantalla')) setupPantalla(AppState);
+    if(hasPermission('ver_espera')) setupEspera(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {
@@ -149,6 +152,8 @@ function setupNavigation() {
                 window.dispatchEvent(new CustomEvent('puestoViewEntered'));
             } else if (targetId === 'view-pantalla-citas') {
                 window.dispatchEvent(new CustomEvent('pantallaViewEntered'));
+            } else if (targetId === 'view-lista-espera') {
+                window.dispatchEvent(new CustomEvent('esperaViewEntered'));
             }
         });
     });

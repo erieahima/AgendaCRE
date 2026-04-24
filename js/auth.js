@@ -87,11 +87,11 @@ export function hasPermission(action) {
     
     // Mapeo de permisos estrictos por rol (V.1.9.0)
     const permissions = {
-        'Super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla'],
-        'Admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla'],
-        'Operador':    ['ver_calendario', 'config_puesto', 'ver_pantalla'],
+        'Super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
+        'Admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
+        'Operador':    ['ver_calendario', 'config_puesto', 'ver_pantalla', 'ver_espera'],
         'Grabador':    ['ver_grabaciones'],
-        'Cita':        ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla'],
+        'Cita':        ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
         'pantalla':    ['ver_pantalla']
     };
 

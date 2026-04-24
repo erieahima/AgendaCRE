@@ -413,4 +413,32 @@ export function listenLlamadasRecientes(sedeId, callback) {
     });
 }
 
+/**
+ * Escucha la lista de espera (asistentes no llamados)
+ */
+export function listenListaEspera(sedeId, callback) {
+    if (!isConfigured || !sedeId) return () => {};
+    
+    const citasRef = collection(db, "citas");
+    const d = new Date();
+    const hoy = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    
+    const q = query(
+        citasRef, 
+        where("sede", "==", sedeId),
+        where("fecha", "==", hoy),
+        where("asistencia", "==", true),
+        where("llamada", "==", null),
+        orderBy("hora", "asc")
+    );
+    
+    return onSnapshot(q, (snapshot) => {
+        const lista = [];
+        snapshot.forEach(docSnap => {
+            lista.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        callback(lista);
+    });
+}
+
 export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas, Timestamp };

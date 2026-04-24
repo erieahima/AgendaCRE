@@ -57,6 +57,7 @@
                 <li id="nav-item-historico"><button class="nav-btn" data-target="view-historico">📚 Histórico</button></li>
                 <li id="nav-item-generador"><button class="nav-btn" data-target="view-generador">⚙️ Generador de citas</button></li>
                 <li id="nav-item-asignar"><button class="nav-btn" data-target="view-asignar">🖊️ Asignar Cita</button></li>
+                <li id="nav-item-espera"><button class="nav-btn" data-target="view-lista-espera">⏳ Lista de Espera</button></li>
                 <li id="nav-item-impresion"><button class="nav-btn" data-target="view-impresion">🖨️ Impresión</button></li>
                 <li id="nav-item-usuarios"><button class="nav-btn" data-target="view-usuarios">👥 Usuarios</button></li>
                 <li id="nav-item-config-puesto"><button class="nav-btn" data-target="view-config-puesto">🖥️ Configurar Puesto</button></li>
@@ -369,6 +370,20 @@
                     </div>
                     <div class="pantalla-footer">
                         Por favor, acuda al puesto indicado cuando vea su código.
+                    </div>
+                </div>
+            </section>
+            <!-- VIEW: Lista de Espera -->
+            <section id="view-lista-espera" class="view-section">
+                <div class="section-container">
+                    <div class="section-header">
+                        <h1>Lista de Espera</h1>
+                        <p>Pacientes que han llegado y están pendientes de ser llamados hoy.</p>
+                    </div>
+                    <div class="card p-4">
+                        <div id="espera-container" class="list-container" style="display: flex; flex-direction: column; gap: 10px;">
+                            <!-- Inyectado por JS -->
+                        </div>
                     </div>
                 </div>
             </section>
