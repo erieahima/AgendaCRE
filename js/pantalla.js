@@ -1,5 +1,7 @@
 import { listenLlamadasRecientes } from './firebase.js';
 
+let appStateRef = null;
+let unsubscribeLlamadas = null;
 let cacheLlamadas = [];
 let lastRenderDataHash = "";
 
