@@ -119,8 +119,25 @@ async function handleGenerarSubmit(e) {
     }
 
     // Convertir slots base a objetos de Cita con código y estado
+    // Para garantizar que el sufijo no se repita el mismo día:
+    const usedSuffixesPerDay = {};
+
     const citas = slotsBase.map(slot => {
-        const sufijo = generarSufijo(3);
+        if (!usedSuffixesPerDay[slot.fechaStr]) {
+            usedSuffixesPerDay[slot.fechaStr] = new Set();
+        }
+
+        let sufijo = generarSufijo(3);
+        let intentos = 0;
+        // Intentar hasta encontrar uno que no se haya usado ese día
+        // Con 3 caracteres (A-Z, 0-9) hay 36^3 = 46656 combinaciones, 
+        // sobra para una sede en un día.
+        while (usedSuffixesPerDay[slot.fechaStr].has(sufijo) && intentos < 1000) {
+            sufijo = generarSufijo(3);
+            intentos++;
+        }
+        usedSuffixesPerDay[slot.fechaStr].add(sufijo);
+
         const cod = generarCodigo(appStateRef.sedeActivaId, slot.fechaStr, slot.horaStrClean, sufijo);
         
         return {

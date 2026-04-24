@@ -80,8 +80,8 @@ function renderPantalla(llamadas) {
 
     let listado = [];
     if (age < principalDurationSecs) {
-        // Mostrar como principal
-        mainCodigo.textContent = masReciente.codigo;
+        // Mostrar como principal (Solo los últimos 3 caracteres)
+        mainCodigo.textContent = masReciente.codigo.slice(-3);
         mainMesa.textContent = masReciente.llamada.puesto;
         listado = validas.slice(1, 7);
     } else {
@@ -93,7 +93,7 @@ function renderPantalla(llamadas) {
 
     listaRecientes.innerHTML = listado.map(ll => `
         <div class="llamada-item">
-            <div class="codigo">${ll.codigo}</div>
+            <div class="codigo">${ll.codigo.slice(-3)}</div>
             <div class="mesa">${ll.llamada.puesto}</div>
         </div>
     `).join('');
