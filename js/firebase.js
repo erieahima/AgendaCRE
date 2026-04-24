@@ -337,23 +337,24 @@ export async function buscarCitasParaAsignar(sedeId) {
 /**
  * Obtiene la configuración de puesto de un usuario
  */
+/**
+ * Obtiene la configuración de puesto de un usuario (Local a este navegador)
+ */
 export async function getPuestoConfig(uid) {
-    if (!isConfigured) return { nombre: "", activo: false };
-    const userRef = doc(db, "usuarios", uid);
-    const snap = await getDoc(userRef);
-    if (snap.exists() && snap.data().puestoConfig) {
-        return snap.data().puestoConfig;
+    const key = `puestoConfig_${uid}`;
+    const local = localStorage.getItem(key);
+    if (local) {
+        return JSON.parse(local);
     }
     return { nombre: "", activo: false };
 }
 
 /**
- * Guarda la configuración de puesto de un usuario
+ * Guarda la configuración de puesto de un usuario (Local a este navegador)
  */
 export async function guardarPuestoConfig(uid, config) {
-    if (!isConfigured) return;
-    const userRef = doc(db, "usuarios", uid);
-    await updateDoc(userRef, { puestoConfig: config });
+    const key = `puestoConfig_${uid}`;
+    localStorage.setItem(key, JSON.stringify(config));
 }
 
 // -- LOGICA DE LLAMADAS --
