@@ -17,33 +17,34 @@ export function setupPantalla(appState) {
         }
     }, 1000);
 
-    // Refresco de expiración (cada 5 segundos para evitar parpadeo constante)
+    // Refresco de expiración (cada 2 segundos para mayor precisión en el borrado de la principal)
     setInterval(() => {
         if (cacheLlamadas.length > 0) {
             renderPantalla(cacheLlamadas);
         }
-    }, 5000);
+    }, 2000);
+
+    // Función interna para iniciar el listener
+    const startListening = (sedeId) => {
+        if (unsubscribeLlamadas) unsubscribeLlamadas();
+        unsubscribeLlamadas = listenLlamadasRecientes(sedeId, (llamadas) => {
+            cacheLlamadas = llamadas;
+            renderPantalla(llamadas);
+        });
+    };
+
+    // Iniciar inmediatamente si ya hay sede (útil si se recarga la página en esta vista)
+    if (appState.sedeActivaId) {
+        startListening(appState.sedeActivaId);
+    }
 
     // Escuchar entrada a la vista
     window.addEventListener('pantallaViewEntered', () => {
-        if (unsubscribeLlamadas) unsubscribeLlamadas();
-        if (appState.sedeActivaId) {
-            unsubscribeLlamadas = listenLlamadasRecientes(appState.sedeActivaId, (llamadas) => {
-                cacheLlamadas = llamadas;
-                renderPantalla(llamadas);
-            });
-        }
+        if (appState.sedeActivaId) startListening(appState.sedeActivaId);
     });
 
     window.addEventListener('sedeChanged', (e) => {
-        const activeSection = document.querySelector('.view-section.active');
-        if (activeSection && activeSection.id === 'view-pantalla-citas') {
-            if (unsubscribeLlamadas) unsubscribeLlamadas();
-            unsubscribeLlamadas = listenLlamadasRecientes(e.detail, (llamadas) => {
-                cacheLlamadas = llamadas;
-                renderPantalla(llamadas);
-            });
-        }
+        startListening(e.detail);
     });
 }
 
@@ -63,11 +64,6 @@ function renderPantalla(llamadas) {
         return (nowSecs - callSecs) < mediaHoraSecs;
     });
 
-    // Crear un hash simple de los datos para ver si algo cambió antes de re-renderizar la lista
-    const currentDataHash = validas.map(ll => ll.id).join('-') + (validas[0] ? (nowSecs - (validas[0].llamada.timestamp?.seconds || 0) < principalDurationSecs) : 'empty');
-    if (currentDataHash === lastRenderDataHash) return;
-    lastRenderDataHash = currentDataHash;
-
     if (validas.length === 0) {
         mainCodigo.textContent = "---";
         mainMesa.textContent = "---";
@@ -75,19 +71,24 @@ function renderPantalla(llamadas) {
         return;
     }
 
+    // El más reciente
     const masReciente = validas[0];
     const age = nowSecs - (masReciente.llamada.timestamp?.seconds || 0);
+
+    const principalContainer = document.querySelector('.llamada-principal');
 
     let listado = [];
     if (age < principalDurationSecs) {
         // Mostrar como principal (Solo los últimos 3 caracteres)
+        if (principalContainer) principalContainer.style.opacity = '1';
         mainCodigo.textContent = masReciente.codigo.slice(-3);
         mainMesa.textContent = masReciente.llamada.puesto;
         listado = validas.slice(1, 7);
     } else {
-        // Ya no es principal, va a la lista directamente
-        mainCodigo.textContent = "---";
-        mainMesa.textContent = "---";
+        // Ya no es principal, ocultar el bloque grande
+        if (principalContainer) principalContainer.style.opacity = '0';
+        mainCodigo.textContent = "";
+        mainMesa.textContent = "";
         listado = validas.slice(0, 6);
     }
 
@@ -98,8 +99,10 @@ function renderPantalla(llamadas) {
         </div>
     `).join('');
 
-    // Sonido opcional (Ding!)
-    playDing();
+    // Sonido opcional (Ding!) si entra una nueva llamada principal
+    if (age < 3) { // Si la llamada entró hace menos de 3 segundos, tocar sonido
+        playDing();
+    }
 }
 
 let lastCallId = null;
