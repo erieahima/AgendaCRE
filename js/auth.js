@@ -30,6 +30,7 @@ export function initAuth(onUserReady) {
             currentUserProfile = await getUsuarioData(user.uid);
             
             if (currentUserProfile) {
+                currentUserProfile.uid = user.uid; // Añadir UID para uso en otras funciones
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-layout').classList.remove('hidden-access');
                 onUserReady(currentUserProfile);
