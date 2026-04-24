@@ -384,7 +384,7 @@ async function llamarSiguienteCita() {
         return;
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = formatearFecha(new Date());
     const siguiente = await getNextCitaParaLlamar(AppState.sedeActivaId, todayStr);
 
     if (!siguiente) {
