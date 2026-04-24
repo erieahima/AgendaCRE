@@ -3,15 +3,21 @@ import { listenLlamadasRecientes } from './firebase.js';
 let appStateRef = null;
 let unsubscribeLlamadas = null;
 
+let cacheLlamadas = [];
+
 export function setupPantalla(appState) {
     appStateRef = appState;
     const clockEl = document.getElementById('pantalla-clock');
     
-    // Reloj
+    // Reloj y refresco de expiración (cada minuto)
     setInterval(() => {
         const now = new Date();
         if (clockEl) {
             clockEl.textContent = now.toLocaleTimeString('es-ES', { hour12: false });
+        }
+        // Refrescar para quitar llamadas expiradas
+        if (cacheLlamadas.length > 0) {
+            renderPantalla(cacheLlamadas);
         }
     }, 1000);
 
@@ -21,6 +27,7 @@ export function setupPantalla(appState) {
         
         if (appState.sedeActivaId) {
             unsubscribeLlamadas = listenLlamadasRecientes(appState.sedeActivaId, (llamadas) => {
+                cacheLlamadas = llamadas;
                 renderPantalla(llamadas);
             });
         }
@@ -32,6 +39,7 @@ export function setupPantalla(appState) {
         if (activeSection && activeSection.id === 'view-pantalla-citas') {
             if (unsubscribeLlamadas) unsubscribeLlamadas();
             unsubscribeLlamadas = listenLlamadasRecientes(e.detail, (llamadas) => {
+                cacheLlamadas = llamadas;
                 renderPantalla(llamadas);
             });
         }
@@ -45,20 +53,30 @@ function renderPantalla(llamadas) {
 
     if (!mainCodigo || !listaRecientes) return;
 
-    if (llamadas.length === 0) {
+    // --- FILTRADO POR TIEMPO (MEDIA HORA) Y LÍMITE (6) ---
+    const nowSecs = Date.now() / 1000;
+    const mediaHoraSecs = 1800; // 30 mins
+
+    const validas = llamadas.filter(ll => {
+        const callSecs = ll.llamada.timestamp?.seconds || 0;
+        return (nowSecs - callSecs) < mediaHoraSecs;
+    });
+
+    if (validas.length === 0) {
         mainCodigo.textContent = "---";
         mainMesa.textContent = "---";
         listaRecientes.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">Esperando llamadas...</p>';
         return;
     }
 
-    // La primera es la principal
-    const actual = llamadas[0];
+    // La primera es la principal (la más reciente)
+    const actual = validas[0];
     mainCodigo.textContent = actual.codigo;
     mainMesa.textContent = actual.llamada.puesto;
 
-    // El resto son recientes
-    const resto = llamadas.slice(1);
+    // El resto son recientes (máximo 6 adicionales o total?) 
+    // Usuario dice: "mantendremos los últimos 6". Entendemos lista de la derecha = 6.
+    const resto = validas.slice(1, 7); 
     listaRecientes.innerHTML = resto.map(ll => `
         <div class="llamada-item">
             <div class="codigo">${ll.codigo}</div>
