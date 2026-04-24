@@ -391,7 +391,8 @@ export function listenLlamadasRecientes(sedeId, callback) {
     // Filtramos por citas que tienen el campo llamada no-nulo
     // Firestore no permite '!= null' fácilmente con orderBy si hay otros filtros complejos,
     // pero podemos filtrar por citas llamadas hoy.
-    const hoy = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const hoy = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
     const q = query(
         citasRef, 
         where("sede", "==", sedeId),
