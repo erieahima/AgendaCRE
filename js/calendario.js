@@ -127,22 +127,21 @@ async function renderDayView(grid) {
         <div class="cal-body" id="cal-body-container">
     `;
 
-    // Map appointments by hour to the nearest integer hour for the grid
-    const groupedByHourInt = {};
-    for(let h=8; h<=20; h++) groupedByHourInt[h] = [];
-
+    // Agrupar por hora exacta (HH:MM) para que cada slot temporal tenga su propia línea
+    const groupedByTime = {};
     citasDelDia.forEach(c => {
-        const hInt = parseInt(c.hora.substring(0, 2));
-        if (hInt >= 8 && hInt <= 20) {
-            groupedByHourInt[hInt].push(c);
-        }
+        if (!groupedByTime[c.hora]) groupedByTime[c.hora] = [];
+        groupedByTime[c.hora].push(c);
     });
 
-    for(let h=8; h<=20; h++) {
+    // Obtener horas ordenadas
+    const sortedTimes = Object.keys(groupedByTime).sort();
+
+    for(let t of sortedTimes) {
         html += `
             <div class="cal-row-hour">
-                <div class="hour-indicator">${String(h).padStart(2,'0')}:00</div>
-                <div class="citas-container-flex" id="hour-row-${h}">
+                <div class="hour-indicator">${formatHoraToDisplay(t)}</div>
+                <div class="citas-container-flex" id="time-row-${t}">
                 </div>
             </div>
         `;
@@ -150,10 +149,10 @@ async function renderDayView(grid) {
     html += `</div>`;
     grid.innerHTML = html;
 
-    // Inject appointments into their rows
-    for(let h=8; h<=20; h++) {
-        const container = document.getElementById(`hour-row-${h}`);
-        const appointments = groupedByHourInt[h];
+    // Inyectar citas en sus filas temporales
+    for(let t of sortedTimes) {
+        const container = document.getElementById(`time-row-${t}`);
+        const appointments = groupedByTime[t];
         
         appointments.forEach(cita => {
             const div = document.createElement('div');
@@ -162,10 +161,9 @@ async function renderDayView(grid) {
             
             div.innerHTML = `
                 ${cita.asistencia ? '<div class="asistencia-dot-absolute"></div>' : ''}
-                <strong>${formatHoraToDisplay(cita.hora)}</strong>
-                <span>${cita.codigo}</span>
+                <span>${cita.codigo.slice(-3)}</span>
             `;
-            div.title = cita.codigo;
+            div.title = cita.codigo; // Mantener completo en el tooltip
             
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
