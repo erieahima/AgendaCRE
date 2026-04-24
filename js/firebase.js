@@ -398,7 +398,7 @@ export function listenLlamadasRecientes(sedeId, callback) {
         citasRef, 
         where("sede", "==", sedeId),
         where("fecha", "==", hoy),
-        where("llamada", "!=", null),
+        orderBy("llamada.timestamp", "desc"),
         limit(15)
     );
     

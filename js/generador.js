@@ -144,7 +144,9 @@ async function handleGenerarSubmit(e) {
             ...slot,
             codigo: cod,
             sede: appStateRef.sedeActivaId,
-            estado: "pendiente" // Todas nacen pendientes
+            estado: "pendiente",
+            asistencia: false,
+            llamada: null
         };
     });
 
