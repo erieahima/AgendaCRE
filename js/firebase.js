@@ -397,20 +397,24 @@ export function listenLlamadasRecientes(sedeId, callback) {
     const q = query(
         citasRef, 
         where("sede", "==", sedeId),
-        where("fecha", "==", hoy),
-        orderBy("llamada.timestamp", "desc"),
-        limit(15)
+        where("fecha", "==", hoy)
     );
     
     return onSnapshot(q, (snapshot) => {
         const llamadas = [];
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
-            llamadas.push({ id: docSnap.id, ...data });
+            if (data.llamada && data.llamada.timestamp) {
+                llamadas.push({ id: docSnap.id, ...data });
+            }
         });
-        // Ordenar por el timestamp de la llamada descendente
-        llamadas.sort((a, b) => (b.llamada.timestamp?.seconds || 0) - (a.llamada.timestamp?.seconds || 0));
-        callback(llamadas);
+        // Ordenar por el timestamp de la llamada descendente (JS side)
+        llamadas.sort((a, b) => {
+            const timeA = a.llamada.timestamp?.seconds || 0;
+            const timeB = b.llamada.timestamp?.seconds || 0;
+            return timeB - timeA;
+        });
+        callback(llamadas.slice(0, 15));
     });
 }
 
