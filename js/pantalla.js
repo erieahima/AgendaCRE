@@ -1,30 +1,30 @@
 import { listenLlamadasRecientes } from './firebase.js';
 
-let appStateRef = null;
-let unsubscribeLlamadas = null;
-
 let cacheLlamadas = [];
+let lastRenderDataHash = "";
 
 export function setupPantalla(appState) {
     appStateRef = appState;
     const clockEl = document.getElementById('pantalla-clock');
     
-    // Reloj y refresco de expiración (cada minuto)
+    // Reloj (cada segundo)
     setInterval(() => {
         const now = new Date();
         if (clockEl) {
             clockEl.textContent = now.toLocaleTimeString('es-ES', { hour12: false });
         }
-        // Refrescar para quitar llamadas expiradas
+    }, 1000);
+
+    // Refresco de expiración (cada 5 segundos para evitar parpadeo constante)
+    setInterval(() => {
         if (cacheLlamadas.length > 0) {
             renderPantalla(cacheLlamadas);
         }
-    }, 1000);
+    }, 5000);
 
-    // Escuchar entrada a la vista para activar listener en tiempo real
+    // Escuchar entrada a la vista
     window.addEventListener('pantallaViewEntered', () => {
         if (unsubscribeLlamadas) unsubscribeLlamadas();
-        
         if (appState.sedeActivaId) {
             unsubscribeLlamadas = listenLlamadasRecientes(appState.sedeActivaId, (llamadas) => {
                 cacheLlamadas = llamadas;
@@ -33,7 +33,6 @@ export function setupPantalla(appState) {
         }
     });
 
-    // Cambiar de sede debe refrescar el listener
     window.addEventListener('sedeChanged', (e) => {
         const activeSection = document.querySelector('.view-section.active');
         if (activeSection && activeSection.id === 'view-pantalla-citas') {
@@ -53,14 +52,19 @@ function renderPantalla(llamadas) {
 
     if (!mainCodigo || !listaRecientes) return;
 
-    // --- FILTRADO POR TIEMPO (MEDIA HORA) Y LÍMITE (6) ---
     const nowSecs = Date.now() / 1000;
-    const mediaHoraSecs = 1800; // 30 mins
+    const mediaHoraSecs = 1800;
+    const principalDurationSecs = 45;
 
     const validas = llamadas.filter(ll => {
         const callSecs = ll.llamada.timestamp?.seconds || 0;
         return (nowSecs - callSecs) < mediaHoraSecs;
     });
+
+    // Crear un hash simple de los datos para ver si algo cambió antes de re-renderizar la lista
+    const currentDataHash = validas.map(ll => ll.id).join('-') + (validas[0] ? (nowSecs - (validas[0].llamada.timestamp?.seconds || 0) < principalDurationSecs) : 'empty');
+    if (currentDataHash === lastRenderDataHash) return;
+    lastRenderDataHash = currentDataHash;
 
     if (validas.length === 0) {
         mainCodigo.textContent = "---";
@@ -69,15 +73,23 @@ function renderPantalla(llamadas) {
         return;
     }
 
-    // La primera es la principal (la más reciente)
-    const actual = validas[0];
-    mainCodigo.textContent = actual.codigo;
-    mainMesa.textContent = actual.llamada.puesto;
+    const masReciente = validas[0];
+    const age = nowSecs - (masReciente.llamada.timestamp?.seconds || 0);
 
-    // El resto son recientes (máximo 6 adicionales o total?) 
-    // Usuario dice: "mantendremos los últimos 6". Entendemos lista de la derecha = 6.
-    const resto = validas.slice(1, 7); 
-    listaRecientes.innerHTML = resto.map(ll => `
+    let listado = [];
+    if (age < principalDurationSecs) {
+        // Mostrar como principal
+        mainCodigo.textContent = masReciente.codigo;
+        mainMesa.textContent = masReciente.llamada.puesto;
+        listado = validas.slice(1, 7);
+    } else {
+        // Ya no es principal, va a la lista directamente
+        mainCodigo.textContent = "---";
+        mainMesa.textContent = "---";
+        listado = validas.slice(0, 6);
+    }
+
+    listaRecientes.innerHTML = listado.map(ll => `
         <div class="llamada-item">
             <div class="codigo">${ll.codigo}</div>
             <div class="mesa">${ll.llamada.puesto}</div>
