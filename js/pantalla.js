@@ -48,6 +48,9 @@ export function setupPantalla(appState) {
     });
 }
 
+let lastMainHTML = "";
+let lastListHTML = "";
+
 function renderPantalla(llamadas) {
     const mainCodigo = document.getElementById('pantalla-main-codigo');
     const mainMesa = document.getElementById('pantalla-main-mesa');
@@ -60,49 +63,66 @@ function renderPantalla(llamadas) {
     const principalDurationSecs = 45;
 
     const validas = llamadas.filter(ll => {
-        const callSecs = ll.llamada.timestamp?.seconds || 0;
+        const callSecs = ll.llamada?.timestamp?.seconds || 0;
+        if (callSecs === 0) return false;
         return (nowSecs - callSecs) < mediaHoraSecs;
     });
 
     if (validas.length === 0) {
-        mainCodigo.textContent = "---";
-        mainMesa.textContent = "---";
-        listaRecientes.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">Esperando llamadas...</p>';
+        if (lastMainHTML !== "empty") {
+            const principalContainer = document.querySelector('.llamada-principal');
+            if (principalContainer) principalContainer.style.opacity = '0';
+            mainCodigo.textContent = "";
+            mainMesa.textContent = "";
+            listaRecientes.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">Esperando llamadas...</p>';
+            lastMainHTML = "empty";
+            lastListHTML = "empty";
+        }
         return;
     }
 
-    // El más reciente
     const masReciente = validas[0];
-    const age = nowSecs - (masReciente.llamada.timestamp?.seconds || 0);
+    const age = nowSecs - (masReciente.llamada?.timestamp?.seconds || 0);
 
     const principalContainer = document.querySelector('.llamada-principal');
 
+    let principalHTML = "";
     let listado = [];
+
     if (age < principalDurationSecs) {
-        // Mostrar como principal (Solo los últimos 3 caracteres)
+        // ACTIVA EN GRANDE
         if (principalContainer) principalContainer.style.opacity = '1';
         mainCodigo.textContent = masReciente.codigo.slice(-3);
         mainMesa.textContent = masReciente.llamada.puesto;
+        principalHTML = masReciente.id + "_active";
         listado = validas.slice(1, 7);
     } else {
-        // Ya no es principal, ocultar el bloque grande
+        // OCULTAR GRANDE
         if (principalContainer) principalContainer.style.opacity = '0';
         mainCodigo.textContent = "";
         mainMesa.textContent = "";
+        principalHTML = "hidden";
         listado = validas.slice(0, 6);
     }
 
-    listaRecientes.innerHTML = listado.map(ll => `
+    // Solo actualizar la lista si el contenido HTML generado cambia
+    const newListHTML = listado.map(ll => `
         <div class="llamada-item">
             <div class="codigo">${ll.codigo.slice(-3)}</div>
             <div class="mesa">${ll.llamada.puesto}</div>
         </div>
     `).join('');
 
-    // Sonido opcional (Ding!) si entra una nueva llamada principal
-    if (age < 3) { // Si la llamada entró hace menos de 3 segundos, tocar sonido
+    if (newListHTML !== lastListHTML) {
+        listaRecientes.innerHTML = newListHTML;
+        lastListHTML = newListHTML;
+    }
+
+    // Sonido si es una llamada nueva (últimos 4 segundos)
+    if (age < 4 && principalHTML !== lastMainHTML) {
         playDing();
     }
+    lastMainHTML = principalHTML;
 }
 
 let lastCallId = null;
