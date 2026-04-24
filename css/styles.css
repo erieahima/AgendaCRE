@@ -815,11 +815,14 @@ input:checked + .slider:before {
 }
 
 .llamada-principal .codigo {
-    font-size: 10rem;
+    font-size: 4rem;
     font-weight: 900;
-    line-height: 1;
-    margin: 2rem 0;
+    line-height: 1.2;
+    margin: 1.5rem 0;
     color: #f8fafc;
+    word-break: break-all;
+    text-align: center;
+    max-width: 100%;
 }
 
 .llamada-principal .mesa {
