@@ -206,6 +206,19 @@ function setupModalControls() {
         });
     }
 
+    // Gestionar comportamiento de asistencia según estado (V.3.1)
+    const selectEstado = document.getElementById('modal-estado-select');
+    const switchAsistencia = document.getElementById('modal-asistencia-switch');
+    if (selectEstado && switchAsistencia) {
+        selectEstado.addEventListener('change', (e) => {
+            const estado = e.target.value;
+            // Si pasamos a terminado o anulado, quitamos asistencia automáticamente
+            if (['terminada', 'anulada', 'pendiente'].includes(estado)) {
+                switchAsistencia.checked = false;
+            }
+        });
+    }
+
     // DELEGACIÓN GLOBAL PARA GUARDAR
     document.addEventListener('click', async (e) => {
         if (e.target.id === 'btn-save-cita') {
@@ -218,11 +231,6 @@ function setupModalControls() {
             const observaciones = document.getElementById('modal-observaciones').value;
             const estado = document.getElementById('modal-estado-select').value;
             let asistencia = document.getElementById('modal-asistencia-switch').checked;
-
-            // Lógica de reset de asistencia según estado (Usuario: terminado, pendiente o anulada quitan el punto)
-            if (['terminada', 'pendiente', 'anulada'].includes(estado)) {
-                asistencia = false;
-            }
 
             btnSave.disabled = true;
             const oldText = btnSave.textContent;
