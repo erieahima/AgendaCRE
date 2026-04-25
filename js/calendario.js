@@ -204,7 +204,7 @@ function setupModalControls() {
         });
     }
 
-    // Gestionar comportamiento de asistencia según estado (V.3.3.5)
+    // Gestionar comportamiento de asistencia según estado (V.3.3.6)
     const selectEstado = document.getElementById('modal-estado-select');
     const switchAsistencia = document.getElementById('modal-asistencia-switch');
     if (selectEstado && switchAsistencia) {
@@ -434,7 +434,7 @@ async function llamarSiguienteCita() {
     const siguiente = await getNextCitaParaLlamar(AppState.sedeActivaId, todayStr);
 
     if (!siguiente) {
-        alert("No hay pacientes esperando asistencia para hoy.");
+        alert("No hay personas usuarias esperando asistencia para hoy.");
         return;
     }
 
@@ -447,7 +447,7 @@ async function llamarSiguienteCita() {
                 }
             });
             updateCalendario();
-            openModal(siguiente); // Abrir modal automáticamente para atender al paciente
+            openModal(siguiente); // Abrir modal automáticamente para atender a la persona usuaria
         } catch (e) {
             console.error(e);
             alert("Error al realizar la llamada: " + e.message);

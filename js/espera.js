@@ -37,7 +37,7 @@ function renderListaEspera(lista) {
     if (lista.length === 0) {
         container.innerHTML = `
             <div style="text-align:center; padding: 3rem; color: var(--text-muted);">
-                <h3>No hay pacientes en espera</h3>
+                <h3>No hay personas usuarias en espera</h3>
                 <p>Todos los asistentes de hoy han sido llamados o no hay asistencia marcada.</p>
             </div>
         `;
@@ -50,7 +50,7 @@ function renderListaEspera(lista) {
                 <strong style="font-size: 1.1rem; color: var(--primary);">${cita.codigo}</strong>
                 <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;">
                     Hora Cita: <strong>${formatearHoraHumana(cita.hora)}</strong> | 
-                    Paciente: <strong>${cita.iniciales || 'Sin iniciales'}</strong>
+                    Persona usuaria: <strong>${cita.iniciales || 'Sin iniciales'}</strong>
                 </div>
             </div>
             <div style="text-align: right;">
