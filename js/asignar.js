@@ -23,31 +23,44 @@ export function setupAsignar(appState) {
 
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(async () => {
-            // 1. Cargar caché si cambia la sede o está vacío (mantiene rapidez para citas recientes)
-            if (lastSedeId !== appState.sedeActivaId || allCitasCache.length === 0) {
-                allCitasCache = await buscarCitasParaAsignar(appState.sedeActivaId);
-                lastSedeId = appState.sedeActivaId;
+            try {
+                // 1. Cargar caché si cambia la sede o está vacío 
+                if (lastSedeId !== appState.sedeActivaId || allCitasCache.length === 0) {
+                    allCitasCache = await buscarCitasParaAsignar(appState.sedeActivaId);
+                    lastSedeId = appState.sedeActivaId;
+                }
+
+                // 2. Filtrado local 
+                const locales = allCitasCache.filter(cita => 
+                    cita.codigo && cita.codigo.toUpperCase().includes(term)
+                );
+
+                // 3. Búsqueda profunda en servidor
+                const globales = await buscarCitasParaAsignar(appState.sedeActivaId, term);
+
+                // 4. Mezclar resultados y eliminar duplicados
+                const mapRes = new Map();
+                locales.forEach(c => mapRes.set(c.id || c.codigo, c));
+                globales.forEach(c => mapRes.set(c.id || c.codigo, c));
+
+                const finales = Array.from(mapRes.values());
+                
+                // Ordenar por fecha desc (Seguridad ante campos nulos)
+                finales.sort((a, b) => {
+                    const fA = a.fecha || '00000000';
+                    const fB = b.fecha || '00000000';
+                    if (fA !== fB) return fB.localeCompare(fA);
+                    
+                    const hA = a.hora || '00:00';
+                    const hB = b.hora || '00:00';
+                    return hB.localeCompare(hA);
+                });
+
+                renderResults(finales.slice(0, 40));
+            } catch (error) {
+                console.error("Error en la búsqueda:", error);
+                renderResults([]);
             }
-
-            // 2. Filtrado local (soporta substring en lo que ya tenemos en memoria)
-            const locales = allCitasCache.filter(cita => 
-                cita.codigo.toUpperCase().includes(term)
-            );
-
-            // 3. Búsqueda profunda en servidor (Busca cualquier código generado en la historia de la sede)
-            // Esto permite encontrar códigos por los 3 caracteres finales aunque sean muy antiguos.
-            const globales = await buscarCitasParaAsignar(appState.sedeActivaId, term);
-
-            // 4. Mezclar resultados y eliminar duplicados
-            const mapRes = new Map();
-            locales.forEach(c => mapRes.set(c.id || c.codigo, c));
-            globales.forEach(c => mapRes.set(c.id || c.codigo, c));
-
-            const finales = Array.from(mapRes.values());
-            // Ordenar por fecha desc para que aparezcan primero las más recientes
-            finales.sort((a, b) => b.fecha.localeCompare(a.fecha) || b.hora.localeCompare(a.hora));
-
-            renderResults(finales.slice(0, 40));
         }, 350);
     });
 
