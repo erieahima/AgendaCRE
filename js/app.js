@@ -187,9 +187,8 @@ function refreshSedeFeatures() {
     const sedeActual = AppState.sedes.find(s => s.codigoTerritorial === AppState.sedeActivaId);
     const hasQueuing = sedeActual ? sedeActual.hasQueuingSystem : false;
 
-    // 1. Sidebar Opciones
+    // 1. Sidebar Opciones (V.3.7.3)
     const qItems = [
-        { id: 'nav-item-espera', action: 'ver_espera' },
         { id: 'nav-item-config-puesto', action: 'config_puesto' },
         { id: 'nav-item-pantalla-citas', action: 'ver_pantalla' }
     ];
@@ -201,6 +200,12 @@ function refreshSedeFeatures() {
             el.style.display = show ? 'block' : 'none';
         }
     });
+
+    // La Lista de Espera se muestra siempre que haya permiso
+    const esperaEl = document.getElementById('nav-item-espera');
+    if (esperaEl) {
+        esperaEl.style.display = hasPermission('ver_espera') ? 'block' : 'none';
+    }
 
     // 2. Elementos dinámicos en vistas (Botones Llamar, etc)
     // Usamos una clase CSS para ocultarlos masivamente

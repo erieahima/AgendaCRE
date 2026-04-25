@@ -9,10 +9,7 @@ export function setupTablasMaestras(appState) {
 
     const renderSedesCards = async () => {
         try {
-            console.log("Tablas Maestras: Cargando sedes...");
             const sedes = await getAllSedes();
-            console.log("Tablas Maestras: Sedes recuperadas:", sedes.length);
-            
             container.innerHTML = '';
 
             if (sedes.length === 0) {
@@ -20,7 +17,7 @@ export function setupTablasMaestras(appState) {
                     <div style="grid-column: 1/-1; padding: 3rem; text-align: center; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 1rem;">
                         <span style="font-size: 3rem;">📍</span>
                         <h3 style="margin-top: 1rem; color: #64748b;">No hay sedes configuradas</h3>
-                        <p style="color: #94a3b8;">Pulsa en "Nueva Sede" para empezar a gestionar ubicaciones.</p>
+                        <p style="color: #94a3b8;">Pulsa en "Nueva Sede" para empezar.</p>
                     </div>
                 `;
                 return;
@@ -29,81 +26,136 @@ export function setupTablasMaestras(appState) {
             sedes.forEach(sede => {
                 const card = document.createElement('div');
                 card.className = `sede-card ${sede.activa ? '' : 'inactiva'}`;
-                
-                card.innerHTML = `
-                    <div class="sede-card-header">
-                        <div>
-                            <h3>${sede.nombre}</h3>
-                            <span class="code-label">#${sede.codigoTerritorial}</span>
-                        </div>
-                        <span class="badge ${sede.activa ? 'badge-success' : 'badge-danger'}">
-                            ${sede.activa ? 'Activa' : 'Baja'}
-                        </span>
-                    </div>
-
-                    <div class="sede-features-list">
-                        <div class="feature-item ${sede.hasQueuingSystem ? 'active' : ''}">
-                            ${sede.hasQueuingSystem ? '✅' : '❌'} Sistema de Pantalla y Turnos
-                        </div>
-                        <div class="feature-item active">
-                            ✅ Gestión de Citas
-                        </div>
-                    </div>
-
-                    <div class="sede-card-actions">
-                        <button class="btn btn-sm btn-outline btn-edit" title="Editar Sede">✏️ Editar</button>
-                        ${sede.activa ? `<button class="btn btn-sm btn-outline btn-delete" style="color: var(--danger); border-color: var(--danger);" title="Dar de baja">🗑️ Baja</button>` : ''}
-                    </div>
-                `;
-
-                // Vincular acciones
-                card.querySelector('.btn-edit').addEventListener('click', () => editSedeModal(sede));
-                
-                const delBtn = card.querySelector('.btn-delete');
-                if (delBtn) {
-                    delBtn.addEventListener('click', async () => {
-                        if (confirm(`¿Dar de baja la sede ${sede.nombre}?`)) {
-                            await guardarSede(sede.codigoTerritorial, { activa: false });
-                            renderSedesCards();
-                            window.dispatchEvent(new CustomEvent('sedesListChanged'));
-                        }
-                    });
-                }
-
+                card.id = `sede-card-${sede.codigoTerritorial}`;
+                renderCardContent(card, sede);
                 container.appendChild(card);
             });
         } catch (error) {
             console.error("Error en Tablas Maestras:", error);
-            container.innerHTML = `<div class="error-msg">Error al cargar sedes: ${error.message}</div>`;
+            container.innerHTML = `<div class="error-msg">Error al cargar sedes.</div>`;
         }
     };
 
-    const editSedeModal = (sede = null) => {
-        const nombre = prompt("Nombre de la Sede:", sede ? sede.nombre : "");
-        if (nombre === null) return;
+    const renderCardContent = (card, sede) => {
+        card.innerHTML = `
+            <div class="sede-card-header">
+                <div>
+                    <h3>${sede.nombre}</h3>
+                    <span class="code-label">#${sede.codigoTerritorial}</span>
+                </div>
+                <span class="badge ${sede.activa ? 'badge-success' : 'badge-danger'}">
+                    ${sede.activa ? 'Activa' : 'Baja'}
+                </span>
+            </div>
+
+            <div class="sede-features-list">
+                <div class="feature-item ${sede.hasQueuingSystem ? 'active' : ''}">
+                    ${sede.hasQueuingSystem ? '✅' : '❌'} Sistema de Pantalla y Turnos
+                </div>
+                <div class="feature-item active">
+                    ✅ Gestión de Citas (Base)
+                </div>
+            </div>
+
+            <div class="sede-card-actions">
+                <button class="btn btn-sm btn-outline btn-edit">✏️ Editar</button>
+                ${sede.activa ? `<button class="btn btn-sm btn-outline btn-delete" style="color: var(--danger); border-color: var(--danger);">🗑️ Baja</button>` : ''}
+            </div>
+        `;
+
+        card.querySelector('.btn-edit').addEventListener('click', () => renderCardEditForm(card, sede));
         
-        const codigo = sede ? sede.codigoTerritorial : prompt("Código Territorial (Identificador único):", "");
-        if (codigo === null || codigo === "") return;
+        const delBtn = card.querySelector('.btn-delete');
+        if (delBtn) {
+            delBtn.addEventListener('click', async () => {
+                if (confirm(`¿Dar de baja la sede ${sede.nombre}?`)) {
+                    await guardarSede(sede.codigoTerritorial, { activa: false });
+                    renderSedesCards();
+                    window.dispatchEvent(new CustomEvent('sedesListChanged'));
+                }
+            });
+        }
+    };
 
-        const hasQueuing = confirm("¿Habilitar Sistema de Pantalla/Turnos para esta sede?");
-        const isActiva = sede ? confirm("¿La sede está activa actualmente?") : true;
+    const renderCardEditForm = (card, sede) => {
+        const isNew = !sede.codigoTerritorial;
+        card.classList.add('editing');
+        card.innerHTML = `
+            <div class="sede-edit-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; font-weight: 700;">Nombre de la Sede:</label>
+                    <input type="text" id="edit-sede-nombre" class="input-modern w-full" value="${sede.nombre || ''}" placeholder="Ej. Asamblea Local...">
+                </div>
+                
+                ${isNew ? `
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; font-weight: 700;">Código Territorial:</label>
+                    <input type="text" id="edit-sede-codigo" class="input-modern w-full" placeholder="Ej. 29XXX">
+                </div>
+                ` : `<div class="code-label">Editando: #${sede.codigoTerritorial}</div>`}
 
-        const data = {
-            nombre: nombre,
-            codigoTerritorial: codigo,
-            activa: isActiva,
-            hasQueuingSystem: hasQueuing
-        };
+                <div class="form-group flex-between">
+                    <label style="font-size: 0.8rem;">Sistema de Pantallas:</label>
+                    <label class="switch">
+                        <input type="checkbox" id="edit-sede-queuing" ${sede.hasQueuingSystem ? 'checked' : ''}>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
 
-        guardarSede(codigo, data).then(() => {
+                <div class="form-group flex-between">
+                    <label style="font-size: 0.8rem;">Sede Activa:</label>
+                    <label class="switch">
+                        <input type="checkbox" id="edit-sede-activa" ${sede.activa !== false ? 'checked' : ''}>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="sede-card-actions" style="margin-top: 0.5rem;">
+                    <button class="btn btn-sm btn-outline btn-cancel">Cancelar</button>
+                    <button class="btn btn-sm btn-primary btn-save">Guardar Cambios</button>
+                </div>
+            </div>
+        `;
+
+        card.querySelector('.btn-cancel').addEventListener('click', () => {
+            if (isNew) renderSedesCards();
+            else {
+                card.classList.remove('editing');
+                renderCardContent(card, sede);
+            }
+        });
+
+        card.querySelector('.btn-save').addEventListener('click', async () => {
+            const nuevoNombre = document.getElementById('edit-sede-nombre').value;
+            const nuevoCodigo = isNew ? document.getElementById('edit-sede-codigo').value : sede.codigoTerritorial;
+            
+            if (!nuevoNombre || !nuevoCodigo) {
+                alert("Nombre y Código son obligatorios");
+                return;
+            }
+
+            const data = {
+                nombre: nuevoNombre,
+                codigoTerritorial: nuevoCodigo,
+                hasQueuingSystem: document.getElementById('edit-sede-queuing').checked,
+                activa: document.getElementById('edit-sede-activa').checked
+            };
+
+            await guardarSede(nuevoCodigo, data);
             renderSedesCards();
             window.dispatchEvent(new CustomEvent('sedesListChanged'));
         });
     };
 
-    btnAdd.addEventListener('click', () => editSedeModal());
+    btnAdd.addEventListener('click', () => {
+        // Crear una tarjeta temporal vacía al principio
+        const placeholder = { nombre: '', codigoTerritorial: '', activa: true, hasQueuingSystem: true };
+        const card = document.createElement('div');
+        card.className = 'sede-card editing';
+        container.prepend(card);
+        renderCardEditForm(card, placeholder);
+    });
 
-    // Listener para refrescar cuando se entra en la vista
     window.addEventListener('tablasViewEntered', () => {
         renderSedesCards();
     });
