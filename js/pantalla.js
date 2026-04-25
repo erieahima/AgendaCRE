@@ -164,8 +164,8 @@ function renderPantalla(llamadas) {
         listado = [...processedArr].reverse();
     }
 
-    // Renderizar lista lateral (limitamos a 6)
-    const listadoFinal = listado.slice(0, 6);
+    // Renderizar lista lateral (limitamos a 5 para evitar scroll)
+    const listadoFinal = listado.slice(0, 5);
     const newListHTML = listadoFinal.map(ll => `
         <div class="llamada-item">
             <div class="codigo">${ll.codigo.slice(-3)}</div>
