@@ -204,7 +204,7 @@ function setupModalControls() {
         });
     }
 
-    // Gestionar comportamiento de asistencia según estado (V.3.4.0)
+    // Gestionar comportamiento de asistencia según estado (V.3.4.1)
     const selectEstado = document.getElementById('modal-estado-select');
     const switchAsistencia = document.getElementById('modal-asistencia-switch');
     if (selectEstado && switchAsistencia) {
