@@ -762,24 +762,25 @@ input:checked + .slider:before {
 
 /* Fullscreen specific & Exit Button */
 .btn-exit-fs {
-    position: absolute;
+    position: fixed; /* Más fiable en FS */
     top: 20px;
     right: 20px;
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.2);
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.15);
     color: white;
     border: none;
     border-radius: 50%;
     font-size: 2rem;
     cursor: pointer;
-    z-index: 1000;
+    z-index: 10000;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.5s ease, transform 0.3s ease;
-    opacity: 0; /* JS controlará esto */
-    pointer-events: none; /* Evitar clics cuando es invisible */
+    transition: opacity 0.4s ease, transform 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 .btn-exit-fs.show {
@@ -787,19 +788,22 @@ input:checked + .slider:before {
     pointer-events: auto;
 }
 
-
 .btn-exit-fs:hover {
     background: rgba(255, 255, 255, 0.3);
     transform: scale(1.1);
 }
 
 #pantalla-target-fs:fullscreen {
-    width: 100vw;
-    height: 100vh;
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+    background: #0f172a !important; 
 }
+
 
 .pantalla-layout {
     background: #0f172a;

@@ -213,12 +213,19 @@ function setupFullscreenLogic(appState) {
             btnExit.classList.remove('show');
             target.removeEventListener('mousemove', showExitBtn);
             if (hideTimer) clearTimeout(hideTimer);
+            
+            // Mostrar controles al salir
+            if (controls) controls.style.display = isAuthorized ? 'block' : 'none';
+
             if (wakeLock) {
                 wakeLock.release().then(() => {
                     wakeLock = null;
                     console.log("Wake Lock liberado");
                 });
             }
+        } else {
+            // Ocultar controles al entrar (por seguridad)
+            if (controls) controls.style.display = 'none';
         }
     });
 }
