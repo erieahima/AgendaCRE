@@ -72,6 +72,7 @@ export function setupPantalla(appState) {
 const localEntranceTimes = new Map(); 
 let lastMainHTML = "";
 let lastListHTML = "";
+let lastPlayedId = ""; // Asegura que cada código suena una sola vez
 let lastSnapshotArrival = 0; // Tiempo local (ms) en que llegó el último snapshot de datos
 let lastSnapshotLatestTS = 0; // Timestamp (s) de la llamada más reciente del último snapshot
 
@@ -152,9 +153,10 @@ function renderPantalla(llamadas) {
         // La lista muestra los que ya pasaron por el panel grande
         listado = processedArr.slice(0, indexPrincipal).reverse();
         
-        // El sonido debe sonar SIEMPRE que cambie el ID de la llamada principal (V.3.6.2)
-        if (principalHTML !== lastMainHTML && principalHTML !== "empty") {
+        // El sonido debe sonar SIEMPRE que aparezca un ID de cita diferente (V.3.6.3)
+        if (masReciente.id !== lastPlayedId) {
             playDing();
+            lastPlayedId = masReciente.id;
         }
     } else {
         // En caso de que todas hayan expirado (o error), todas van a la derecha
