@@ -79,11 +79,21 @@ function renderGrabacionesList(citas) {
         // Lógica de copia
         const btnCopy = tr.querySelector('.btn-copy-code');
         if (btnCopy) {
-            btnCopy.addEventListener('click', () => {
+            btnCopy.addEventListener('click', async () => {
                 const code = btnCopy.getAttribute('data-code');
                 navigator.clipboard.writeText(code);
                 const originalText = btnCopy.textContent;
                 btnCopy.textContent = '✅';
+                
+                // V.3.7.8: Cambiar estado automáticamente al copiar el código
+                if (cita.estadoGrabacion !== 'Inicia grabación') {
+                    try {
+                        await actualizarCitaData(cita.id, { estadoGrabacion: 'Inicia grabación' });
+                    } catch (err) {
+                        console.error("Error al actualizar estado tras copia:", err);
+                    }
+                }
+
                 setTimeout(() => { btnCopy.textContent = originalText; }, 1500);
             });
         }
