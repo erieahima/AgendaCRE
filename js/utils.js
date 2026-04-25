@@ -4,7 +4,7 @@
  * Genera un sufijo aleatorio alfanumérico de X caracteres en mayúsculas
  */
 export function generarSufijo(longitud = 3) {
-    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let resultado = '';
     for (let i = 0; i < longitud; i++) {
         resultado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));

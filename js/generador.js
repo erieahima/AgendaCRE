@@ -130,7 +130,7 @@ async function handleGenerarSubmit(e) {
         let sufijo = generarSufijo(3);
         let intentos = 0;
         // Intentar hasta encontrar uno que no se haya usado ese día
-        // Con 3 caracteres (A-Z, 0-9) hay 36^3 = 46656 combinaciones, 
+        // Con 3 caracteres (solo A-Z) hay 26^3 = 17576 combinaciones, 
         // sobra para una sede en un día.
         while (usedSuffixesPerDay[slot.fechaStr].has(sufijo) && intentos < 1000) {
             sufijo = generarSufijo(3);
