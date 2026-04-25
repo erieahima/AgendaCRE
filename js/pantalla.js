@@ -56,17 +56,19 @@ export function setupPantalla(appState) {
         if (btnClear) {
             btnClear.style.display = (appState.user && appState.user.rol === 'Super_admin') ? 'inline-block' : 'none';
             btnClear.addEventListener('click', async () => {
+                const sedeId = appState.sedeActivaId;
+                if (!sedeId) return;
+
                 if (confirm("¿Estás seguro de que deseas limpiar la pantalla? Esto borrará el historial visual actual de esta sede.")) {
-                    btnClear.disabled = true;
-                    const originalText = btnClear.textContent;
-                    btnClear.textContent = "⌛ Limpiando...";
                     try {
-                        await resetLlamadasSede(appState.sedeActivaId);
+                        btnClear.disabled = true;
+                        btnClear.textContent = "⌛ Limpiando...";
+                        await resetLlamadasSede(sedeId);
                     } catch (err) {
                         console.error(err);
                         alert("Error al limpiar pantalla.");
                     } finally {
-                        btnClear.textContent = originalText;
+                        btnClear.textContent = "🧹 Limpiar Pantalla";
                         btnClear.disabled = false;
                     }
                 }

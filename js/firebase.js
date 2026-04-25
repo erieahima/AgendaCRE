@@ -231,11 +231,19 @@ export async function resetLlamadasSede(sedeId) {
     
     if (snap.empty) return;
 
-    const batch = writeBatch(db);
-    snap.forEach(docSnap => {
-        batch.update(docSnap.ref, { llamada: null });
-    });
-    await batch.commit();
+    const docs = [];
+    snap.forEach(docSnap => docs.push(docSnap.ref));
+
+    // Chunk size 500 (Firestore limit)
+    const chunkSize = 500;
+    for (let i = 0; i < docs.length; i += chunkSize) {
+        const batch = writeBatch(db);
+        const chunk = docs.slice(i, i + chunkSize);
+        chunk.forEach(ref => {
+            batch.update(ref, { llamada: null });
+        });
+        await batch.commit();
+    }
 }
 
 // -- PERFILES DE USUARIO --
