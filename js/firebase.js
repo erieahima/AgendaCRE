@@ -429,6 +429,7 @@ export async function getNextCitaParaLlamar(sedeId, fechaStr) {
     // 2. Que hayan marcado asistencia (llegada)
     // 3. Que NO hayan sido llamados aún
     // 4. Ordenados por HORA de la cita (prioridad por antigüedad de cita, no de llegada)
+    const citasRef = collection(db, "citas");
     const q = query(citasRef, 
         where("sede", "==", sedeId),
         where("fecha", "==", fechaStr),
