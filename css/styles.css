@@ -93,24 +93,31 @@ body {
 }
 
 /* Media Queries de Escalado Global */
-@media (max-width: 1440px) {
+@media (min-width: 1601px) {
+    html { font-size: 17px; }
+}
+
+@media (max-width: 1600px) {
     html { font-size: 15px; }
-    .sidebar { width: 250px; }
-    .main-content { margin-left: 250px; }
+    .sidebar { width: 240px; }
+    .main-content { margin-left: 240px; }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
     html { font-size: 14px; }
-    .sidebar { width: 220px; padding: 1rem; }
-    .main-content { margin-left: 220px; padding: 1.5rem; }
+    .sidebar { width: 180px; padding: 1rem; }
+    .sidebar .sede-selector-container label { font-size: 0.8rem; }
+    .main-content { margin-left: 180px; padding: 1.5rem; }
 }
 
-@media (max-width: 1024px) {
-    .sidebar { width: 80px; padding: 0.5rem; overflow: hidden; }
-    .sidebar .nav-btn span { display: none; }
-    .sidebar .nav-btn { text-align: center; }
-    .main-content { margin-left: 80px; }
-    .pantalla-logo { font-size: 1.5rem; }
+@media (max-width: 1100px) {
+    .sidebar { width: 70px; padding: 0.5rem; overflow: hidden; }
+    .sidebar-header h2 { display: none; }
+    .sidebar .nav-btn span, 
+    .sidebar .sede-selector-container label, 
+    .sidebar .sede-selector-container select { display: none; }
+    .sidebar .nav-btn { text-align: center; font-size: 1.5rem; padding: 1rem 0; }
+    .main-content { margin-left: 70px; }
 }
 
 /* Typography elements */
@@ -888,18 +895,18 @@ input:checked + .slider:before {
 }
 
 .llamada-principal .codigo {
-    font-size: 4rem;
+    font-size: min(12vw, 15rem); /* Escalado fluido según ancho con tope */
     font-weight: 900;
-    line-height: 1.2;
-    margin: 1.5rem 0;
+    line-height: 1;
+    margin: 2vh 0;
     color: #f8fafc;
     word-break: break-all;
     text-align: center;
-    max-width: 100%;
+    max-width: 95%;
 }
 
 .llamada-principal .mesa {
-    font-size: 4rem;
+    font-size: min(8vw, 10rem);
     font-weight: 600;
     color: #fbbf24;
 }
