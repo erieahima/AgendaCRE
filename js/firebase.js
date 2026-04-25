@@ -374,7 +374,7 @@ export async function buscarCitasParaAsignar(sedeId, term = "") {
         where("sede", "==", sedeId),
         orderBy("fecha", "desc"),
         orderBy("hora", "desc"),
-        limit(3000) // Ampliamos límite para cubrir más rango en local
+        limit(10000) // Ampliamos límite a 10.000 para cubrir mucho más rango en local (substring)
     );
 
     const results = [];
