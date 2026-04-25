@@ -202,6 +202,9 @@ function setupModalControls() {
                 document.getElementById('modal-estado-select').value = 'asignada';
             }
         });
+        inputInit.addEventListener('blur', (e) => {
+            e.target.value = e.target.value.toUpperCase();
+        });
     }
 
     // Gestionar comportamiento de asistencia según estado (V.3.6.5)
@@ -225,7 +228,7 @@ function setupModalControls() {
             if(!modalCitaActiva) return;
 
             const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
-            const iniciales = document.getElementById('modal-iniciales').value;
+            const iniciales = document.getElementById('modal-iniciales').value.toUpperCase();
             const observaciones = document.getElementById('modal-observaciones').value;
             const estado = document.getElementById('modal-estado-select').value;
             let asistencia = document.getElementById('modal-asistencia-switch').checked;
