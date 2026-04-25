@@ -148,6 +148,84 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .badge-danger { background: #fee2e2; color: #991b1b; }
 .badge-neutral { background: #f1f5f9; color: #475569; }
 
+/* Grid de Sedes (Tablas Maestras) (V.3.7.1) */
+.sedes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.sede-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.sede-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.sede-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.sede-card h3 { 
+    margin: 0; 
+    font-size: 1.2rem; 
+    color: var(--text-main);
+    line-height: 1.3;
+}
+
+.sede-card .code-label {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.sede-features-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.feature-item.active {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.sede-card-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.sede-card.inactiva {
+    opacity: 0.7;
+    background: #f8fafc;
+}
+
 /* Navigation */
 .nav-links {
     list-style: none;

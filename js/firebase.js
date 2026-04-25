@@ -53,7 +53,10 @@ export async function getSedes() {
     const snapshot = await getDocs(q);
     const sedes = [];
     snapshot.forEach(doc => {
-        sedes.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        // Migración al vuelo: Si no tiene el flag, lo ponemos a true por defecto
+        if (data.hasQueuingSystem === undefined) data.hasQueuingSystem = true;
+        sedes.push({ id: doc.id, ...data });
     });
     return sedes;
 }
@@ -64,7 +67,9 @@ export async function getAllSedes() {
     const snapshot = await getDocs(sedesRef);
     const sedes = [];
     snapshot.forEach(doc => {
-        sedes.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        if (data.hasQueuingSystem === undefined) data.hasQueuingSystem = true;
+        sedes.push({ id: doc.id, ...data });
     });
     return sedes;
 }

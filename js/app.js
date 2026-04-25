@@ -186,13 +186,16 @@ function refreshSedeFeatures() {
     const hasQueuing = sedeActual ? sedeActual.hasQueuingSystem : false;
 
     // 1. Sidebar Opciones
-    const qItems = ['nav-item-espera', 'nav-item-config-puesto', 'nav-item-pantalla-citas'];
-    qItems.forEach(id => {
-        const el = document.getElementById(id);
+    const qItems = [
+        { id: 'nav-item-espera', action: 'ver_espera' },
+        { id: 'nav-item-config-puesto', action: 'config_puesto' },
+        { id: 'nav-item-pantalla-citas', action: 'ver_pantalla' }
+    ];
+
+    qItems.forEach(item => {
+        const el = document.getElementById(item.id);
         if (el) {
-            // Solo lo mostramos si la SEDE lo tiene Y el USUARIO tiene permiso
-            const action = id.replace('nav-item-', '').replace('-', '_').replace('pantalla_citas', 'ver_pantalla');
-            const show = hasQueuing && hasPermission(action);
+            const show = hasQueuing && hasPermission(item.action);
             el.style.display = show ? 'block' : 'none';
         }
     });
