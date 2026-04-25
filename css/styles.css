@@ -132,7 +132,6 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 /* Control de visibilidad por Sede (V.3.7.0) */
 .hide-queuing-features .btn-llamar,
 .hide-queuing-features .col-llamar,
-.hide-queuing-features #nav-item-espera,
 .hide-queuing-features #nav-item-config-puesto,
 .hide-queuing-features #nav-item-pantalla-citas {
     display: none !important;
