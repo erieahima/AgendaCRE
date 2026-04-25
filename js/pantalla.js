@@ -58,6 +58,7 @@ export function setupPantalla(appState) {
     });
 }
 
+const localEntranceTimes = new Map(); // Para rastrear cuándo VISTO por primera vez esta llamada localmente
 let lastMainHTML = "";
 let lastListHTML = "";
 
@@ -68,53 +69,45 @@ function renderPantalla(llamadas) {
 
     if (!mainCodigo || !listaRecientes) return;
 
-    const nowSecs = Date.now() / 1000;
-    const hideFromListSecs = 1800; // 30 min para desaparecer de la lista completa
-    const principalDurationSecs = 45; // Tiempo total que puede estar en grande si no hay más esperando
-    const minBufferSecs = 10; // Tiempo mínimo garantizado en grande antes de dar paso
+    const now = Date.now();
+    const principalDurationMs = 45000; 
+    const minBufferMs = 10000; 
 
-    // 1. Filtrar las que son válidas para mostrar (menos de 30 min) 
-    // Ordenamos cronológicamente (ASC) para procesar la cola
-    const validasArr = llamadas
-        .filter(ll => {
-            const callSecs = ll.llamada?.timestamp?.seconds || 0;
-            if (callSecs === 0) return false;
-            return (nowSecs - callSecs) < hideFromListSecs;
-        })
-        .sort((a, b) => (a.llamada.timestamp?.seconds || 0) - (b.llamada.timestamp?.seconds || 0));
+    // 1. Procesar llamadas y asignarles un tiempo de entrada local si no lo tienen
+    const processedArr = llamadas
+        .sort((a, b) => (a.llamada?.timestamp?.seconds || 0) - (b.llamada?.timestamp?.seconds || 0));
 
-    if (validasArr.length === 0) {
-        if (lastMainHTML !== "empty") {
-            const principalContainer = document.querySelector('.llamada-principal');
-            if (principalContainer) principalContainer.style.opacity = '0';
-            mainCodigo.textContent = "";
-            mainMesa.textContent = "";
-            listaRecientes.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">Esperando llamadas...</p>';
-            lastMainHTML = "empty";
-            lastListHTML = "empty";
+    processedArr.forEach(ll => {
+        if (!localEntranceTimes.has(ll.id)) {
+            // Si es nueva para este equipo, marcamos su entrada ahora mismo
+            localEntranceTimes.set(ll.id, now);
         }
-        return;
+    });
+
+    // Limpieza de caché local (opcional, para no llenar el Map)
+    if (localEntranceTimes.size > 50) {
+        const idsInLlamadas = new Set(llamadas.map(l => l.id));
+        for (const id of localEntranceTimes.keys()) {
+            if (!idsInLlamadas.has(id)) localEntranceTimes.delete(id);
+        }
     }
 
+    // 2. Determinar quién es el "Rey del Panel" siguiendo la cola
     let indexPrincipal = -1;
-    try {
-        for (let i = 0; i < validasArr.length; i++) {
-            const callTime = validasArr[i].llamada?.timestamp?.seconds || 0;
-            if (callTime === 0) continue;
-
-            const age = Math.max(0, nowSecs - callTime); // Evitar efectos de desincronización de reloj
-            const someoneIsWaiting = i < validasArr.length - 1;
-            
-            // ¿Esta llamada i YA HA CUMPLIDO su tiempo en el panel grande?
-            const turnFinished = age >= principalDurationSecs || (age >= minBufferSecs && someoneIsWaiting);
-            
-            if (!turnFinished) {
-                indexPrincipal = i;
-                break;
-            }
+    for (let i = 0; i < processedArr.length; i++) {
+        const ll = processedArr[i];
+        const entranceTime = localEntranceTimes.get(ll.id) || now;
+        const localAge = now - entranceTime;
+        const someoneIsWaiting = i < processedArr.length - 1;
+        
+        // ¿Esta llamada ha agotado su tiempo en el panel grande?
+        // Es 100% RELATIVO al reloj local, por lo que el desvío de hora no importa
+        const turnFinished = localAge >= principalDurationMs || (localAge >= minBufferMs && someoneIsWaiting);
+        
+        if (!turnFinished) {
+            indexPrincipal = i;
+            break;
         }
-    } catch (e) {
-        console.error("Error calculando el ciclo de llamadas:", e);
     }
 
     const principalContainer = document.querySelector('.llamada-principal');
@@ -123,38 +116,32 @@ function renderPantalla(llamadas) {
 
     if (indexPrincipal !== -1) {
         try {
-            const masReciente = validasArr[indexPrincipal];
-            const callTime = masReciente.llamada?.timestamp?.seconds || 0;
-            const age = Math.max(0, nowSecs - callTime);
+            const masReciente = processedArr[indexPrincipal];
             
-            // MOSTRAR EN GRANDE
             if (principalContainer) principalContainer.style.opacity = '1';
             mainCodigo.textContent = (masReciente.codigo || "---").slice(-3);
             mainMesa.textContent = masReciente.llamada?.puesto || "Mesa";
-            principalHTML = masReciente.id + "_" + (callTime || "0");
+            principalHTML = masReciente.id + "_" + (masReciente.llamada?.timestamp?.seconds || "0");
             
-            // REGLA CLAVE: La lista de la derecha SOLO muestra las que ya PASARON por el panel grande
-            listado = validasArr.slice(0, indexPrincipal).reverse();
+            listado = processedArr.slice(0, indexPrincipal).reverse();
             
-            if (age < 4 && principalHTML !== lastMainHTML) {
+            const localAge = now - (localEntranceTimes.get(masReciente.id) || now);
+            if (localAge < 3000 && principalHTML !== lastMainHTML) {
                 playDing();
             }
         } catch (e) {
-            console.error("Error renderizando llamada principal:", e);
-            indexPrincipal = -1; // Forzar modo histórico si falla
+            console.error("Error renderizando principal:", e);
         }
     } 
     
     if (indexPrincipal === -1) {
-        // Todo es histórico o error
         if (principalContainer) principalContainer.style.opacity = '0';
         mainCodigo.textContent = "";
         mainMesa.textContent = "";
         principalHTML = "hidden";
-        listado = [...validasArr].reverse();
+        listado = [...processedArr].reverse();
     }
 
-    // 3. Renderizar lista lateral (limitamos a 6)
     const listadoFinal = listado.slice(0, 6);
     const newListHTML = listadoFinal.map(ll => `
         <div class="llamada-item">
