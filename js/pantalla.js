@@ -69,9 +69,11 @@ export function setupPantalla(appState) {
     });
 }
 
-const localEntranceTimes = new Map(); // Para rastrear cuándo VISTO por primera vez esta llamada localmente
+const localEntranceTimes = new Map(); 
 let lastMainHTML = "";
 let lastListHTML = "";
+let lastSnapshotArrival = 0; // Tiempo local (ms) en que llegó el último snapshot de datos
+let lastSnapshotLatestTS = 0; // Timestamp (s) de la llamada más reciente del último snapshot
 
 function renderPantalla(llamadas) {
     const mainCodigo = document.getElementById('pantalla-main-codigo');
@@ -80,40 +82,53 @@ function renderPantalla(llamadas) {
 
     if (!mainCodigo || !listaRecientes) return;
 
-    const now = Date.now();
-    const principalDurationMs = 45000; 
-    const minBufferMs = 10000; 
-
-    // 1. Procesar llamadas y asignarles un tiempo de entrada local si no lo tienen
+    // 1. Clasificar y Ordenar (ASC: el más antiguo primero en el array)
+    // Filtramos para asegurar que tienen marca de tiempo válida
     const processedArr = llamadas
-        .sort((a, b) => (a.llamada?.timestamp?.seconds || 0) - (b.llamada?.timestamp?.seconds || 0));
+        .filter(ll => ll.llamada && ll.llamada.timestamp)
+        .sort((a, b) => (a.llamada.timestamp.seconds) - (b.llamada.timestamp.seconds));
 
-    processedArr.forEach(ll => {
-        if (!localEntranceTimes.has(ll.id)) {
-            // Si es nueva para este equipo, marcamos su entrada ahora mismo
-            localEntranceTimes.set(ll.id, now);
-        }
-    });
-
-    // Limpieza de caché local (opcional, para no llenar el Map)
-    if (localEntranceTimes.size > 50) {
-        const idsInLlamadas = new Set(llamadas.map(l => l.id));
-        for (const id of localEntranceTimes.keys()) {
-            if (!idsInLlamadas.has(id)) localEntranceTimes.delete(id);
-        }
+    if (processedArr.length === 0) {
+        const principalContainer = document.querySelector('.llamada-principal');
+        if (principalContainer) principalContainer.style.opacity = '0';
+        mainCodigo.textContent = ""; 
+        mainMesa.textContent = "";
+        listaRecientes.innerHTML = '<p style="color: #94a3b8; text-align: center; margin-top: 2rem;">Esperando llamadas...</p>';
+        return;
     }
 
-    // 2. Determinar quién es el "Rey del Panel" siguiendo la cola
+    // 2. Sincronización lógica: Calcular "ahora" relativo al snapshot
+    const newestCall = processedArr[processedArr.length - 1];
+    const newestTS = newestCall.llamada.timestamp.seconds;
+
+    // Si el snapshot es nuevo (entró una llamada nueva al sistema), reiniciamos el cronómetro local
+    if (newestTS !== lastSnapshotLatestTS) {
+        lastSnapshotLatestTS = newestTS;
+        lastSnapshotArrival = Date.now();
+    }
+
+    // Segundos transcurridos desde que RECIBIMOS los últimos datos
+    const localElapsedSecs = (Date.now() - lastSnapshotArrival) / 1000;
+    
+    // El "Tiempo Lógico" compartido por todos los equipos es: TS_de_la_más_reciente + Tiempo_local_transcurrido
+    // Esto garantiza que todos avancen a la par independientemente de si su reloj de Windows está mal
+    const logicNowSecs = newestTS + localElapsedSecs;
+
+    const principalDurationSecs = 45; 
+    const minBufferSecs = 10; 
+
+    // 3. Determinar quién es el "Rey del Panel" (BIG)
     let indexPrincipal = -1;
     for (let i = 0; i < processedArr.length; i++) {
         const ll = processedArr[i];
-        const entranceTime = localEntranceTimes.get(ll.id) || now;
-        const localAge = now - entranceTime;
+        const callTS = ll.llamada.timestamp.seconds;
+        const relativeAge = logicNowSecs - callTS;
         const someoneIsWaiting = i < processedArr.length - 1;
         
-        // ¿Esta llamada ha agotado su tiempo en el panel grande?
-        // Es 100% RELATIVO al reloj local, por lo que el desvío de hora no importa
-        const turnFinished = localAge >= principalDurationMs || (localAge >= minBufferMs && someoneIsWaiting);
+        // Turno terminado si:
+        // - Ha cumplido 45s lógicos
+        // - O ha cumplido 10s lógicos Y hay otra llamada posterior esperando su turno
+        const turnFinished = relativeAge >= principalDurationSecs || (relativeAge >= minBufferSecs && someoneIsWaiting);
         
         if (!turnFinished) {
             indexPrincipal = i;
@@ -126,26 +141,22 @@ function renderPantalla(llamadas) {
     let listado = [];
 
     if (indexPrincipal !== -1) {
-        try {
-            const masReciente = processedArr[indexPrincipal];
-            
-            if (principalContainer) principalContainer.style.opacity = '1';
-            mainCodigo.textContent = (masReciente.codigo || "---").slice(-3);
-            mainMesa.textContent = masReciente.llamada?.puesto || "Mesa";
-            principalHTML = masReciente.id + "_" + (masReciente.llamada?.timestamp?.seconds || "0");
-            
-            listado = processedArr.slice(0, indexPrincipal).reverse();
-            
-            const localAge = now - (localEntranceTimes.get(masReciente.id) || now);
-            if (localAge < 3000 && principalHTML !== lastMainHTML) {
-                playDing();
-            }
-        } catch (e) {
-            console.error("Error renderizando principal:", e);
+        const masReciente = processedArr[indexPrincipal];
+        const age = logicNowSecs - masReciente.llamada.timestamp.seconds;
+        
+        if (principalContainer) principalContainer.style.opacity = '1';
+        mainCodigo.textContent = (masReciente.codigo || "---").slice(-3);
+        mainMesa.textContent = masReciente.llamada?.puesto || "Mesa";
+        principalHTML = masReciente.id + "_" + masReciente.llamada.timestamp.seconds;
+        
+        // La lista muestra los que ya pasaron por el panel grande
+        listado = processedArr.slice(0, indexPrincipal).reverse();
+        
+        if (age < 3 && principalHTML !== lastMainHTML) {
+            playDing();
         }
-    } 
-    
-    if (indexPrincipal === -1) {
+    } else {
+        // En caso de que todas hayan expirado (o error), todas van a la derecha
         if (principalContainer) principalContainer.style.opacity = '0';
         mainCodigo.textContent = "";
         mainMesa.textContent = "";
@@ -153,6 +164,7 @@ function renderPantalla(llamadas) {
         listado = [...processedArr].reverse();
     }
 
+    // Renderizar lista lateral (limitamos a 6)
     const listadoFinal = listado.slice(0, 6);
     const newListHTML = listadoFinal.map(ll => `
         <div class="llamada-item">
