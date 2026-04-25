@@ -85,6 +85,27 @@ body {
     transition: width 0.3s ease;
 }
 
+.nav-links {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-right: -1.5rem;
+    padding-right: 1rem;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-links::-webkit-scrollbar {
+    width: 4px;
+}
+
+.nav-links::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 4px;
+}
+
 .main-content {
     flex: 1;
     margin-left: 280px;
@@ -133,7 +154,8 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .hide-queuing-features .btn-llamar,
 .hide-queuing-features .col-llamar,
 .hide-queuing-features #nav-item-config-puesto,
-.hide-queuing-features #nav-item-pantalla-citas {
+.hide-queuing-features #nav-item-pantalla-citas,
+.hide-queuing-features #cal-llamar-siguiente {
     display: none !important;
 }
 
