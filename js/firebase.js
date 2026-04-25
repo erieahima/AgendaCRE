@@ -368,24 +368,27 @@ export async function buscarCitasParaAsignar(sedeId, term = "") {
         }
     }
 
-    // ESTRATEGIA C: Carga de proximidad (Últimas citas generadas)
-    // Se usa para cargar el caché inicial o si la búsqueda por término no fue fructífera
-    const q = query(citasRef, 
-        where("sede", "==", sedeId),
-        orderBy("fecha", "desc"),
-        orderBy("hora", "desc"),
-        limit(10000) // Ampliamos límite a 10.000 para cubrir mucho más rango en local (substring)
-    );
+    // ESTRATEGIA C: Carga de proximidad (Solo si NO hay término de búsqueda)
+    // Se usa para cargar el caché inicial de forma que el filtrado local sea instantáneo
+    if (!term) {
+        const q = query(citasRef, 
+            where("sede", "==", sedeId),
+            orderBy("fecha", "desc"),
+            orderBy("hora", "desc"),
+            limit(10000) 
+        );
 
-    const results = [];
-    try {
-        const snap = await getDocs(q);
-        snap.forEach(d => results.push({id: d.id, ...d.data()}));
-    } catch (e) {
-        console.error("Error cargando citas para asignar:", e);
+        const results = [];
+        try {
+            const snap = await getDocs(q);
+            snap.forEach(d => results.push({id: d.id, ...d.data()}));
+        } catch (e) {
+            console.error("Error cargando citas para asignar:", e);
+        }
+        return results;
     }
-    
-    return results;
+
+    return []; // Si hay término pero no hubo resultados en las estrategias A o B
 }
 
 // -- CONFIGURACION DE PUESTO --
