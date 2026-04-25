@@ -350,7 +350,16 @@
 
             <!-- VIEW: Pantalla Citas -->
             <section id="view-pantalla-citas" class="view-section">
-                <div class="pantalla-layout">
+                <!-- Controles de Pantalla (Solo visibles para autorizados) -->
+                <div id="pantalla-controls" class="no-print" style="margin-bottom: 1rem; display: none;">
+                    <button id="btn-fullscreen" class="btn-primary">🌐 Pantalla Completa</button>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Ideal para monitores externos o TV.</p>
+                </div>
+
+                <div class="pantalla-layout" id="pantalla-target-fs">
+                    <!-- Botón de salida flotante (solo en FS) -->
+                    <button id="btn-exit-fullscreen" class="btn-exit-fs hidden">&times;</button>
+
                     <div class="pantalla-header">
                         <div class="pantalla-logo">Agenda CRE</div>
                         <div class="pantalla-time" id="pantalla-clock">00:00:00</div>

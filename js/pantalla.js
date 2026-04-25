@@ -17,6 +17,9 @@ export function setupPantalla(appState) {
         }
     }, 1000);
 
+    // Lógica de Pantalla Completa y Wake Lock (Solo Super_admin y perfil pantalla)
+    setupFullscreenLogic(appState);
+
     // Refresco de expiración (cada 2 segundos para mayor precisión en el borrado de la principal)
     setInterval(() => {
         if (cacheLlamadas.length > 0) {
@@ -33,7 +36,14 @@ export function setupPantalla(appState) {
         });
     };
 
-    // Iniciar inmediatamente si ya hay sede (útil si se recarga la página en esta vista)
+    // VISIBILIDAD DE CONTROLES: Solo Super_admin y perfil pantalla
+    const isAuthorized = appState.user && (appState.user.rol === 'Super_admin' || appState.user.rol === 'pantalla');
+    const controls = document.getElementById('pantalla-controls');
+    if (controls) {
+        controls.style.display = isAuthorized ? 'block' : 'none';
+    }
+
+    // Iniciar inmediatamente si ya hay sede
     if (appState.sedeActivaId) {
         startListening(appState.sedeActivaId);
     }
@@ -47,9 +57,6 @@ export function setupPantalla(appState) {
         startListening(e.detail);
     });
 }
-
-let lastMainHTML = "";
-let lastListHTML = "";
 
 function renderPantalla(llamadas) {
     const mainCodigo = document.getElementById('pantalla-main-codigo');
@@ -125,8 +132,55 @@ function renderPantalla(llamadas) {
     lastMainHTML = principalHTML;
 }
 
-let lastCallId = null;
+let lastMainHTML = "";
+let lastListHTML = "";
+
 function playDing() {
-    // Para no molestar con dings repetidos de la misma lista
-    // En una app real, compararíamos el ID de la última llamada
+    // Para no molestar con dings repetidos
+}
+
+// LOGICA FULLSCREEN Y WAKE LOCK
+let wakeLock = null;
+
+function setupFullscreenLogic(appState) {
+    const btnEnter = document.getElementById('btn-fullscreen');
+    const btnExit = document.getElementById('btn-exit-fullscreen');
+    const target = document.getElementById('pantalla-target-fs');
+
+    if (!btnEnter || !btnExit || !target) return;
+
+    const toggleFS = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await target.requestFullscreen();
+                btnExit.classList.remove('hidden');
+                // Activar Wake Lock
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log("Wake Lock activo");
+                }
+            } else {
+                if (document.fullscreenElement) await document.exitFullscreen();
+            }
+        } catch (err) {
+            console.error("Error Fullscreen/WakeLock:", err);
+        }
+    };
+
+    btnEnter.addEventListener('click', toggleFS);
+    btnExit.addEventListener('click', () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            btnExit.classList.add('hidden');
+            if (wakeLock) {
+                wakeLock.release().then(() => {
+                    wakeLock = null;
+                    console.log("Wake Lock liberado");
+                });
+            }
+        }
+    });
 }

@@ -760,7 +760,44 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
-/* Pantalla Layout */
+/* Fullscreen specific & Exit Button */
+.btn-exit-fs {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    opacity: 0; /* Hidden by default, shown on mousemove */
+}
+
+.pantalla-layout:hover .btn-exit-fs {
+    opacity: 1;
+}
+
+.btn-exit-fs:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+#pantalla-target-fs:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+}
+
 .pantalla-layout {
     background: #0f172a;
     color: white;
@@ -770,6 +807,7 @@ input:checked + .slider:before {
     flex-direction: column;
     overflow: hidden;
     font-family: 'Inter', sans-serif;
+    position: relative; /* Base for absolute btn */
 }
 
 .pantalla-header {
