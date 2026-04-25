@@ -72,12 +72,17 @@ async function handleGenerarSubmit(e) {
     e.preventDefault();
 
     if (!appStateRef.sedeActivaId) {
-        alert("Por favor, selecciona una sede arriba (si no carga, revisa la configuración de Firebase).");
+        alert("Por favor, selecciona una sede arriba.");
         return;
     }
 
     const fechaInicio = document.getElementById('gen-fecha-inicio').value;
     const fechaFin = document.getElementById('gen-fecha-fin').value;
+    const progressContainer = document.getElementById('progress-container');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const btnSubmit = e.target.querySelector('button[type="submit"]');
+
     // Franjas
     const franjasDom = document.querySelectorAll('.franja-item');
     if (franjasDom.length === 0) {
@@ -114,82 +119,90 @@ async function handleGenerarSubmit(e) {
 
     const slotsBase = generarSlotsBatch(config);
     if(slotsBase.length === 0) {
-        alert("No se generaron huecos con la configuración seleccionada. Comprueba rangos y fechas.");
+        alert("No se generaron huecos. Comprueba rangos y fechas.");
         return;
     }
 
-    // Convertir slots base a objetos de Cita con código y estado
-    // Para garantizar que el sufijo no se repita el mismo día:
-    const usedSuffixesPerDay = {};
-
-    const citas = slotsBase.map(slot => {
-        if (!usedSuffixesPerDay[slot.fechaStr]) {
-            usedSuffixesPerDay[slot.fechaStr] = new Set();
-        }
-
-        let sufijo = generarSufijo(3);
-        let intentos = 0;
-        // Intentar hasta encontrar uno que no se haya usado ese día
-        // Con 3 caracteres (solo A-Z) hay 26^3 = 17576 combinaciones, 
-        // sobra para una sede en un día.
-        while (usedSuffixesPerDay[slot.fechaStr].has(sufijo) && intentos < 1000) {
-            sufijo = generarSufijo(3);
-            intentos++;
-        }
-        usedSuffixesPerDay[slot.fechaStr].add(sufijo);
-
-        const cod = generarCodigo(appStateRef.sedeActivaId, slot.fechaStr, slot.horaStrClean, sufijo);
-        
-        return {
-            ...slot,
-            codigo: cod,
-            sede: appStateRef.sedeActivaId,
-            estado: "pendiente",
-            asistencia: false,
-            llamada: null
-        };
-    });
-
-    if(!confirm(`Se van a generar ${citas.length} citas. ¿Deseas continuar?`)) {
-        return;
-    }
-
-    await executeBulkCreation(citas);
-}
-
-async function executeBulkCreation(citas) {
-    const progressContainer = document.getElementById('progress-container');
-    const progressFill = document.getElementById('progress-fill');
-    const progressText = document.getElementById('progress-text');
-    const btnSubmit = document.getElementById('btn-generar');
+    // V.3.8.0: Evitar duplicados.
+    const fIniBusq = fechaInicio.replace(/-/g, '');
+    const fFinBusq = fechaFin.replace(/-/g, '');
 
     btnSubmit.disabled = true;
     progressContainer.classList.remove('hidden');
     progressFill.style.width = '0%';
-    progressText.innerText = "Iniciando subida a Firebase...";
+    progressText.innerText = "Comprobando duplicados en Firebase...";
 
     try {
-        // En una app real podríamos simular progreso particionando aquí y actualizando la barra, 
-        // pero guardarCitasBulk ya particiona internamente, podemos asumir que tarda un momento y usar una animación falsa
-        // para dar UX, o modificar bulk para retornar promesas.
-        // Haremos una transición de UX 50% al empezar.
-        progressFill.style.width = '50%';
-        
+        const existentes = await getCitasPorSedeYRango(appStateRef.sedeActivaId, fIniBusq, fFinBusq);
+        const mapExistentes = new Set(existentes.map(c => `${c.fecha}|${c.hora}|${c.puesto}`));
+
+        const slotsNuevos = slotsBase.filter(s => !mapExistentes.has(`${s.fechaStr}|${s.horaStrClean}|${s.puesto}`));
+
+        if (slotsNuevos.length === 0) {
+            alert("Todas las citas solicitadas ya existen.");
+            progressContainer.classList.add('hidden');
+            btnSubmit.disabled = false;
+            return;
+        }
+
+        const countExistentes = slotsBase.length - slotsNuevos.length;
+        if (countExistentes > 0) {
+            if (!confirm(`Se han detectado ${countExistentes} citas ya existentes. Se generarán solo las ${slotsNuevos.length} nuevas. ¿Continuar?`)) {
+                progressContainer.classList.add('hidden');
+                btnSubmit.disabled = false;
+                return;
+            }
+        }
+
+        progressFill.style.width = '30%';
+        progressText.innerText = "Generando códigos únicos...";
+
+        const usedSuffixesPerDay = {};
+        const citas = slotsNuevos.map(slot => {
+            if (!usedSuffixesPerDay[slot.fechaStr]) {
+                usedSuffixesPerDay[slot.fechaStr] = new Set();
+                existentes.filter(e => e.fecha === slot.fechaStr).forEach(e => {
+                    const suf = e.codigo.slice(-3);
+                    usedSuffixesPerDay[slot.fechaStr].add(suf);
+                });
+            }
+
+            let sufijo = generarSufijo(3);
+            let intentos = 0;
+            while (usedSuffixesPerDay[slot.fechaStr].has(sufijo) && intentos < 1000) {
+                sufijo = generarSufijo(3);
+                intentos++;
+            }
+            usedSuffixesPerDay[slot.fechaStr].add(sufijo);
+
+            return {
+                fecha: slot.fechaStr,
+                hora: slot.horaStrClean,
+                puesto: slot.puesto,
+                codigo: generarCodigo(appStateRef.sedeActivaId, slot.fechaStr, slot.horaStrClean, sufijo),
+                sede: appStateRef.sedeActivaId,
+                estado: "pendiente",
+                asistencia: false,
+                llamada: null
+            };
+        });
+
+        progressFill.style.width = '60%';
+        progressText.innerText = `Guardando ${citas.length} citas...`;
+
         const guardadas = await guardarCitasBulk(citas);
 
         progressFill.style.width = '100%';
-        progressText.innerText = `¡Éxito! Se han guardado ${guardadas} citas en la agenda.`;
+        progressText.innerText = `¡Éxito! Se han guardado ${guardadas} citas nuevas.`;
         
-        // Reset después de unos segundos
         setTimeout(() => {
             progressContainer.classList.add('hidden');
-            progressFill.style.width = '0%';
             btnSubmit.disabled = false;
-        }, 4000);
+        }, 3000);
 
     } catch (e) {
-        console.error("Error bulk save:", e);
-        progressText.innerText = "Error al guardar citas.";
+        console.error(e);
+        progressText.innerText = "Error al procesar.";
         btnSubmit.disabled = false;
         alert("Error: " + e.message);
     }
@@ -199,78 +212,37 @@ async function handleBorrarSubmit(e) {
     if(e) e.preventDefault();
 
     if (!appStateRef.sedeActivaId) {
-        alert("Por favor, selecciona una sede arriba (si no carga, revisa la configuración de Firebase).");
+        alert("Selecciona una sede.");
         return;
     }
-
-    const form = document.getElementById('form-generador');
-    if (!form.reportValidity()) return; // Valida que fecha de incio y fin estén rellenas
 
     const fechaInicio = document.getElementById('gen-fecha-inicio').value;
     const fechaFin = document.getElementById('gen-fecha-fin').value;
-    
-    const franjasDom = document.querySelectorAll('.franja-item');
-    if (franjasDom.length === 0) {
-        alert("Debes añadir al menos una franja horaria.");
-        return;
-    }
-
-    const franjas = Array.from(franjasDom).map(item => {
-        const checked = item.querySelectorAll('input[type="checkbox"]:checked');
-        return {
-            inicio: item.querySelector('input[name="franja-inicio"]').value.replace(':', ''),
-            fin: item.querySelector('input[name="franja-fin"]').value.replace(':', ''),
-            diasActivos: Array.from(checked).map(cb => parseInt(cb.value))
-        };
-    });
-
-    for (let f of franjas) {
-        if (f.diasActivos.length === 0) {
-            alert(`La franja debe tener al menos un día activo seleccionado.`);
-            return;
-        }
-    }
-
     const btnBorrar = document.getElementById('btn-borrar');
     btnBorrar.disabled = true;
 
     try {
-        const fechaInicioYMD = fechaInicio.replace(/-/g, '');
-        const fechaFinYMD = fechaFin.replace(/-/g, '');
+        const fIni = fechaInicio.replace(/-/g, '');
+        const fFin = fechaFin.replace(/-/g, '');
+        const existentes = await getCitasPorSedeYRango(appStateRef.sedeActivaId, fIni, fFin);
         
-        const citas = await getCitasPorSedeYRango(appStateRef.sedeActivaId, fechaInicioYMD, fechaFinYMD);
-        
-        const citasAEliminar = citas.filter(cita => {
-            const yyyy = parseInt(cita.fecha.substring(0, 4));
-            const mm = parseInt(cita.fecha.substring(4, 6)) - 1;
-            const dd = parseInt(cita.fecha.substring(6, 8));
-            const dateObj = new Date(yyyy, mm, dd);
-            const dayOfWeek = dateObj.getDay();
-
-            return franjas.some(franja => franja.diasActivos.includes(dayOfWeek));
-        });
-
-        if (citasAEliminar.length === 0) {
-            alert("No se encontraron citas en Base de Datos que coincidan con este rango y franjas horarias.");
+        if (existentes.length === 0) {
+            alert("No hay citas para borrar en ese rango.");
             btnBorrar.disabled = false;
             return;
         }
 
-        if(!confirm(`⚠️ Se van a eliminar TODAS LAS CITAS de los días seleccionados en tu rango de fechas.\n\nSe han encontrado ${citasAEliminar.length} citas que ocurren en esos días (sin importar el horario y sede).\n\n¿Seguro que deseas ELIMINARLAS irrevocablemente?`)) {
+        if(!confirm(`¿Borrar ${existentes.length} citas de la sede actual?`)) {
             btnBorrar.disabled = false;
             return;
         }
 
-        // Proceder al batch delete
-        const idsArray = citasAEliminar.map(c => c.id);
-        const borradas = await borrarCitasBulk(idsArray);
-        
-        alert(`✅ Éxito. Se han eliminado ${borradas} citas permanentemente de la sede.`);
-        
+        const ids = existentes.map(c => c.id);
+        const borradas = await borrarCitasBulk(ids);
+        alert(`Eliminadas ${borradas} citas.`);
     } catch (err) {
         console.error(err);
-        alert("Error al borrar citas: " + err.message);
+        alert("Error: " + err.message);
     }
-    
     btnBorrar.disabled = false;
 }
