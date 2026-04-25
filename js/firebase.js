@@ -90,6 +90,7 @@ export async function guardarCitasBulk(citasList) {
             
             const citaToSave = {
                 codigo: cita.codigo,
+                sufijo: cita.codigo.slice(-3), // Guardar sufijo para búsqueda rápida
                 sede: cita.sede,
                 fecha: cita.fechaStr,
                 hora: cita.horaStrClean,
@@ -309,16 +310,71 @@ export async function buscarCitasHistorico(sedeId, term) {
     return Array.from(results.values());
 }
 
-export async function buscarCitasParaAsignar(sedeId) {
+export async function buscarCitasParaAsignar(sedeId, term = "") {
     if (!isConfigured || !sedeId) return [];
     
     const citasRef = collection(db, "citas");
-    // Traemos las últimas 1000 citas de la sede para filtrar en cliente (soporta substring)
+    const termClean = term.trim().toUpperCase();
+
+    // ESTRATEGIA A: Búsqueda por SUFIJO (Los 3 caracteres finales)
+    if (termClean.length === 3) {
+        // Buscamos por sufijo en TODAS las citas y filtramos por sede en el cliente
+        // Esto evita requerir índices compuestos complejos y es rápido porque hay pocos duplicados de sufijo
+        const qSufijo = query(citasRef, 
+            where("sufijo", "==", termClean),
+            limit(100)
+        );
+        try {
+            const snap = await getDocs(qSufijo);
+            const results = [];
+            snap.forEach(d => {
+                const data = d.data();
+                if (data.sede === sedeId) {
+                    results.push({id: d.id, ...data});
+                }
+            });
+            // Si encontramos resultados por sufijo, los devolvemos directamente
+            if (results.length > 0) return results;
+        } catch (e) {
+            console.error("Error buscando por sufijo:", e);
+        }
+    }
+
+    // ESTRATEGIA B: Búsqueda por PREFIJO (Fecha YYYYMMDD o Código Completo)
+    if (termClean.length > 3) {
+        let prefix = termClean;
+        if (!prefix.startsWith("REG")) {
+            // Si el usuario escribe una fecha (ej 20260425), anteponemos REG+SEDE para que sea un prefijo válido
+            prefix = `REG${sedeId}${termClean}`;
+        } else {
+            // Si ya escribe REG..., validamos que pertenezca a su sede
+            if (!prefix.startsWith(`REG${sedeId}`)) return []; 
+        }
+
+        const qPrefix = query(citasRef, 
+            orderBy("codigo"), 
+            startAt(prefix), 
+            endAt(prefix + "\uf8ff"),
+            limit(100)
+        );
+
+        try {
+            const snap = await getDocs(qPrefix);
+            const results = [];
+            snap.forEach(d => results.push({id: d.id, ...d.data()}));
+            return results;
+        } catch (e) {
+            console.error("Error buscando por prefijo:", e);
+        }
+    }
+
+    // ESTRATEGIA C: Carga de proximidad (Últimas citas generadas)
+    // Se usa para cargar el caché inicial o si la búsqueda por término no fue fructífera
     const q = query(citasRef, 
         where("sede", "==", sedeId),
         orderBy("fecha", "desc"),
         orderBy("hora", "desc"),
-        limit(2000)
+        limit(3000) // Ampliamos límite para cubrir más rango en local
     );
 
     const results = [];
