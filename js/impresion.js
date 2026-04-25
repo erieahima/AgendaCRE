@@ -1,6 +1,6 @@
 // js/impresion.js
 import { getCitasPorSedeYFecha } from './firebase.js';
-import { formatHoraToDisplay, dateToInputString } from './utils.js';
+import { formatHoraToDisplay, dateToInputString, formatearFechaHumana, formatearHoraHumana } from './utils.js';
 
 let appStateRef = null;
 
@@ -9,13 +9,10 @@ export function setupImpresion(appState) {
     const today = new Date();
     document.getElementById('print-fecha').value = dateToInputString(today);
 
-    document.getElementById('btn-load-print').addEventListener('click', loadImpresion);
-    document.getElementById('btn-print').addEventListener('click', () => {
-        window.print();
-    });
+    document.getElementById('btn-print-pdf').addEventListener('click', handleExportPDF);
 }
 
-async function loadImpresion() {
+async function handleExportPDF() {
     if (!appStateRef.sedeActivaId) {
         alert("Selecciona una sede arriba.");
         return;
@@ -27,51 +24,123 @@ async function loadImpresion() {
         return;
     }
 
-    // Convertir yyyy-mm-dd a yyyymmdd para firebase
     const yyyymmdd = fechaInput.replace(/-/g, '');
-    
-    const tbody = document.getElementById('print-tbody');
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Cargando...</td></tr>';
-    
-    const printArea = document.getElementById('print-area');
-    printArea.classList.remove('hidden');
+    const sede = appStateRef.sedes.find(s => s.codigoTerritorial === appStateRef.sedeActivaId);
+    if (!sede) return;
 
-    // UI header config
-    const sedeName = appStateRef.sedes.find(s => s.codigoTerritorial === appStateRef.sedeActivaId)?.nombre || appStateRef.sedeActivaId;
-    document.getElementById('print-sede-name').textContent = sedeName;
-    document.getElementById('print-date-label').textContent = `Fecha generada: ${fechaInput}`;
-    
+    const msgContainer = document.getElementById('pdf-generating-msg');
+    const statusText = document.getElementById('pdf-status-text');
+    const renderArea = document.getElementById('a4-render-area');
+    const btnExport = document.getElementById('btn-print-pdf');
+
     try {
+        btnExport.disabled = true;
+        msgContainer.classList.remove('hidden');
+        statusText.textContent = "Obteniendo datos de Firebase...";
+
         const citas = await getCitasPorSedeYFecha(appStateRef.sedeActivaId, yyyymmdd);
         
-        if(citas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay citas generadas para esta sede y fecha.</td></tr>';
-            document.getElementById('btn-print').disabled = true;
+        if (citas.length === 0) {
+            alert("No hay citas para exportar en este día.");
+            msgContainer.classList.add('hidden');
+            btnExport.disabled = false;
             return;
         }
 
-        tbody.innerHTML = '';
-        citas.forEach(cita => {
-            const tr = document.createElement('tr');
-            
-            // Colorear ligeramente si está ocupada
-            if(cita.estado === 'ocupada') {
-                tr.style.backgroundColor = '#fef2f2';
-            }
-
-            tr.innerHTML = `
-                <td><strong>${formatHoraToDisplay(cita.hora)}</strong></td>
-                <td style="font-family: monospace; font-size: 1.1em;">${cita.codigo}</td>
-                <td><span class="badge ${cita.estado}">${cita.estado}</span></td>
-                <td><!-- Espacio observaciones papel --></td>
-            `;
-            tbody.appendChild(tr);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4'
         });
 
-        document.getElementById('btn-print').disabled = false;
+        // Loop por cada cita
+        for (let i = 0; i < citas.length; i++) {
+            const cita = citas[i];
+            statusText.textContent = `Generando página ${i + 1} de ${citas.length}...`;
 
-    } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center" style="color:red">Error: ${e.message}</td></tr>`;
-        document.getElementById('btn-print').disabled = true;
+            // Preparar el HTML de UNA hoja A4
+            renderArea.innerHTML = createA4Html(cita, sede, fechaInput);
+            
+            // Renderizar a Canvas
+            const canvas = await html2canvas(renderArea.querySelector('.a4-page'), {
+                scale: 2, // Mayor calidad
+                useCORS: true,
+                logging: false
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            if (i > 0) doc.addPage();
+            
+            // Añadir imagen al PDF (A4 es 210x297mm)
+            doc.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+        }
+
+        statusText.textContent = "¡Documento listo! Descargando...";
+        const fileName = `CITAS_${sede.nombre.replace(/ /g, '_')}_${yyyymmdd}.pdf`;
+        doc.save(fileName);
+
+        setTimeout(() => {
+            msgContainer.classList.add('hidden');
+            btnExport.disabled = false;
+            renderArea.innerHTML = '';
+        }, 2000);
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al generar PDF: " + error.message);
+        msgContainer.classList.add('hidden');
+        btnExport.disabled = false;
     }
+}
+
+function createA4Html(cita, sede, fechaISO) {
+    const shortCode = cita.codigo.slice(-3);
+    const fechaHumana = formatearFechaHumana(cita.fecha);
+    const horaHumana = formatearHoraHumana(cita.hora);
+
+    return `
+        <div class="a4-page" style="width: 210mm; height: 297mm; background: white; padding: 20mm; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Helvetica', sans-serif; color: #1e293b; border: 1px solid #eee;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 10mm; margin-bottom: 15mm;">
+                <div style="font-size: 24pt; font-weight: 800; color: #2563eb;">CRUZ ROJA</div>
+                <div style="text-align: right;">
+                    <div style="font-size: 14pt; font-weight: 700;">Ticket de Cita</div>
+                    <div style="font-size: 10pt; color: #64748b;">Sistema de Gestión de Turnos</div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                <div style="font-size: 18pt; color: #475569; margin-bottom: 5mm;">SU CÓDIGO DE TURNO ES:</div>
+                <div style="font-size: 120pt; font-weight: 900; color: #0f172a; margin-bottom: 10mm; border: 4px solid #0f172a; padding: 10mm 20mm; border-radius: 20px; line-height: 1;">
+                    ${shortCode}
+                </div>
+                
+                <div style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-top: 15mm;">
+                    <div style="padding: 10mm; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 12pt; color: #64748b; margin-bottom: 2mm;">FECHA</div>
+                        <div style="font-size: 20pt; font-weight: 700;">${fechaHumana}</div>
+                    </div>
+                    <div style="padding: 10mm; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 12pt; color: #64748b; margin-bottom: 2mm;">HORA ESTIMADA</div>
+                        <div style="font-size: 20pt; font-weight: 700;">${horaHumana}</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15mm; padding: 10mm; width: 100%; border-left: 10px solid #2563eb; background: #eff6ff; border-radius: 0 12px 12px 0;">
+                    <div style="font-size: 12pt; font-weight: 700;">SEDE: ${sede.nombre}</div>
+                    <div style="font-size: 10pt; color: #1e40af; margin-top: 2mm;">Por favor, permanezca en la zona de espera hasta que su código aparezca en pantalla o sea llamado por el personal.</div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: auto; padding-top: 10mm; border-top: 1px solid #e2e8f0; font-size: 9pt; color: #94a3b8; display: flex; justify-content: space-between;">
+                <div>ID Cita: ${cita.codigo}</div>
+                <div>Este documento es un comprobante de turno. No garantiza la atención inmediata.</div>
+                <div>Pág. 1/1</div>
+            </div>
+        </div>
+    `;
 }
