@@ -141,6 +141,7 @@ function playDing() {
 
 // LOGICA FULLSCREEN Y WAKE LOCK
 let wakeLock = null;
+let hideTimer = null;
 
 function setupFullscreenLogic(appState) {
     const btnEnter = document.getElementById('btn-fullscreen');
@@ -149,12 +150,22 @@ function setupFullscreenLogic(appState) {
 
     if (!btnEnter || !btnExit || !target) return;
 
+    const showExitBtn = () => {
+        btnExit.classList.add('show');
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+            btnExit.classList.remove('show');
+        }, 3000); // 3 segundos y se oculta
+    };
+
     const toggleFS = async () => {
         try {
             if (!document.fullscreenElement) {
                 await target.requestFullscreen();
-                btnExit.classList.remove('hidden');
-                // Activar Wake Lock
+                showExitBtn();
+                // Escuchar el movimiento del ratón solo en FS
+                target.addEventListener('mousemove', showExitBtn);
+
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
                     console.log("Wake Lock activo");
@@ -174,7 +185,9 @@ function setupFullscreenLogic(appState) {
 
     document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
-            btnExit.classList.add('hidden');
+            btnExit.classList.remove('show');
+            target.removeEventListener('mousemove', showExitBtn);
+            if (hideTimer) clearTimeout(hideTimer);
             if (wakeLock) {
                 wakeLock.release().then(() => {
                     wakeLock = null;

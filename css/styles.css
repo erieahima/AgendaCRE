@@ -767,7 +767,7 @@ input:checked + .slider:before {
     right: 20px;
     width: 50px;
     height: 50px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.2);
     color: white;
     border: none;
     border-radius: 50%;
@@ -777,13 +777,16 @@ input:checked + .slider:before {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-    opacity: 0; /* Hidden by default, shown on mousemove */
+    transition: opacity 0.5s ease, transform 0.3s ease;
+    opacity: 0; /* JS controlará esto */
+    pointer-events: none; /* Evitar clics cuando es invisible */
 }
 
-.pantalla-layout:hover .btn-exit-fs {
+.btn-exit-fs.show {
     opacity: 1;
+    pointer-events: auto;
 }
+
 
 .btn-exit-fs:hover {
     background: rgba(255, 255, 255, 0.3);
