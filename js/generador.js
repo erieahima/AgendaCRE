@@ -99,13 +99,6 @@ async function handleGenerarSubmit(e) {
         };
     });
 
-    for (let f of franjas) {
-        if (f.diasActivos.length === 0) {
-            alert(`La franja de ${f.inicio} a ${f.fin} debe tener al menos un día activo seleccionado.`);
-            return;
-        }
-    }
-
     const intervalo = parseInt(document.getElementById('gen-intervalo').value);
     const puestos = parseInt(document.getElementById('gen-puestos').value);
 
@@ -123,14 +116,14 @@ async function handleGenerarSubmit(e) {
         return;
     }
 
-    // V.3.8.0: Evitar duplicados.
+    // Buscamos duplicados
     const fIniBusq = fechaInicio.replace(/-/g, '');
     const fFinBusq = fechaFin.replace(/-/g, '');
 
     btnSubmit.disabled = true;
     progressContainer.classList.remove('hidden');
     progressFill.style.width = '0%';
-    progressText.innerText = "Comprobando duplicados en Firebase...";
+    progressText.innerText = "Sincronizando con Firebase...";
 
     try {
         const existentes = await getCitasPorSedeYRango(appStateRef.sedeActivaId, fIniBusq, fFinBusq);
@@ -139,7 +132,7 @@ async function handleGenerarSubmit(e) {
         const slotsNuevos = slotsBase.filter(s => !mapExistentes.has(`${s.fechaStr}|${s.horaStrClean}|${s.puesto}`));
 
         if (slotsNuevos.length === 0) {
-            alert("Todas las citas solicitadas ya existen.");
+            alert("No hay huecos nuevos que generar para ese rango y franjas.");
             progressContainer.classList.add('hidden');
             btnSubmit.disabled = false;
             return;
@@ -147,24 +140,26 @@ async function handleGenerarSubmit(e) {
 
         const countExistentes = slotsBase.length - slotsNuevos.length;
         if (countExistentes > 0) {
-            if (!confirm(`Se han detectado ${countExistentes} citas ya existentes. Se generarán solo las ${slotsNuevos.length} nuevas. ¿Continuar?`)) {
+            if (!confirm(`Se han detectado ${countExistentes} citas ya creadas. ¿Generar solo las ${slotsNuevos.length} nuevas?`)) {
                 progressContainer.classList.add('hidden');
                 btnSubmit.disabled = false;
                 return;
             }
         }
 
-        progressFill.style.width = '30%';
-        progressText.innerText = "Generando códigos únicos...";
+        progressFill.style.width = '40%';
+        progressText.innerText = "Preparando datos...";
 
+        // Mapa de sufijos para evitar colisiones el mismo día
         const usedSuffixesPerDay = {};
+        existentes.forEach(e => {
+            if (!usedSuffixesPerDay[e.fecha]) usedSuffixesPerDay[e.fecha] = new Set();
+            usedSuffixesPerDay[e.fecha].add(e.codigo.slice(-3));
+        });
+
         const citas = slotsNuevos.map(slot => {
             if (!usedSuffixesPerDay[slot.fechaStr]) {
                 usedSuffixesPerDay[slot.fechaStr] = new Set();
-                existentes.filter(e => e.fecha === slot.fechaStr).forEach(e => {
-                    const suf = e.codigo.slice(-3);
-                    usedSuffixesPerDay[slot.fechaStr].add(suf);
-                });
             }
 
             let sufijo = generarSufijo(3);
@@ -175,25 +170,25 @@ async function handleGenerarSubmit(e) {
             }
             usedSuffixesPerDay[slot.fechaStr].add(sufijo);
 
+            // IMPORTANTE: Mantener nombres de campos que espera firebase.js:guardarCitasBulk
             return {
-                fecha: slot.fechaStr,
-                hora: slot.horaStrClean,
-                puesto: slot.puesto,
                 codigo: generarCodigo(appStateRef.sedeActivaId, slot.fechaStr, slot.horaStrClean, sufijo),
                 sede: appStateRef.sedeActivaId,
-                estado: "pendiente",
-                asistencia: false,
-                llamada: null
+                fechaStr: slot.fechaStr,
+                horaStrClean: slot.horaStrClean,
+                baseDate: slot.baseDate, // REQUERIDO para Timestamp.fromDate en firebase.js
+                puesto: slot.puesto,
+                estado: "pendiente"
             };
         });
 
-        progressFill.style.width = '60%';
-        progressText.innerText = `Guardando ${citas.length} citas...`;
+        progressFill.style.width = '70%';
+        progressText.innerText = `Subiendo ${citas.length} citas...`;
 
         const guardadas = await guardarCitasBulk(citas);
 
         progressFill.style.width = '100%';
-        progressText.innerText = `¡Éxito! Se han guardado ${guardadas} citas nuevas.`;
+        progressText.innerText = `¡Éxito! ${guardadas} citas generadas.`;
         
         setTimeout(() => {
             progressContainer.classList.add('hidden');
@@ -201,8 +196,8 @@ async function handleGenerarSubmit(e) {
         }, 3000);
 
     } catch (e) {
-        console.error(e);
-        progressText.innerText = "Error al procesar.";
+        console.error("Error en generación:", e);
+        progressText.innerText = "Error crítico.";
         btnSubmit.disabled = false;
         alert("Error: " + e.message);
     }
@@ -210,11 +205,7 @@ async function handleGenerarSubmit(e) {
 
 async function handleBorrarSubmit(e) {
     if(e) e.preventDefault();
-
-    if (!appStateRef.sedeActivaId) {
-        alert("Selecciona una sede.");
-        return;
-    }
+    if (!appStateRef.sedeActivaId) return;
 
     const fechaInicio = document.getElementById('gen-fecha-inicio').value;
     const fechaFin = document.getElementById('gen-fecha-fin').value;
@@ -227,21 +218,20 @@ async function handleBorrarSubmit(e) {
         const existentes = await getCitasPorSedeYRango(appStateRef.sedeActivaId, fIni, fFin);
         
         if (existentes.length === 0) {
-            alert("No hay citas para borrar en ese rango.");
+            alert("No hay citas en ese rango.");
             btnBorrar.disabled = false;
             return;
         }
 
-        if(!confirm(`¿Borrar ${existentes.length} citas de la sede actual?`)) {
+        if(!confirm(`¿Borrar ${existentes.length} citas definiticamente?`)) {
             btnBorrar.disabled = false;
             return;
         }
 
         const ids = existentes.map(c => c.id);
         const borradas = await borrarCitasBulk(ids);
-        alert(`Eliminadas ${borradas} citas.`);
+        alert(`Borradas ${borradas} citas.`);
     } catch (err) {
-        console.error(err);
         alert("Error: " + err.message);
     }
     btnBorrar.disabled = false;
