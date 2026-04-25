@@ -29,9 +29,9 @@ if (isConfigured) {
 
 // -- SEDES --
 const SEDES_INICIALES = [
-    { nombre: "Oficina Provincial Málaga", codigoTerritorial: "29000", activa: true },
-    { nombre: "Asamblea Local Benalmádena", codigoTerritorial: "29025", activa: true },
-    { nombre: "Asamblea Local Torremolinos", codigoTerritorial: "29200", activa: true }
+    { nombre: "Oficina Provincial Málaga", codigoTerritorial: "29000", activa: true, hasQueuingSystem: true },
+    { nombre: "Asamblea Local Benalmádena", codigoTerritorial: "29025", activa: true, hasQueuingSystem: true },
+    { nombre: "Asamblea Local Torremolinos", codigoTerritorial: "29200", activa: true, hasQueuingSystem: true }
 ];
 
 export async function inicializarSedes() {
@@ -47,7 +47,7 @@ export async function inicializarSedes() {
 }
 
 export async function getSedes() {
-    if (!isConfigured) return SEDES_INICIALES; // Placeholder
+    if (!isConfigured) return SEDES_INICIALES;
     const sedesRef = collection(db, "sedes");
     const q = query(sedesRef, where("activa", "==", true));
     const snapshot = await getDocs(q);
@@ -56,6 +56,33 @@ export async function getSedes() {
         sedes.push({ id: doc.id, ...doc.data() });
     });
     return sedes;
+}
+
+export async function getAllSedes() {
+    if (!isConfigured) return SEDES_INICIALES;
+    const sedesRef = collection(db, "sedes");
+    const snapshot = await getDocs(sedesRef);
+    const sedes = [];
+    snapshot.forEach(doc => {
+        sedes.push({ id: doc.id, ...doc.data() });
+    });
+    return sedes;
+}
+
+export async function getSedeById(id) {
+    if (!isConfigured) return SEDES_INICIALES.find(s => s.codigoTerritorial === id);
+    const docRef = doc(db, "sedes", id);
+    const snap = await getDoc(docRef);
+    return snap.exists() ? snap.data() : null;
+}
+
+export async function guardarSede(id, data) {
+    const docRef = doc(db, "sedes", id);
+    await setDoc(docRef, data, { merge: true });
+}
+
+export async function borrarSede(id) {
+    await deleteDoc(doc(db, "sedes", id));
 }
 
 // -- CITAS --

@@ -11,6 +11,7 @@ import { setupAsignar } from './asignar.js';
 import { setupPuesto } from './puesto.js';
 import { setupPantalla } from './pantalla.js';
 import { setupEspera } from './espera.js';
+import { setupTablasMaestras } from './tablasMaestras.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -83,6 +84,7 @@ async function loadAuthenticatedApp() {
     document.getElementById('nav-item-config-puesto').style.display = hasPermission('config_puesto') ? 'block' : 'none';
     document.getElementById('nav-item-pantalla-citas').style.display = hasPermission('ver_pantalla') ? 'block' : 'none';
     document.getElementById('nav-item-espera').style.display = hasPermission('ver_espera') ? 'block' : 'none';
+    document.getElementById('nav-item-tablas-maestras').style.display = hasPermission('admin_tablas') ? 'block' : 'none';
     
     const isSuper = AppState.user.rol === 'Super_admin';
     const isAdmin = AppState.user.rol === 'Admin';
@@ -107,15 +109,37 @@ async function loadAuthenticatedApp() {
     if(hasPermission('config_puesto')) setupPuesto(AppState);
     if(hasPermission('ver_pantalla')) setupPantalla(AppState);
     if(hasPermission('ver_espera')) setupEspera(AppState);
+    if(hasPermission('admin_tablas')) setupTablasMaestras(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {
+        refreshSedeFeatures();
         const activeSection = document.querySelector('.view-section.active');
         const vistaActiva = activeSection ? activeSection.id : '';
         if(vistaActiva === 'view-calendario') {
             loadCitasCalendario(e.detail);
         }
     });
+
+    window.addEventListener('sedesListChanged', async () => {
+        // Recargar sedes en el selector sin perder la activa
+        const currentSede = AppState.sedeActivaId;
+        const sedesData = await getSedes();
+        AppState.sedes = sedesData;
+        const globalSelector = document.getElementById('global-sede-selector');
+        globalSelector.innerHTML = '';
+        AppState.sedes.forEach(sede => {
+            const opt = document.createElement('option');
+            opt.value = sede.codigoTerritorial;
+            opt.textContent = sede.nombre;
+            globalSelector.appendChild(opt);
+        });
+        globalSelector.value = currentSede;
+        refreshSedeFeatures();
+    });
+
+    // Ejecución inicial de visibilidad por sede
+    refreshSedeFeatures();
 
     // VISTA INICIAL INTELIGENTE: Hacer clic en el primer botón visible para este rol
     const firstVisibleBtn = Array.from(document.querySelectorAll('.nav-links .nav-btn'))
@@ -146,8 +170,6 @@ function setupNavigation() {
             // Hook específico onViewEnter
             if (targetId === 'view-calendario') {
                 loadCitasCalendario(AppState.sedeActivaId);
-            } else if (targetId === 'view-grabaciones') {
-                // El listener de tiempo real ya mantiene la lista actualizada
             } else if (targetId === 'view-config-puesto') {
                 window.dispatchEvent(new CustomEvent('puestoViewEntered'));
             } else if (targetId === 'view-pantalla-citas') {
@@ -157,6 +179,31 @@ function setupNavigation() {
             }
         });
     });
+}
+
+function refreshSedeFeatures() {
+    const sedeActual = AppState.sedes.find(s => s.codigoTerritorial === AppState.sedeActivaId);
+    const hasQueuing = sedeActual ? sedeActual.hasQueuingSystem : false;
+
+    // 1. Sidebar Opciones
+    const qItems = ['nav-item-espera', 'nav-item-config-puesto', 'nav-item-pantalla-citas'];
+    qItems.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            // Solo lo mostramos si la SEDE lo tiene Y el USUARIO tiene permiso
+            const action = id.replace('nav-item-', '').replace('-', '_').replace('pantalla_citas', 'ver_pantalla');
+            const show = hasQueuing && hasPermission(action);
+            el.style.display = show ? 'block' : 'none';
+        }
+    });
+
+    // 2. Elementos dinámicos en vistas (Botones Llamar, etc)
+    // Usamos una clase CSS para ocultarlos masivamente
+    if (!hasQueuing) {
+        document.body.classList.add('hide-queuing-features');
+    } else {
+        document.body.classList.remove('hide-queuing-features');
+    }
 }
 
 // Exportar State para uso si es requerido

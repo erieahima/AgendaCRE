@@ -129,6 +129,25 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 .mt-4 { margin-top: 1rem; }
 .text-center { text-align: center; }
 
+/* Control de visibilidad por Sede (V.3.7.0) */
+.hide-queuing-features .btn-llamar,
+.hide-queuing-features .col-llamar,
+.hide-queuing-features #nav-item-espera,
+.hide-queuing-features #nav-item-config-puesto,
+.hide-queuing-features #nav-item-pantalla-citas {
+    display: none !important;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
+.badge-neutral { background: #f1f5f9; color: #475569; }
+
 /* Navigation */
 .nav-links {
     list-style: none;
