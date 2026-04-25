@@ -153,11 +153,11 @@ function renderPantalla(llamadas) {
         // La lista muestra los que ya pasaron por el panel grande
         listado = processedArr.slice(0, indexPrincipal).reverse();
         
-        // El sonido debe sonar SIEMPRE que aparezca un ID de cita diferente (V.3.6.4)
+        // El sonido debe sonar SIEMPRE que aparezca un ID de cita diferente (V.3.6.5)
         if (masReciente.id !== lastPlayedId) {
-            console.log("Disparando sonido para:", masReciente.id);
-            playDing();
-            lastPlayedId = masReciente.id;
+            if (playDing()) {
+                lastPlayedId = masReciente.id;
+            }
         }
     } else {
         // En caso de que todas hayan expirado (o error), todas van a la derecha
@@ -187,14 +187,16 @@ function renderPantalla(llamadas) {
 
 function playDing() {
     // REGLA: Solo suena en el dispositivo que está en PANTALLA COMPLETA
-    if (!document.fullscreenElement) return;
+    if (!document.fullscreenElement) return false;
 
     const audio = document.getElementById('audio-ding');
     if (audio) {
         audio.currentTime = 0;
         audio.volume = 0.6;
         audio.play().catch(e => console.log("Auto-play prevenido o error de audio:", e));
+        return true;
     }
+    return false;
 }
 
 // LOGICA FULLSCREEN Y WAKE LOCK
