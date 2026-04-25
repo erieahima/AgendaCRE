@@ -8,7 +8,7 @@
     <!-- Robustez: Forzar limpieza de caché en cambio de versión -->
     <script>
         (function() {
-            const VERSION = "3.6.3";
+            const VERSION = "3.6.4";
             const savedVersion = localStorage.getItem('app_version');
             if (savedVersion !== VERSION) {
                 console.log("Nueva versión detectada (" + VERSION + "). Limpiando caché...");
@@ -85,7 +85,7 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger); padding: 5px 10px; font-size: 0.9rem;">🚪 <span>Cerrar Sesión</span></button>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.6.3</div>
+                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.6.4</div>
             </div>
         </nav>
 
@@ -524,6 +524,6 @@
     <audio id="audio-ding" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <!-- Scripts -->
-    <script type="module" src="js/app.js?v=3.6.3"></script>
+    <script type="module" src="js/app.js?v=3.6.4"></script>
 </body>
 </html>
