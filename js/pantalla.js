@@ -96,21 +96,24 @@ function renderPantalla(llamadas) {
         return;
     }
 
-    // 2. Determinar quién es el "Rey del Panel" (BIG)
-    // Es el primero de la cola que:
-    // a) Tiene menos de 45 segundos de antigüedad
-    // b) Y ADEMÁS: (Tiene menos de 10s O es el último que ha entrado)
     let indexPrincipal = -1;
     for (let i = 0; i < validasArr.length; i++) {
-        const age = nowSecs - (validasArr[i].llamada?.timestamp?.seconds || 0);
-        if (age < principalDurationSecs) {
-            // Si tiene menos de 10s, tiene prioridad absoluta de quedarse
-            // Si es el último, también se queda
-            if (age < minBufferSecs || i === validasArr.length - 1) {
-                indexPrincipal = i;
-                break;
-            }
+        const callTime = validasArr[i].llamada?.timestamp?.seconds || 0;
+        const age = nowSecs - callTime;
+        const someoneIsWaiting = i < validasArr.length - 1;
+        
+        // ¿Esta llamada i YA HA CUMPLIDO su tiempo en el panel grande?
+        // Termina si:
+        // 1. Llega al máximo absoluto (45s)
+        // 2. O llega al mínimo (10s) y hay otra llamada posterior esperando su turno
+        const turnFinished = age >= principalDurationSecs || (age >= minBufferSecs && someoneIsWaiting);
+        
+        if (!turnFinished) {
+            // Es la primera que aún debe estar en grande
+            indexPrincipal = i;
+            break;
         }
+        // Si ya terminó, esta pasará al listado de la derecha y probamos con la siguiente i+1
     }
 
     const principalContainer = document.querySelector('.llamada-principal');
