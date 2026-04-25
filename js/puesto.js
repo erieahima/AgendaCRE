@@ -1,14 +1,16 @@
 import { getPuestoConfig, guardarPuestoConfig } from './firebase.js';
 
 let appStateRef = null;
+let isInitialized = false;
 
 export async function setupPuesto(appState) {
     appStateRef = appState;
     const form = document.getElementById('form-config-puesto');
     const inputNombre = document.getElementById('config-puesto-nombre');
     const inputActivo = document.getElementById('config-puesto-activo');
+    const statusMsg = document.getElementById('puesto-save-status');
 
-    if (!form) return;
+    if (!form || isInitialized) return;
 
     // Cargar config inicial
     const cargarConfig = async () => {
@@ -24,23 +26,42 @@ export async function setupPuesto(appState) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = form.querySelector('button');
+        
         btn.disabled = true;
-        btn.textContent = "Guardando...";
+        const originalBtnText = btn.innerHTML;
+        btn.innerHTML = "⌛ Guardando...";
+        statusMsg.classList.add('hidden');
 
         try {
             await guardarPuestoConfig(appState.user.uid, {
                 nombre: inputNombre.value.trim(),
                 activo: inputActivo.checked
             });
-            alert("Configuración guardada correctamente.");
+            
+            // UI Feedback moderno en lugar de alert (V.3.8.8)
+            statusMsg.textContent = "✅ Configuración guardada correctamente";
+            statusMsg.style.background = "var(--success-bg)";
+            statusMsg.style.color = "#065f46";
+            statusMsg.classList.remove('hidden');
+
+            // Ocultar mensaje tras unos segundos
+            setTimeout(() => {
+                statusMsg.classList.add('hidden');
+            }, 4000);
+
         } catch (error) {
             console.error(error);
-            alert("Error al guardar: " + error.message);
+            statusMsg.textContent = "❌ Error: " + error.message;
+            statusMsg.style.background = "var(--danger-bg)";
+            statusMsg.style.color = "#991b1b";
+            statusMsg.classList.remove('hidden');
         } finally {
             btn.disabled = false;
-            btn.textContent = "Guardar Configuración";
+            btn.innerHTML = originalBtnText;
         }
     });
+
+    isInitialized = true;
 
     // Cargar si ya estamos logueados
     if (appState.user) {
