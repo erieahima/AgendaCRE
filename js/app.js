@@ -176,6 +176,8 @@ function setupNavigation() {
                 window.dispatchEvent(new CustomEvent('pantallaViewEntered'));
             } else if (targetId === 'view-lista-espera') {
                 window.dispatchEvent(new CustomEvent('esperaViewEntered'));
+            } else if (targetId === 'view-tablas-maestras') {
+                window.dispatchEvent(new CustomEvent('tablasViewEntered'));
             }
         });
     });

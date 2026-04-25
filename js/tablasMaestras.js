@@ -8,57 +8,77 @@ export function setupTablasMaestras(appState) {
     if (!container || !btnAdd) return;
 
     const renderSedesCards = async () => {
-        const sedes = await getAllSedes();
-        container.innerHTML = '';
-
-        sedes.forEach(sede => {
-            const card = document.createElement('div');
-            card.className = `sede-card ${sede.activa ? '' : 'inactiva'}`;
+        try {
+            console.log("Tablas Maestras: Cargando sedes...");
+            const sedes = await getAllSedes();
+            console.log("Tablas Maestras: Sedes recuperadas:", sedes.length);
             
-            card.innerHTML = `
-                <div class="sede-card-header">
-                    <div>
-                        <h3>${sede.nombre}</h3>
-                        <span class="code-label">#${sede.codigoTerritorial}</span>
+            container.innerHTML = '';
+
+            if (sedes.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; padding: 3rem; text-align: center; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 1rem;">
+                        <span style="font-size: 3rem;">📍</span>
+                        <h3 style="margin-top: 1rem; color: #64748b;">No hay sedes configuradas</h3>
+                        <p style="color: #94a3b8;">Pulsa en "Nueva Sede" para empezar a gestionar ubicaciones.</p>
                     </div>
-                    <span class="badge ${sede.activa ? 'badge-success' : 'badge-danger'}">
-                        ${sede.activa ? 'Activa' : 'Baja'}
-                    </span>
-                </div>
-
-                <div class="sede-features-list">
-                    <div class="feature-item ${sede.hasQueuingSystem ? 'active' : ''}">
-                        ${sede.hasQueuingSystem ? '✅' : '❌'} Sistema de Pantalla y Turnos
-                    </div>
-                </div>
-
-                <div class="sede-card-actions">
-                    <button class="btn btn-sm btn-outline btn-edit" title="Editar Sede">✏️ Editar</button>
-                    ${sede.activa ? `<button class="btn btn-sm btn-outline btn-delete" style="color: var(--danger); border-color: var(--danger);" title="Dar de baja">🗑️ Baja</button>` : ''}
-                </div>
-            `;
-
-            // Vincular acciones
-            card.querySelector('.btn-edit').addEventListener('click', () => editSedeModal(sede));
-            
-            const delBtn = card.querySelector('.btn-delete');
-            if (delBtn) {
-                delBtn.addEventListener('click', async () => {
-                    if (confirm(`¿Dar de baja la sede ${sede.nombre}?`)) {
-                        await guardarSede(sede.codigoTerritorial, { activa: false });
-                        renderSedesCards();
-                        window.dispatchEvent(new CustomEvent('sedesListChanged'));
-                    }
-                });
+                `;
+                return;
             }
 
-            container.appendChild(card);
-        });
+            sedes.forEach(sede => {
+                const card = document.createElement('div');
+                card.className = `sede-card ${sede.activa ? '' : 'inactiva'}`;
+                
+                card.innerHTML = `
+                    <div class="sede-card-header">
+                        <div>
+                            <h3>${sede.nombre}</h3>
+                            <span class="code-label">#${sede.codigoTerritorial}</span>
+                        </div>
+                        <span class="badge ${sede.activa ? 'badge-success' : 'badge-danger'}">
+                            ${sede.activa ? 'Activa' : 'Baja'}
+                        </span>
+                    </div>
+
+                    <div class="sede-features-list">
+                        <div class="feature-item ${sede.hasQueuingSystem ? 'active' : ''}">
+                            ${sede.hasQueuingSystem ? '✅' : '❌'} Sistema de Pantalla y Turnos
+                        </div>
+                        <div class="feature-item active">
+                            ✅ Gestión de Citas
+                        </div>
+                    </div>
+
+                    <div class="sede-card-actions">
+                        <button class="btn btn-sm btn-outline btn-edit" title="Editar Sede">✏️ Editar</button>
+                        ${sede.activa ? `<button class="btn btn-sm btn-outline btn-delete" style="color: var(--danger); border-color: var(--danger);" title="Dar de baja">🗑️ Baja</button>` : ''}
+                    </div>
+                `;
+
+                // Vincular acciones
+                card.querySelector('.btn-edit').addEventListener('click', () => editSedeModal(sede));
+                
+                const delBtn = card.querySelector('.btn-delete');
+                if (delBtn) {
+                    delBtn.addEventListener('click', async () => {
+                        if (confirm(`¿Dar de baja la sede ${sede.nombre}?`)) {
+                            await guardarSede(sede.codigoTerritorial, { activa: false });
+                            renderSedesCards();
+                            window.dispatchEvent(new CustomEvent('sedesListChanged'));
+                        }
+                    });
+                }
+
+                container.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Error en Tablas Maestras:", error);
+            container.innerHTML = `<div class="error-msg">Error al cargar sedes: ${error.message}</div>`;
+        }
     };
 
     const editSedeModal = (sede = null) => {
-        // En una versión más avanzada usaríamos un modal real del DOM. 
-        // Para rapidez y robustez ahora mismo, usamos prompts con validación.
         const nombre = prompt("Nombre de la Sede:", sede ? sede.nombre : "");
         if (nombre === null) return;
         
@@ -82,6 +102,11 @@ export function setupTablasMaestras(appState) {
     };
 
     btnAdd.addEventListener('click', () => editSedeModal());
+
+    // Listener para refrescar cuando se entra en la vista
+    window.addEventListener('tablasViewEntered', () => {
+        renderSedesCards();
+    });
 
     renderSedesCards();
 }
