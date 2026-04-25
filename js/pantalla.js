@@ -20,19 +20,30 @@ export function setupPantalla(appState) {
     // Lógica de Pantalla Completa y Wake Lock (Solo Super_admin y perfil pantalla)
     setupFullscreenLogic(appState);
 
+    const updateDebugInfo = (status, sedeId) => {
+        const debugEl = document.getElementById('pantalla-debug-info');
+        if (debugEl) {
+            const time = new Date().toLocaleTimeString();
+            debugEl.textContent = `Diagnóstico: Sede [${sedeId || '?'}] | Status [${status}] | Última [${time}]`;
+        }
+    };
+
     // Refresco de expiración (cada 2 segundos para mayor precisión en el borrado de la principal)
     setInterval(() => {
         if (cacheLlamadas.length > 0) {
             renderPantalla(cacheLlamadas);
         }
+        updateDebugInfo("OK", appState.sedeActivaId);
     }, 2000);
 
     // Función interna para iniciar el listener
     const startListening = (sedeId) => {
         if (unsubscribeLlamadas) unsubscribeLlamadas();
+        updateDebugInfo("Conectando...", sedeId);
         unsubscribeLlamadas = listenLlamadasRecientes(sedeId, (llamadas) => {
             cacheLlamadas = llamadas;
             renderPantalla(llamadas);
+            updateDebugInfo("En Vivo", sedeId);
         });
     };
 
