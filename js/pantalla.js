@@ -1,4 +1,4 @@
-import { listenLlamadasRecientes } from './firebase.js';
+import { listenLlamadasRecientes, resetLlamadasSede } from './firebase.js';
 
 let appStateRef = null;
 let unsubscribeLlamadas = null;
@@ -50,8 +50,28 @@ export function setupPantalla(appState) {
     // VISIBILIDAD DE CONTROLES: Solo Super_admin y perfil pantalla
     const isAuthorized = appState.user && (appState.user.rol === 'Super_admin' || appState.user.rol === 'pantalla');
     const controls = document.getElementById('pantalla-controls');
+    const btnClear = document.getElementById('btn-clear-pantalla');
     if (controls) {
         controls.style.display = isAuthorized ? 'block' : 'none';
+        if (btnClear) {
+            btnClear.style.display = (appState.user && appState.user.rol === 'Super_admin') ? 'inline-block' : 'none';
+            btnClear.addEventListener('click', async () => {
+                if (confirm("¿Estás seguro de que deseas limpiar la pantalla? Esto borrará el historial visual actual de esta sede.")) {
+                    btnClear.disabled = true;
+                    const originalText = btnClear.textContent;
+                    btnClear.textContent = "⌛ Limpiando...";
+                    try {
+                        await resetLlamadasSede(appState.sedeActivaId);
+                    } catch (err) {
+                        console.error(err);
+                        alert("Error al limpiar pantalla.");
+                    } finally {
+                        btnClear.textContent = originalText;
+                        btnClear.disabled = false;
+                    }
+                }
+            });
+        }
     }
 
     // Iniciar inmediatamente si ya hay sede

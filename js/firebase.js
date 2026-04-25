@@ -223,6 +223,21 @@ export async function borrarCitasBulk(citasPorBorrarIds) {
     return borradasCount;
 }
 
+export async function resetLlamadasSede(sedeId) {
+    if (!isConfigured) return;
+    const citasRef = collection(db, "citas");
+    const q = query(citasRef, where("sede", "==", sedeId), where("llamada", "!=", null));
+    const snap = await getDocs(q);
+    
+    if (snap.empty) return;
+
+    const batch = writeBatch(db);
+    snap.forEach(docSnap => {
+        batch.update(docSnap.ref, { llamada: null });
+    });
+    await batch.commit();
+}
+
 // -- PERFILES DE USUARIO --
 export async function getUsuarioData(uid) {
     if (!isConfigured) return null;

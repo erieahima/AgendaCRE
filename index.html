@@ -8,7 +8,7 @@
     <!-- Robustez: Forzar limpieza de caché en cambio de versión -->
     <script>
         (function() {
-            const VERSION = "3.8.5";
+            const VERSION = "3.8.6";
             const savedVersion = localStorage.getItem('app_version');
             if (savedVersion !== VERSION) {
                 console.log("Nueva versión detectada (" + VERSION + "). Limpiando caché...");
@@ -86,7 +86,7 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger); padding: 5px 10px; font-size: 0.9rem;">🚪 <span>Cerrar Sesión</span></button>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.8.5</div>
+                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.8.6</div>
             </div>
         </nav>
 
@@ -382,6 +382,7 @@
                 <!-- Controles de Pantalla (Solo visibles para autorizados) -->
                 <div id="pantalla-controls" class="no-print" style="margin-bottom: 1rem; display: none;">
                     <button id="btn-fullscreen" class="btn-primary">🌐 Pantalla Completa</button>
+                    <button id="btn-clear-pantalla" class="btn-primary" style="background-color: var(--danger); margin-left: 1rem; display: none;">🧹 Limpiar Pantalla</button>
                     <!-- Monitor de Diagnóstico (v.3.5.1) -->
                     <span id="pantalla-debug-info" style="margin-left: 1rem; font-size: 0.75rem; color: var(--text-muted); background: #eee; padding: 4px 8px; border-radius: 4px;">
                         Diagnóstico: Sede [?] | Status [?] | Última [?]
@@ -536,6 +537,6 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module" src="js/app.js?v=3.8.5"></script>
+    <script type="module" src="js/app.js?v=3.8.6"></script>
 </body>
 </html>
