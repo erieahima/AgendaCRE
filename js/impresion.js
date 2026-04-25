@@ -130,8 +130,11 @@ function createA4Html(cita, sede, fechaISO) {
                 </div>
 
                 <div style="margin-top: 15mm; padding: 10mm; width: 100%; border-left: 10px solid #2563eb; background: #eff6ff; border-radius: 0 12px 12px 0;">
-                    <div style="font-size: 12pt; font-weight: 700;">SEDE: ${sede.nombre}</div>
-                    <div style="font-size: 10pt; color: #1e40af; margin-top: 2mm;">Por favor, permanezca en la zona de espera hasta que su código aparezca en pantalla o sea llamado por el personal.</div>
+                    <div style="font-size: 14pt; font-weight: 700; color: #1e3a8a;">UBICACIÓN: ${sede.nombre}</div>
+                    <div style="font-size: 12pt; color: #374151; font-weight: 500; margin-top: 2mm;">📍 ${sede.direccion || 'Dirección no especificada'}</div>
+                    <div style="font-size: 10pt; color: #1e40af; margin-top: 4mm; border-top: 1px dashed #bfdbfe; padding-top: 4mm;">
+                        Por favor, permanezca en la zona de espera hasta que su código aparezca en pantalla o sea llamado por el personal.
+                    </div>
                 </div>
             </div>
 

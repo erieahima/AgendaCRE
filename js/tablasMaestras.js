@@ -55,6 +55,9 @@ export function setupTablasMaestras(appState) {
                 <div class="feature-item active">
                     ✅ Gestión de Citas (Base)
                 </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+                    📍 <strong>Dirección:</strong> ${sede.direccion || 'No definida'}
+                </div>
             </div>
 
             <div class="sede-card-actions">
@@ -110,6 +113,11 @@ export function setupTablasMaestras(appState) {
                     </label>
                 </div>
 
+                <div class="form-group">
+                    <label style="font-size: 0.8rem; font-weight: 700;">Dirección Postal:</label>
+                    <input type="text" id="edit-sede-direccion" class="input-modern w-full" value="${sede.direccion || ''}" placeholder="Ej. Calle Hospital 4, Ciudad...">
+                </div>
+
                 <div class="sede-card-actions" style="margin-top: 0.5rem;">
                     <button class="btn btn-sm btn-outline btn-cancel">Cancelar</button>
                     <button class="btn btn-sm btn-primary btn-save">Guardar Cambios</button>
@@ -138,7 +146,8 @@ export function setupTablasMaestras(appState) {
                 nombre: nuevoNombre,
                 codigoTerritorial: nuevoCodigo,
                 hasQueuingSystem: document.getElementById('edit-sede-queuing').checked,
-                activa: document.getElementById('edit-sede-activa').checked
+                activa: document.getElementById('edit-sede-activa').checked,
+                direccion: document.getElementById('edit-sede-direccion').value
             };
 
             await guardarSede(nuevoCodigo, data);
