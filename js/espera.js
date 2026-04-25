@@ -76,7 +76,7 @@ function renderListaEspera(lista) {
                     </div>
                     <div>
                         <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">
-                            ${cita.iniciales || 'Persona Usuaria'}
+                            ${cita.iniciales ? `Iniciales: ${cita.iniciales}` : '---'}
                         </div>
                         <div style="font-size: 0.85rem; color: var(--text-muted);">
                             <strong>${formatearHoraHumana(cita.hora)}</strong> | Sede: ${activeSede ? activeSede.nombre : '---'}
