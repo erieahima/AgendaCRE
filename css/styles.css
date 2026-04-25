@@ -800,9 +800,15 @@ input:checked + .slider:before {
     margin: 0 !important;
     border-radius: 0 !important;
     border: none !important;
+    outline: none !important;
     overflow: hidden !important;
     background: #0f172a !important; 
 }
+
+#pantalla-target-fs::backdrop {
+    background: #0f172a;
+}
+
 
 
 .pantalla-layout {

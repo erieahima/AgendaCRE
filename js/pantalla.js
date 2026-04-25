@@ -178,9 +178,13 @@ function setupFullscreenLogic(appState) {
 
     const showExitBtn = () => {
         btnExit.classList.add('show');
+        target.style.cursor = 'default'; 
         if (hideTimer) clearTimeout(hideTimer);
         hideTimer = setTimeout(() => {
             btnExit.classList.remove('show');
+            if (document.fullscreenElement) {
+                target.style.cursor = 'none'; // Ocultar ratón en FS
+            }
         }, 3000); 
     };
 
@@ -193,7 +197,6 @@ function setupFullscreenLogic(appState) {
 
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    console.log("Wake Lock activo");
                 }
             } else {
                 if (document.fullscreenElement) await document.exitFullscreen();
@@ -211,20 +214,18 @@ function setupFullscreenLogic(appState) {
     document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
             btnExit.classList.remove('show');
+            target.style.cursor = 'default';
             target.removeEventListener('mousemove', showExitBtn);
             if (hideTimer) clearTimeout(hideTimer);
             
-            // Mostrar controles al salir
             if (controls) controls.style.display = isAuthorized ? 'block' : 'none';
 
             if (wakeLock) {
                 wakeLock.release().then(() => {
                     wakeLock = null;
-                    console.log("Wake Lock liberado");
                 });
             }
         } else {
-            // Ocultar controles al entrar (por seguridad)
             if (controls) controls.style.display = 'none';
         }
     });
