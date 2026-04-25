@@ -65,7 +65,7 @@ body {
     line-height: 1.5;
 }
 
-/* Layout */
+/* Layout Responsivo */
 .app-layout {
     display: flex;
     min-height: 100vh;
@@ -80,16 +80,37 @@ body {
     flex-direction: column;
     gap: 2rem;
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    top: 0; left: 0; bottom: 0;
     z-index: 10;
+    transition: width 0.3s ease;
 }
 
 .main-content {
     flex: 1;
     margin-left: 280px;
     padding: 2rem;
+    transition: margin-left 0.3s ease;
+}
+
+/* Media Queries de Escalado Global */
+@media (max-width: 1440px) {
+    html { font-size: 15px; }
+    .sidebar { width: 250px; }
+    .main-content { margin-left: 250px; }
+}
+
+@media (max-width: 1200px) {
+    html { font-size: 14px; }
+    .sidebar { width: 220px; padding: 1rem; }
+    .main-content { margin-left: 220px; padding: 1.5rem; }
+}
+
+@media (max-width: 1024px) {
+    .sidebar { width: 80px; padding: 0.5rem; overflow: hidden; }
+    .sidebar .nav-btn span { display: none; }
+    .sidebar .nav-btn { text-align: center; }
+    .main-content { margin-left: 80px; }
+    .pantalla-logo { font-size: 1.5rem; }
 }
 
 /* Typography elements */
@@ -847,7 +868,8 @@ input:checked + .slider:before {
 .pantalla-content {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: 1fr minmax(300px, 25%);
+    overflow: hidden;
 }
 
 .llamada-principal {
