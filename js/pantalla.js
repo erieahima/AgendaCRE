@@ -97,23 +97,24 @@ function renderPantalla(llamadas) {
     }
 
     let indexPrincipal = -1;
-    for (let i = 0; i < validasArr.length; i++) {
-        const callTime = validasArr[i].llamada?.timestamp?.seconds || 0;
-        const age = nowSecs - callTime;
-        const someoneIsWaiting = i < validasArr.length - 1;
-        
-        // ¿Esta llamada i YA HA CUMPLIDO su tiempo en el panel grande?
-        // Termina si:
-        // 1. Llega al máximo absoluto (45s)
-        // 2. O llega al mínimo (10s) y hay otra llamada posterior esperando su turno
-        const turnFinished = age >= principalDurationSecs || (age >= minBufferSecs && someoneIsWaiting);
-        
-        if (!turnFinished) {
-            // Es la primera que aún debe estar en grande
-            indexPrincipal = i;
-            break;
+    try {
+        for (let i = 0; i < validasArr.length; i++) {
+            const callTime = validasArr[i].llamada?.timestamp?.seconds || 0;
+            if (callTime === 0) continue;
+
+            const age = Math.max(0, nowSecs - callTime); // Evitar efectos de desincronización de reloj
+            const someoneIsWaiting = i < validasArr.length - 1;
+            
+            // ¿Esta llamada i YA HA CUMPLIDO su tiempo en el panel grande?
+            const turnFinished = age >= principalDurationSecs || (age >= minBufferSecs && someoneIsWaiting);
+            
+            if (!turnFinished) {
+                indexPrincipal = i;
+                break;
+            }
         }
-        // Si ya terminó, esta pasará al listado de la derecha y probamos con la siguiente i+1
+    } catch (e) {
+        console.error("Error calculando el ciclo de llamadas:", e);
     }
 
     const principalContainer = document.querySelector('.llamada-principal');
@@ -121,25 +122,31 @@ function renderPantalla(llamadas) {
     let listado = [];
 
     if (indexPrincipal !== -1) {
-        const masReciente = validasArr[indexPrincipal];
-        const age = nowSecs - (masReciente.llamada?.timestamp?.seconds || 0);
-        
-        // MOSTRAR EN GRANDE
-        if (principalContainer) principalContainer.style.opacity = '1';
-        mainCodigo.textContent = masReciente.codigo.slice(-3);
-        mainMesa.textContent = masReciente.llamada.puesto;
-        principalHTML = masReciente.id + "_" + (masReciente.llamada?.timestamp?.seconds || "0");
-        
-        // REGLA CLAVE: La lista de la derecha SOLO muestra las que ya PASARON por el panel grande
-        // Las que están "en espera" (posteriores a indexPrincipal) NO se muestran todavía
-        listado = validasArr.slice(0, indexPrincipal).reverse(); // Reverse para que la más reciente de las pasadas esté arriba
-        
-        // Sonido si es el comienzo de su aparición
-        if (age < 4 && principalHTML !== lastMainHTML) {
-            playDing();
+        try {
+            const masReciente = validasArr[indexPrincipal];
+            const callTime = masReciente.llamada?.timestamp?.seconds || 0;
+            const age = Math.max(0, nowSecs - callTime);
+            
+            // MOSTRAR EN GRANDE
+            if (principalContainer) principalContainer.style.opacity = '1';
+            mainCodigo.textContent = (masReciente.codigo || "---").slice(-3);
+            mainMesa.textContent = masReciente.llamada?.puesto || "Mesa";
+            principalHTML = masReciente.id + "_" + (callTime || "0");
+            
+            // REGLA CLAVE: La lista de la derecha SOLO muestra las que ya PASARON por el panel grande
+            listado = validasArr.slice(0, indexPrincipal).reverse();
+            
+            if (age < 4 && principalHTML !== lastMainHTML) {
+                playDing();
+            }
+        } catch (e) {
+            console.error("Error renderizando llamada principal:", e);
+            indexPrincipal = -1; // Forzar modo histórico si falla
         }
-    } else {
-        // Todo es histórico
+    } 
+    
+    if (indexPrincipal === -1) {
+        // Todo es histórico o error
         if (principalContainer) principalContainer.style.opacity = '0';
         mainCodigo.textContent = "";
         mainMesa.textContent = "";
