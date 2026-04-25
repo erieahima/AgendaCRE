@@ -70,17 +70,20 @@ function renderPantalla(llamadas) {
 
     const nowSecs = Date.now() / 1000;
     const hideFromListSecs = 1800; // 30 min para desaparecer de la lista completa
-    const principalDurationSecs = 45; // Tiempo total que puede estar en grande si no hay otras
-    const minBufferSecs = 10; // Tiempo mínimo garantizado en grande (V.3.3.2)
+    const principalDurationSecs = 45; // Tiempo total que puede estar en grande si no hay más esperando
+    const minBufferSecs = 10; // Tiempo mínimo garantizado en grande antes de dar paso
 
-    // 1. Filtrar las que son válidas para mostrar (menos de 30 min)
-    const validas = llamadas.filter(ll => {
-        const callSecs = ll.llamada?.timestamp?.seconds || 0;
-        if (callSecs === 0) return false;
-        return (nowSecs - callSecs) < hideFromListSecs;
-    });
+    // 1. Filtrar las que son válidas para mostrar (menos de 30 min) 
+    // Ordenamos cronológicamente (ASC) para procesar la cola
+    const validasArr = llamadas
+        .filter(ll => {
+            const callSecs = ll.llamada?.timestamp?.seconds || 0;
+            if (callSecs === 0) return false;
+            return (nowSecs - callSecs) < hideFromListSecs;
+        })
+        .sort((a, b) => (a.llamada.timestamp?.seconds || 0) - (b.llamada.timestamp?.seconds || 0));
 
-    if (validas.length === 0) {
+    if (validasArr.length === 0) {
         if (lastMainHTML !== "empty") {
             const principalContainer = document.querySelector('.llamada-principal');
             if (principalContainer) principalContainer.style.opacity = '0';
@@ -93,22 +96,20 @@ function renderPantalla(llamadas) {
         return;
     }
 
-    // 2. Determinar quién va en grande
-    // Buscamos la cita más antigua que aún no haya cumplido sus 10 segundos de "gloria"
+    // 2. Determinar quién es el "Rey del Panel" (BIG)
+    // Es el primero de la cola que:
+    // a) Tiene menos de 45 segundos de antigüedad
+    // b) Y ADEMÁS: (Tiene menos de 10s O es el último que ha entrado)
     let indexPrincipal = -1;
-    for (let i = validas.length - 1; i >= 0; i--) {
-        const age = nowSecs - (validas[i].llamada?.timestamp?.seconds || 0);
-        if (age < minBufferSecs) {
-            indexPrincipal = i;
-            break;
-        }
-    }
-
-    // Si ninguna está en sus primeros 10s, mostramos la más reciente (si tiene menos de 45s)
-    if (indexPrincipal === -1) {
-        const ageReciente = nowSecs - (validas[0].llamada?.timestamp?.seconds || 0);
-        if (ageReciente < principalDurationSecs) {
-            indexPrincipal = 0;
+    for (let i = 0; i < validasArr.length; i++) {
+        const age = nowSecs - (validasArr[i].llamada?.timestamp?.seconds || 0);
+        if (age < principalDurationSecs) {
+            // Si tiene menos de 10s, tiene prioridad absoluta de quedarse
+            // Si es el último, también se queda
+            if (age < minBufferSecs || i === validasArr.length - 1) {
+                indexPrincipal = i;
+                break;
+            }
         }
     }
 
@@ -117,7 +118,7 @@ function renderPantalla(llamadas) {
     let listado = [];
 
     if (indexPrincipal !== -1) {
-        const masReciente = validas[indexPrincipal];
+        const masReciente = validasArr[indexPrincipal];
         const age = nowSecs - (masReciente.llamada?.timestamp?.seconds || 0);
         
         // MOSTRAR EN GRANDE
@@ -126,24 +127,26 @@ function renderPantalla(llamadas) {
         mainMesa.textContent = masReciente.llamada.puesto;
         principalHTML = masReciente.id + "_" + (masReciente.llamada?.timestamp?.seconds || "0");
         
-        // El listado son todas las demás
-        listado = validas.filter((_, idx) => idx !== indexPrincipal).slice(0, 6);
+        // REGLA CLAVE: La lista de la derecha SOLO muestra las que ya PASARON por el panel grande
+        // Las que están "en espera" (posteriores a indexPrincipal) NO se muestran todavía
+        listado = validasArr.slice(0, indexPrincipal).reverse(); // Reverse para que la más reciente de las pasadas esté arriba
         
-        // Sonido si es el comienzo de su aparición (últimos 4 segundos de edad real o cambio de ID)
+        // Sonido si es el comienzo de su aparición
         if (age < 4 && principalHTML !== lastMainHTML) {
             playDing();
         }
     } else {
-        // OCULTAR GRANDE
+        // Todo es histórico
         if (principalContainer) principalContainer.style.opacity = '0';
         mainCodigo.textContent = "";
         mainMesa.textContent = "";
         principalHTML = "hidden";
-        listado = validas.slice(0, 6);
+        listado = [...validasArr].reverse();
     }
 
-    // 3. Renderizar lista lateral
-    const newListHTML = listado.map(ll => `
+    // 3. Renderizar lista lateral (limitamos a 6)
+    const listadoFinal = listado.slice(0, 6);
+    const newListHTML = listadoFinal.map(ll => `
         <div class="llamada-item">
             <div class="codigo">${ll.codigo.slice(-3)}</div>
             <div class="mesa">${ll.llamada.puesto}</div>
