@@ -162,7 +162,15 @@ function renderPantalla(llamadas) {
 }
 
 function playDing() {
-    // Sonido...
+    // REGLA: Solo suena en el dispositivo que está en PANTALLA COMPLETA
+    if (!document.fullscreenElement) return;
+
+    const audio = document.getElementById('audio-ding');
+    if (audio) {
+        audio.currentTime = 0;
+        audio.volume = 0.6;
+        audio.play().catch(e => console.log("Auto-play prevenido o error de audio:", e));
+    }
 }
 
 // LOGICA FULLSCREEN Y WAKE LOCK
