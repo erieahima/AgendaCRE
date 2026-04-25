@@ -72,7 +72,7 @@ async function loadAuthenticatedApp() {
         globalSelector.appendChild(opt);
     }
     
-    // Ocultar/Mostrar opciones del menú según permisos (V.3.3.1)
+    // Ocultar/Mostrar opciones del menú según permisos (V.3.3.2)
     document.getElementById('nav-item-calendario').style.display = hasPermission('ver_calendario') ? 'block' : 'none';
     document.getElementById('nav-item-grabaciones').style.display = hasPermission('ver_grabaciones') ? 'block' : 'none';
     document.getElementById('nav-item-historico').style.display = hasPermission('ver_historico') ? 'block' : 'none';

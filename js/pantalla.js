@@ -58,6 +58,9 @@ export function setupPantalla(appState) {
     });
 }
 
+let lastMainHTML = "";
+let lastListHTML = "";
+
 function renderPantalla(llamadas) {
     const mainCodigo = document.getElementById('pantalla-main-codigo');
     const mainMesa = document.getElementById('pantalla-main-mesa');
@@ -66,13 +69,15 @@ function renderPantalla(llamadas) {
     if (!mainCodigo || !listaRecientes) return;
 
     const nowSecs = Date.now() / 1000;
-    const mediaHoraSecs = 1800;
-    const principalDurationSecs = 45;
+    const hideFromListSecs = 1800; // 30 min para desaparecer de la lista completa
+    const principalDurationSecs = 45; // Tiempo total que puede estar en grande si no hay otras
+    const minBufferSecs = 10; // Tiempo mínimo garantizado en grande (V.3.3.2)
 
+    // 1. Filtrar las que son válidas para mostrar (menos de 30 min)
     const validas = llamadas.filter(ll => {
         const callSecs = ll.llamada?.timestamp?.seconds || 0;
         if (callSecs === 0) return false;
-        return (nowSecs - callSecs) < mediaHoraSecs;
+        return (nowSecs - callSecs) < hideFromListSecs;
     });
 
     if (validas.length === 0) {
@@ -88,21 +93,46 @@ function renderPantalla(llamadas) {
         return;
     }
 
-    const masReciente = validas[0];
-    const age = nowSecs - (masReciente.llamada?.timestamp?.seconds || 0);
+    // 2. Determinar quién va en grande
+    // Buscamos la cita más antigua que aún no haya cumplido sus 10 segundos de "gloria"
+    let indexPrincipal = -1;
+    for (let i = validas.length - 1; i >= 0; i--) {
+        const age = nowSecs - (validas[i].llamada?.timestamp?.seconds || 0);
+        if (age < minBufferSecs) {
+            indexPrincipal = i;
+            break;
+        }
+    }
+
+    // Si ninguna está en sus primeros 10s, mostramos la más reciente (si tiene menos de 45s)
+    if (indexPrincipal === -1) {
+        const ageReciente = nowSecs - (validas[0].llamada?.timestamp?.seconds || 0);
+        if (ageReciente < principalDurationSecs) {
+            indexPrincipal = 0;
+        }
+    }
 
     const principalContainer = document.querySelector('.llamada-principal');
-
     let principalHTML = "";
     let listado = [];
 
-    if (age < principalDurationSecs) {
-        // ACTIVA EN GRANDE
+    if (indexPrincipal !== -1) {
+        const masReciente = validas[indexPrincipal];
+        const age = nowSecs - (masReciente.llamada?.timestamp?.seconds || 0);
+        
+        // MOSTRAR EN GRANDE
         if (principalContainer) principalContainer.style.opacity = '1';
         mainCodigo.textContent = masReciente.codigo.slice(-3);
         mainMesa.textContent = masReciente.llamada.puesto;
-        principalHTML = masReciente.id + "_active";
-        listado = validas.slice(1, 7);
+        principalHTML = masReciente.id + "_" + (masReciente.llamada?.timestamp?.seconds || "0");
+        
+        // El listado son todas las demás
+        listado = validas.filter((_, idx) => idx !== indexPrincipal).slice(0, 6);
+        
+        // Sonido si es el comienzo de su aparición (últimos 4 segundos de edad real o cambio de ID)
+        if (age < 4 && principalHTML !== lastMainHTML) {
+            playDing();
+        }
     } else {
         // OCULTAR GRANDE
         if (principalContainer) principalContainer.style.opacity = '0';
@@ -112,7 +142,7 @@ function renderPantalla(llamadas) {
         listado = validas.slice(0, 6);
     }
 
-    // Solo actualizar la lista si el contenido HTML generado cambia
+    // 3. Renderizar lista lateral
     const newListHTML = listado.map(ll => `
         <div class="llamada-item">
             <div class="codigo">${ll.codigo.slice(-3)}</div>
@@ -125,18 +155,11 @@ function renderPantalla(llamadas) {
         lastListHTML = newListHTML;
     }
 
-    // Sonido si es una llamada nueva (últimos 4 segundos)
-    if (age < 4 && principalHTML !== lastMainHTML) {
-        playDing();
-    }
     lastMainHTML = principalHTML;
 }
 
-let lastMainHTML = "";
-let lastListHTML = "";
-
 function playDing() {
-    // Para no molestar con dings repetidos
+    // Sonido...
 }
 
 // LOGICA FULLSCREEN Y WAKE LOCK
@@ -155,7 +178,7 @@ function setupFullscreenLogic(appState) {
         if (hideTimer) clearTimeout(hideTimer);
         hideTimer = setTimeout(() => {
             btnExit.classList.remove('show');
-        }, 3000); // 3 segundos y se oculta
+        }, 3000); 
     };
 
     const toggleFS = async () => {
@@ -163,7 +186,6 @@ function setupFullscreenLogic(appState) {
             if (!document.fullscreenElement) {
                 await target.requestFullscreen();
                 showExitBtn();
-                // Escuchar el movimiento del ratón solo en FS
                 target.addEventListener('mousemove', showExitBtn);
 
                 if ('wakeLock' in navigator) {
