@@ -294,7 +294,7 @@ function setupModalControls() {
     });
 }
 
-function openModal(cita, isRestricted = false) {
+export function openModal(cita, isRestricted = false) {
     modalCitaActiva = cita;
     const modal = document.getElementById('cita-modal');
     
