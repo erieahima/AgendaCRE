@@ -424,13 +424,17 @@ export async function guardarPuestoConfig(uid, config) {
 export async function getNextCitaParaLlamar(sedeId, fechaStr) {
     if (!isConfigured) return null;
     
-    const citasRef = collection(db, "citas");
+    // La prioridad es: 
+    // 1. Que sean de hoy
+    // 2. Que hayan marcado asistencia (llegada)
+    // 3. Que NO hayan sido llamados aún
+    // 4. Ordenados por HORA de la cita (prioridad por antigüedad de cita, no de llegada)
     const q = query(citasRef, 
         where("sede", "==", sedeId),
         where("fecha", "==", fechaStr),
         where("asistencia", "==", true),
         where("llamada", "==", null),
-        orderBy("hora", "asc"),
+        orderBy("fechaHoraTimestamp", "asc"),
         limit(1)
     );
     
@@ -448,32 +452,27 @@ export function listenLlamadasRecientes(sedeId, callback) {
     if (!isConfigured || !sedeId) return () => {};
     
     const citasRef = collection(db, "citas");
-    // Filtramos por citas que tienen el campo llamada no-nulo
-    // Firestore no permite '!= null' fácilmente con orderBy si hay otros filtros complejos,
-    // pero podemos filtrar por citas llamadas hoy.
-    const d = new Date();
-    const hoy = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    // Filtramos por sede y ordenamos por el momento de la LLAMADA (timestamp interno) descendentemente.
+    // Quitamos el filtro de "fecha == hoy" para que si se llama a una cita de otro día, aparezca en la pantalla.
     const q = query(
         citasRef, 
         where("sede", "==", sedeId),
-        where("fecha", "==", hoy)
+        orderBy("llamada.timestamp", "desc"),
+        limit(15)
     );
     
     return onSnapshot(q, (snapshot) => {
         const llamadas = [];
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
+            // Solo incluimos las que realmente tienen una llamada activa
             if (data.llamada && data.llamada.timestamp) {
                 llamadas.push({ id: docSnap.id, ...data });
             }
         });
-        // Ordenar por el timestamp de la llamada descendente (JS side)
-        llamadas.sort((a, b) => {
-            const timeA = a.llamada.timestamp?.seconds || 0;
-            const timeB = b.llamada.timestamp?.seconds || 0;
-            return timeB - timeA;
-        });
-        callback(llamadas.slice(0, 15));
+        callback(llamadas);
+    }, (error) => {
+        console.error("Error en listenLlamadasRecientes:", error);
     });
 }
 
@@ -493,7 +492,7 @@ export function listenListaEspera(sedeId, callback) {
         where("fecha", "==", hoy),
         where("asistencia", "==", true),
         where("llamada", "==", null),
-        orderBy("hora", "asc")
+        orderBy("fechaHoraTimestamp", "asc")
     );
     
     return onSnapshot(q, (snapshot) => {
