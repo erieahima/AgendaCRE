@@ -78,7 +78,7 @@ async function handleExportPDF() {
         }
 
         statusText.textContent = "¡Documento listo! Descargando...";
-        const fileName = `CITAS_${sede.nombre.replace(/ /g, '_')}_${yyyymmdd}.pdf`;
+        const fileName = `${yyyymmdd}-Citas-${sede.nombre.replace(/ /g, '_')}.pdf`;
         doc.save(fileName);
 
         setTimeout(() => {
