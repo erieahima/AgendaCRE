@@ -152,7 +152,8 @@ function renderPantalla(llamadas) {
         // La lista muestra los que ya pasaron por el panel grande
         listado = processedArr.slice(0, indexPrincipal).reverse();
         
-        if (age < 3 && principalHTML !== lastMainHTML) {
+        // El sonido debe sonar SIEMPRE que cambie el ID de la llamada principal (V.3.6.2)
+        if (principalHTML !== lastMainHTML && principalHTML !== "empty") {
             playDing();
         }
     } else {
