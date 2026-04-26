@@ -131,7 +131,7 @@ function createA4Html(cita, sede, fechaISO) {
             <!-- CUADRO CÓDIGO QR -->
             <div style="border: 2pt solid #000; padding: 10mm; margin: 0 auto; width: fit-content; border-radius: 12px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <div style="width: 85mm; height: 85mm; overflow: hidden; display: flex; justify-content: center; align-items: center; background: white;">
-                    <img src="img/qr-poster.png" style="width: 330%; margin-top: -105%; filter: contrast(1.1);">
+                    <img src="img/qr-poster.png" style="width: 380%; margin-top: -38%; margin-left: 0%; filter: contrast(1.1);">
                 </div>
                 <div style="text-align: center; font-size: 10pt; color: #64748b; margin-top: 4mm; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
                     Escanee para completar sus datos
