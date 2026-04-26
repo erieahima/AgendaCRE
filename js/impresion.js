@@ -154,5 +154,3 @@ function createA4Html(cita, sede, fechaISO) {
         </div>
     `;
 }
-    `;
-}
