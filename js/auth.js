@@ -2,6 +2,7 @@ import {
     auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, getUsuarioData, 
     firebaseConfig, initializeApp, getAuth, createUserWithEmailAndPassword 
 } from './firebase.js';
+import { cacheClear } from './cache.js';
 
 let currentUserProfile = null;
 
@@ -73,6 +74,7 @@ export function initAuth(onUserReady) {
 }
 
 export async function logout() {
+    cacheClear();
     await signOut(auth);
     window.location.reload(); 
 }

@@ -1,5 +1,6 @@
 // js/app.js
 import { getSedes, inicializarSedes } from './firebase.js';
+import { cacheClear, cacheInvalidatePrefix } from './cache.js';
 import { renderCalendario, loadCitasCalendario, initCalendarioModal } from './calendario.js';
 import { setupGenerador } from './generador.js';
 import { setupImpresion } from './impresion.js';
@@ -94,6 +95,9 @@ async function loadAuthenticatedApp() {
     globalSelector.addEventListener('change', (e) => {
         AppState.sedeActivaId = e.target.value;
         localStorage.setItem('last_sede_id', AppState.sedeActivaId);
+        // Invalidar caché de la sede anterior para no servir datos cruzados
+        cacheInvalidatePrefix(`cal_dia_`);
+        cacheInvalidatePrefix(`cal_mes_`);
         window.dispatchEvent(new CustomEvent('sedeChanged', { detail: AppState.sedeActivaId }));
     });
 

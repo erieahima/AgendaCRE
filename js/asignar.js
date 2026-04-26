@@ -1,9 +1,28 @@
 import { buscarCitasParaAsignar } from './firebase.js';
 import { formatearFechaHumana, formatearHoraHumana } from './utils.js';
+import { cacheGet, cacheSet, cachePatchItem } from './cache.js';
 
-let allCitasCache = [];
+// Caché de 10 minutos para la carga masiva de citas de la sede.
+// Cubre TODOS los días (no solo hoy), igual que antes.
+const ASIGNAR_TTL = 10 * 60 * 1000;
+
 let lastSedeId = null;
 let appStateRef = null;
+
+function getCacheKey(sedeId) {
+    return `asignar_${sedeId}`;
+}
+
+/** Devuelve el array de citas desde caché o carga desde Firestore si ha expirado. */
+async function getOrLoadCitas(sedeId) {
+    const key = getCacheKey(sedeId);
+    const cached = cacheGet(key);
+    if (cached) return cached;
+
+    const citas = await buscarCitasParaAsignar(sedeId); // sin term → carga hasta 10.000 citas de todos los días
+    cacheSet(key, citas, ASIGNAR_TTL);
+    return citas;
+}
 
 export function setupAsignar(appState) {
     appStateRef = appState;
@@ -15,45 +34,43 @@ export function setupAsignar(appState) {
     let searchTimeout = null;
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.trim().toUpperCase();
-        
+
         if (term.length < 3) {
             resultsContainer.innerHTML = '';
             return;
         }
 
         clearTimeout(searchTimeout);
+        // Debounce aumentado a 600ms para reducir aún más las consultas
         searchTimeout = setTimeout(async () => {
             try {
-                // 1. Cargar caché si cambia la sede o está vacío 
-                if (lastSedeId !== appState.sedeActivaId || allCitasCache.length === 0) {
-                    allCitasCache = await buscarCitasParaAsignar(appState.sedeActivaId);
-                    lastSedeId = appState.sedeActivaId;
-                }
+                const sedeId = appState.sedeActivaId;
 
-                // 2. Filtrado local 
-                const locales = allCitasCache.filter(cita => 
+                // 1. Obtener caché de todos los días (sin repetir la carga masiva)
+                const allCitas = await getOrLoadCitas(sedeId);
+
+                // 2. Filtrado local (cubre TODOS los días ya en memoria)
+                const locales = allCitas.filter(cita =>
                     cita.codigo && cita.codigo.toUpperCase().includes(term)
                 );
 
-                // 3. Búsqueda profunda en servidor
-                const globales = await buscarCitasParaAsignar(appState.sedeActivaId, term);
+                // 3. Solo consultar el servidor si hay muy pocos resultados locales
+                //    y el término parece suficientemente específico (> 3 chars)
+                let finales = locales;
+                if (locales.length < 3 && term.length > 3) {
+                    const globales = await buscarCitasParaAsignar(sedeId, term);
+                    const mapRes = new Map();
+                    locales.forEach(c => mapRes.set(c.id || c.codigo, c));
+                    globales.forEach(c => mapRes.set(c.id || c.codigo, c));
+                    finales = Array.from(mapRes.values());
+                }
 
-                // 4. Mezclar resultados y eliminar duplicados
-                const mapRes = new Map();
-                locales.forEach(c => mapRes.set(c.id || c.codigo, c));
-                globales.forEach(c => mapRes.set(c.id || c.codigo, c));
-
-                const finales = Array.from(mapRes.values());
-                
-                // Ordenar por fecha desc (Seguridad ante campos nulos)
+                // 4. Ordenar por fecha desc
                 finales.sort((a, b) => {
                     const fA = a.fecha || '00000000';
                     const fB = b.fecha || '00000000';
                     if (fA !== fB) return fB.localeCompare(fA);
-                    
-                    const hA = a.hora || '00:00';
-                    const hB = b.hora || '00:00';
-                    return hB.localeCompare(hA);
+                    return (b.hora || '00:00').localeCompare(a.hora || '00:00');
                 });
 
                 renderResults(finales.slice(0, 40));
@@ -61,22 +78,32 @@ export function setupAsignar(appState) {
                 console.error("Error en la búsqueda:", error);
                 renderResults([]);
             }
-        }, 350);
+        }, 600);
     });
 
-    // Limpiar caché al cambiar de sede
+    // Al cambiar de sede, la caché del módulo apunta a la nueva sede automáticamente
+    // (la key incluye sedeId). No hay que borrar nada manualmente.
     window.addEventListener('sedeChanged', () => {
-        allCitasCache = [];
+        // Solo limpiamos la búsqueda visual
+        searchInput.value = '';
+        resultsContainer.innerHTML = '';
     });
 
-    // Refrescar al guardar desde el modal
-    window.addEventListener('citaActualizada', async () => {
-        allCitasCache = []; // Forzar recarga de los 3000 locales
+    // Al guardar una cita desde el modal: actualizar el elemento en caché (patch)
+    // en lugar de recargar los 10.000 docs.
+    window.addEventListener('citaActualizada', async (e) => {
+        const { id, patch } = e.detail || {};
+        if (id && patch && appState.sedeActivaId) {
+            cachePatchItem(getCacheKey(appState.sedeActivaId), id, patch);
+        }
+
+        // Refrescar resultados visibles con los datos actualizados del caché
         const term = searchInput.value.trim().toUpperCase();
         if (term.length >= 3) {
-            // Re-lanzar búsqueda para ver reflejado el cambio (ej. color azul si se asignó)
-            const globales = await buscarCitasParaAsignar(appState.sedeActivaId, term);
-            renderResults(globales.slice(0, 40));
+            const allCitas = await getOrLoadCitas(appState.sedeActivaId);
+            const locales = allCitas.filter(c => c.codigo && c.codigo.toUpperCase().includes(term));
+            locales.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+            renderResults(locales.slice(0, 40));
         }
     });
 }
@@ -99,7 +126,6 @@ function renderResults(citas) {
         card.style.border = '1px solid var(--border)';
         card.style.transition = 'transform 0.2s';
         
-        // Colores según estado (consistente con calendario)
         aplicarEstiloEstado(card, cita.estado);
 
         card.innerHTML = `

@@ -2,6 +2,10 @@
 import { AppState } from './app.js';
 import { getCitasPorSedeYFecha, getCitasPorSedeYRango, actualizarCitaData } from './firebase.js';
 import { formatHoraToDisplay, formatearFecha, formatearFechaHumana, formatearHoraHumana } from './utils.js';
+import { cacheGet, cacheSet, cacheInvalidate, cachePatchItem } from './cache.js';
+
+// TTL para datos del calendario: 5 minutos
+const CAL_TTL = 5 * 60 * 1000;
 
 let currentView = 'dia'; // 'dia', 'semana', 'mes'
 let currentDate = new Date();
@@ -117,7 +121,12 @@ async function renderDayView(grid) {
     }
 
     const yyyymmdd = formatearFecha(currentDate);
-    const citasDelDia = await getCitasPorSedeYFecha(AppState.sedeActivaId, yyyymmdd);
+    const cacheKey = `cal_dia_${AppState.sedeActivaId}_${yyyymmdd}`;
+    let citasDelDia = cacheGet(cacheKey);
+    if (!citasDelDia) {
+        citasDelDia = await getCitasPorSedeYFecha(AppState.sedeActivaId, yyyymmdd);
+        cacheSet(cacheKey, citasDelDia, CAL_TTL);
+    }
     
     let html = `
         <div class="cal-header">
@@ -239,21 +248,27 @@ function setupModalControls() {
 
             try {
                 const idDocumento = modalCitaActiva.id || modalCitaActiva.codigo;
-                await actualizarCitaData(idDocumento, {
-                    codigoUsuario,
-                    iniciales,
-                    observaciones,
-                    estado,
-                    asistencia
-                });
+                const patch = { codigoUsuario, iniciales, observaciones, estado, asistencia };
+                await actualizarCitaData(idDocumento, patch);
                 
+                // Actualizar la caché sin volver a leer de Firestore
+                if (modalCitaActiva.fecha && AppState.sedeActivaId) {
+                    const diaKey = `cal_dia_${AppState.sedeActivaId}_${modalCitaActiva.fecha}`;
+                    cachePatchItem(diaKey, idDocumento, patch);
+                    // Invalidar la vista de mes para que refleje cambios de estado
+                    const d = new Date(modalCitaActiva.fecha.slice(0,4), modalCitaActiva.fecha.slice(4,6) - 1, modalCitaActiva.fecha.slice(6,8));
+                    const mesKey = `cal_mes_${AppState.sedeActivaId}_`;
+                    // Invalidar cualquier caché mensual que contenga este día
+                    cacheInvalidate(mesKey + modalCitaActiva.fecha.slice(0,6) + '01_' + new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0,10).replace(/-/g,''));
+                }
+
                 modal.classList.add('hidden');
                 
                 if (document.getElementById('view-calendario')?.classList.contains('active')) {
                     updateCalendario(); 
                 }
                 
-                window.dispatchEvent(new CustomEvent('citaActualizada', { detail: idDocumento }));
+                window.dispatchEvent(new CustomEvent('citaActualizada', { detail: { id: idDocumento, patch } }));
             } catch (err) {
                 console.error("Error al guardar cita:", err);
                 alert("Error al guardar: " + err.message);
@@ -366,7 +381,12 @@ async function renderMonthView(grid) {
     const inicioMesStr = formatearFecha(inicioMes);
     const finMesStr = formatearFecha(finMes);
 
-    const citasMes = await getCitasPorSedeYRango(AppState.sedeActivaId, inicioMesStr, finMesStr);
+    const mesKey = `cal_mes_${AppState.sedeActivaId}_${inicioMesStr}_${finMesStr}`;
+    let citasMes = cacheGet(mesKey);
+    if (!citasMes) {
+        citasMes = await getCitasPorSedeYRango(AppState.sedeActivaId, inicioMesStr, finMesStr);
+        cacheSet(mesKey, citasMes, CAL_TTL);
+    }
 
     let html = '<div class="month-grid">';
     
