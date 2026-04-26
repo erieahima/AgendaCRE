@@ -130,7 +130,8 @@ function createA4Html(cita, sede, fechaISO) {
 
             <!-- CUADRO CÓDIGO QR -->
             <div style="border: 2pt solid #000; padding: 10mm; margin: 0 auto; width: fit-content; border-radius: 12px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <div style="width: 85mm; height: 85mm; background-image: url('img/qr-poster.png'); background-size: 380%; background-position: center 34%; background-repeat: no-repeat; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <div style="width: 85mm; height: 85mm; background: white; display: flex; justify-content: center; align-items: center; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <img src="img/QRIMAP.png" style="width: 100%; height: 100%; object-fit: contain;">
                 </div>
                 <div style="text-align: center; font-size: 10pt; color: #64748b; margin-top: 4mm; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
                     Escanee para completar sus datos
