@@ -101,65 +101,58 @@ function createA4Html(cita, sede, fechaISO) {
     const horaHumana = formatearHoraHumana(cita.hora);
 
     return `
-        <div class="a4-page" style="width: 210mm; height: 297mm; background: white; padding: 20mm; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Helvetica', sans-serif; color: #1e293b; border: 1px solid #eee;">
-            <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2563eb; padding-bottom: 10mm; margin-bottom: 15mm;">
-                <div style="font-size: 24pt; font-weight: 800; color: #2563eb;">CRUZ ROJA</div>
-                <div style="text-align: right;">
-                    <div style="font-size: 14pt; font-weight: 700;">Ticket de Cita</div>
-                    <div style="font-size: 10pt; color: #64748b;">Sistema de Gestión de Turnos</div>
-                </div>
-            </div>
-
-            <!-- Content -->
-            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-                <div style="font-size: 18pt; color: #475569; margin-bottom: 5mm;">SU CÓDIGO DE TURNO ES:</div>
-                <div style="font-size: 120pt; font-weight: 900; color: #0f172a; margin-bottom: 10mm; border: 4px solid #0f172a; padding: 10mm 20mm; border-radius: 20px; line-height: 1;">
-                    ${shortCode}
+        <div class="a4-page" style="width: 210mm; height: 297mm; background: white; padding: 25mm; box-sizing: border-box; display: flex; flex-direction: column; font-family: 'Inter', 'Helvetica', sans-serif; color: #000; position: relative;">
+            
+            <!-- CUADRO SUPERIOR (Datos Identificativos) -->
+            <div style="border: 2.5pt solid #000; padding: 12mm; margin-bottom: 20mm; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8mm;">
+                    <div style="font-size: 16pt;"><strong>Fecha de la cita:</strong> ${fechaHumana}</div>
+                    <div style="font-size: 16pt;"><strong>Hora de la cita:</strong> ${horaHumana}</div>
                 </div>
                 
-                <div style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-top: 15mm;">
-                    <div style="padding: 10mm; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
-                        <div style="font-size: 12pt; color: #64748b; margin-bottom: 2mm;">FECHA</div>
-                        <div style="font-size: 20pt; font-weight: 700;">${fechaHumana}</div>
-                    </div>
-                    <div style="padding: 10mm; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
-                        <div style="font-size: 12pt; color: #64748b; margin-bottom: 2mm;">HORA ESTIMADA</div>
-                        <div style="font-size: 20pt; font-weight: 700;">${horaHumana}</div>
-                    </div>
+                <div style="font-size: 14pt; margin-bottom: 8mm; line-height: 1.4;">
+                    <strong>Dirección:</strong><br>
+                    ${sede.nombre}<br>
+                    📍 ${sede.direccion || 'Dirección no especificada'}
                 </div>
 
-                <div style="margin-top: 15mm; padding: 10mm; width: 100%; border-left: 10px solid #2563eb; background: #eff6ff; border-radius: 0 12px 12px 0;">
-                    <div style="font-size: 14pt; font-weight: 700; color: #1e3a8a;">UBICACIÓN: ${sede.nombre}</div>
-                    <div style="font-size: 12pt; color: #374151; font-weight: 500; margin-top: 2mm;">📍 ${sede.direccion || 'Dirección no especificada'}</div>
-                    <div style="font-size: 10pt; color: #1e40af; margin-top: 4mm; border-top: 1px dashed #bfdbfe; padding-top: 4mm;">
-                        Por favor, permanezca en la zona de espera hasta que su código aparezca en pantalla o sea llamado por el personal.
-                    </div>
-                </div>
-
-                <!-- Sección QR Ayuda (Nuevo V.3.9.1) -->
-                <div style="margin-top: 10mm; display: flex; gap: 10mm; align-items: center; background: #fff5f5; padding: 8mm; border-radius: 12px; border: 1.5px solid #fee2e2;">
-                    <div style="width: 45mm; height: 45mm; overflow: hidden; background: white; border: 1px solid #e2e8f0; border-radius: 8px; flex-shrink: 0; display: flex; justify-content: center; align-items: center;">
-                        <img src="img/qr-poster.png" style="width: 330%; margin-top: -105%; margin-left: 0%;">
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="font-size: 14pt; font-weight: 800; color: #b91c1c; margin-bottom: 2mm;">¿NECESITAS AYUDA?</div>
-                        <div style="font-size: 11pt; line-height: 1.4; color: #7f1d1d; font-weight: 500;">
-                            Escanea este código con tu móvil para acceder al <strong>formulario de solicitud</strong> en solo 3 pasos.
-                        </div>
-                        <div style="font-size: 9pt; color: #991b1b; margin-top: 4mm; font-style: italic;">
-                            * Este proceso es independiente del sistema de turnos.
-                        </div>
-                    </div>
+                <div style="font-size: 32pt; font-weight: 900; border-top: 1.5pt solid #eee; padding-top: 6mm; text-align: center; letter-spacing: 2px;">
+                    CÓDIGO DE CITA: <span style="color: #2563eb;">${shortCode}</span>
                 </div>
             </div>
 
-            <!-- Footer -->
-            <div style="margin-top: auto; padding-top: 10mm; border-top: 1px solid #e2e8f0; font-size: 9pt; color: #94a3b8; display: flex; justify-content: space-between;">
-                <div>ID Cita: ${cita.codigo}</div>
-                <div>Este documento es un comprobante de turno. No garantiza la atención inmediata.</div>
-                <div>Pág. 1/1</div>
+            <!-- TEXTO INTERMEDIO (Fuera del cuadro) -->
+            <div style="text-align: center; margin-bottom: 12mm; padding: 0 10mm;">
+                <p style="font-size: 15pt; line-height: 1.6; color: #334155;">
+                    Para el día de la fecha tendrá que asistir con los datos insertados en nuestros datos a través del siguiente código QR
+                </p>
+            </div>
+
+            <!-- CUADRO CÓDIGO QR -->
+            <div style="border: 2pt solid #000; padding: 10mm; margin: 0 auto; width: fit-content; border-radius: 12px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                <div style="width: 85mm; height: 85mm; overflow: hidden; display: flex; justify-content: center; align-items: center; background: white;">
+                    <img src="img/qr-poster.png" style="width: 330%; margin-top: -105%; filter: contrast(1.1);">
+                </div>
+                <div style="text-align: center; font-size: 10pt; color: #64748b; margin-top: 4mm; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                    Escanee para completar sus datos
+                </div>
+            </div>
+
+            <!-- ESPACIO FLEXIBLE -->
+            <div style="flex: 1;"></div>
+
+            <!-- PIE DE PÁGINA -->
+            <div style="border-top: 1.5pt solid #000; padding-top: 6mm; margin-top: 20mm; display: flex; justify-content: space-between; align-items: flex-end;">
+                <div style="font-size: 11pt; font-family: monospace; color: #475569;">
+                    <strong>código de control:</strong> ${cita.codigo}
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 12pt; font-weight: 800; color: #2563eb;">CRUZ ROJA</div>
+                    <div style="font-size: 8pt; color: #94a3b8; margin-top: 1mm;">Generado el ${new Date().toLocaleDateString('es-ES')}</div>
+                </div>
             </div>
         </div>
+    `;
+}
     `;
 }
