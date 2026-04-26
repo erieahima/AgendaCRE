@@ -1050,7 +1050,7 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column; /* Cambiamos a columna para que quepa mejor el código largo */
     align-items: flex-start;
-    padding: 1.25rem;
+    padding: 0.8rem 1.25rem; /* Un pelín menos alto */
     background: #1e293b;
     border-radius: var(--radius-md);
     margin-bottom: 1rem;
@@ -1064,16 +1064,17 @@ input:checked + .slider:before {
 }
 
 .llamada-item .codigo {
-    font-size: 1.25rem;
-    font-weight: 800;
+    font-size: 2.2rem; /* Más grande */
+    font-weight: 900;
     color: #ffffff;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0px;
+    line-height: 1;
     word-break: break-all;
 }
 
 .llamada-item .mesa {
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: 1.1rem; /* Más pequeño */
+    font-weight: 600;
     color: #fbbf24;
 }
 
