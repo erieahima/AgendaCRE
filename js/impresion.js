@@ -136,6 +136,22 @@ function createA4Html(cita, sede, fechaISO) {
                         Por favor, permanezca en la zona de espera hasta que su código aparezca en pantalla o sea llamado por el personal.
                     </div>
                 </div>
+
+                <!-- Sección QR Ayuda (Nuevo V.3.9.1) -->
+                <div style="margin-top: 10mm; display: flex; gap: 10mm; align-items: center; background: #fff5f5; padding: 8mm; border-radius: 12px; border: 1.5px solid #fee2e2;">
+                    <div style="width: 45mm; height: 45mm; overflow: hidden; background: white; border: 1px solid #e2e8f0; border-radius: 8px; flex-shrink: 0; display: flex; justify-content: center; align-items: center;">
+                        <img src="img/qr-poster.png" style="width: 330%; margin-top: -105%; margin-left: 0%;">
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 14pt; font-weight: 800; color: #b91c1c; margin-bottom: 2mm;">¿NECESITAS AYUDA?</div>
+                        <div style="font-size: 11pt; line-height: 1.4; color: #7f1d1d; font-weight: 500;">
+                            Escanea este código con tu móvil para acceder al <strong>formulario de solicitud</strong> en solo 3 pasos.
+                        </div>
+                        <div style="font-size: 9pt; color: #991b1b; margin-top: 4mm; font-style: italic;">
+                            * Este proceso es independiente del sistema de turnos.
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Footer -->
