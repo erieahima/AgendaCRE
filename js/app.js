@@ -38,10 +38,12 @@ async function loadAuthenticatedApp() {
     await inicializarSedes();
     let sedesData = await getSedes();
     
-    // FILTRAR SEDES: Admin/Super ve todo, otros solo sedesAsignadas
+    // FILTRAR SEDES: Admin/Super ve todo, otros solo sedesAsignadas (v3.22.0 con soporte ALL)
     if (AppState.user.rol !== 'Super_admin' && AppState.user.rol !== 'Admin') {
         const permitidas = AppState.user.sedesAsignadas || [];
-        sedesData = sedesData.filter(s => permitidas.includes(s.codigoTerritorial));
+        if (!permitidas.includes("ALL")) {
+            sedesData = sedesData.filter(s => permitidas.includes(s.codigoTerritorial));
+        }
     }
     AppState.sedes = sedesData;
     
@@ -131,7 +133,16 @@ async function loadAuthenticatedApp() {
     window.addEventListener('sedesListChanged', async () => {
         // Recargar sedes en el selector sin perder la activa
         const currentSede = AppState.sedeActivaId;
-        const sedesData = await getSedes();
+        let sedesData = await getSedes();
+        
+        // Mantener filtro de seguridad
+        if (AppState.user.rol !== 'Super_admin' && AppState.user.rol !== 'Admin') {
+            const permitidas = AppState.user.sedesAsignadas || [];
+            if (!permitidas.includes("ALL")) {
+                sedesData = sedesData.filter(s => permitidas.includes(s.codigoTerritorial));
+            }
+        }
+
         AppState.sedes = sedesData;
         const globalSelector = document.getElementById('global-sede-selector');
         globalSelector.innerHTML = '';

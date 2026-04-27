@@ -8,7 +8,7 @@
     <!-- Robustez: Forzar limpieza de caché en cambio de versión -->
     <script>
         (function() {
-            const VERSION = "3.21.0";
+            const VERSION = "3.22.0";
             const savedVersion = localStorage.getItem('app_version');
             if (savedVersion !== VERSION) {
                 console.log("Nueva versión detectada (" + VERSION + "). Limpiando caché...");
@@ -81,7 +81,7 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger); padding: 5px 10px; font-size: 0.9rem;">🚪 <span>Cerrar Sesión</span></button>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.21.0</div>
+                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.22.0</div>
             </div>
         </nav>
 
@@ -393,20 +393,8 @@
                     <button id="btn-show-add-user" class="btn-primary">+ Nuevo Usuario</button>
                 </div>
 
-                <div class="card mt-4">
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 250px;">Email Usuario</th>
-                                <th style="width: 150px;">Rol / Perfil</th>
-                                <th>Sedes Autorizadas</th>
-                                <th style="width: 120px; text-align: center;">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="users-tbody">
-                            <!-- Inyectado por JS -->
-                        </tbody>
-                    </table>
+                <div id="users-grid" class="users-cards-grid mt-4">
+                    <!-- Inyectado por JS en formato tarjetas -->
                 </div>
             </section>
             
@@ -636,6 +624,6 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module" src="js/app.js?v=3.21.0"></script>
+    <script type="module" src="js/app.js?v=3.22.0"></script>
 </body>
 </html>

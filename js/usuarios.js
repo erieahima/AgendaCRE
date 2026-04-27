@@ -23,47 +23,56 @@ export function setupUsuarios(appState) {
 }
 
 async function renderUserList() {
-    const tbody = document.getElementById('users-tbody');
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center">Cargando usuarios...</td></tr>';
+    const grid = document.getElementById('users-grid');
+    grid.innerHTML = '<div class="col-span-full text-center">Cargando usuarios...</div>';
 
     try {
         const users = await getTodosLosUsuarios();
-        tbody.innerHTML = '';
+        grid.innerHTML = '';
 
         users.forEach(u => {
-            const tr = document.createElement('tr');
-            tr.dataset.uid = u.uid;
-            renderRowViewMode(tr, u);
-            tbody.appendChild(tr);
+            const card = document.createElement('div');
+            card.className = 'user-card';
+            card.dataset.uid = u.uid;
+            renderCardViewMode(card, u);
+            grid.appendChild(card);
         });
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color: var(--danger);">Error al cargar: ' + err.message + '</td></tr>';
+        grid.innerHTML = '<div class="col-span-full text-center" style="color: var(--danger);">Error al cargar: ' + err.message + '</div>';
     }
 }
 
-function renderRowViewMode(tr, u) {
-    const sedesStr = u.rol === 'Super_admin' || u.rol === 'Admin' 
-        ? '<span class="badge badge-success">Acceso Total</span>' 
-        : (u.sedesAsignadas || []).map(s => `<span class="badge badge-neutral" style="margin-right:2px">${s}</span>`).join("") || '<span class="text-muted">Sin sedes</span>';
+function renderCardViewMode(card, u) {
+    card.classList.remove('editing');
+    const isAllSedes = (u.sedesAsignadas || []).includes("ALL") || u.rol === 'Super_admin' || u.rol === 'Admin';
+    
+    const sedesHtml = isAllSedes 
+        ? '<span class="all-sedes-tag">⭐ Acceso a Todas las Sedes</span>' 
+        : (u.sedesAsignadas || []).map(s => `<span class="badge badge-neutral">${s}</span>`).join("") || '<span class="text-muted" style="font-size:0.8rem">Sin sedes asignadas</span>';
 
-    tr.innerHTML = `
-        <td style="font-weight:600; color: var(--primary);">${u.email}</td>
-        <td><span class="badge" style="background:var(--secondary); color:var(--text-main); text-transform: uppercase; font-size:0.7rem">${u.rol}</span></td>
-        <td>${sedesStr}</td>
-        <td style="text-align: center;">
-            <div style="display: flex; gap: 8px; justify-content: center;">
-                <button class="btn-icon edit-btn" title="Editar">✏️</button>
-                ${u.rol !== 'Super_admin' ? `<button class="btn-icon delete-btn" title="Borrar" style="border-color: var(--danger-bg); color: var(--danger);">🗑️</button>` : ''}
+    card.innerHTML = `
+        <div class="user-card-header">
+            <div class="user-avatar">${u.email.charAt(0).toUpperCase()}</div>
+            <div class="user-info">
+                <span class="user-email" title="${u.email}">${u.email}</span>
+                <span class="user-role-badge">${u.rol}</span>
             </div>
-        </td>
+        </div>
+        <div class="user-sedes-list">
+            ${sedesHtml}
+        </div>
+        <div class="user-card-actions">
+            <button class="btn-icon edit-btn" title="Editar">✏️</button>
+            ${u.rol !== 'Super_admin' ? `<button class="btn-icon delete-btn" title="Borrar" style="border-color: var(--danger-bg); color: var(--danger);">🗑️</button>` : ''}
+        </div>
     `;
 
-    tr.querySelector('.edit-btn').addEventListener('click', () => renderRowEditMode(tr, u));
+    card.querySelector('.edit-btn').addEventListener('click', () => renderCardEditMode(card, u));
     
-    const delBtn = tr.querySelector('.delete-btn');
+    const delBtn = card.querySelector('.delete-btn');
     if (delBtn) {
         delBtn.addEventListener('click', async () => {
-            if (confirm(`¿Estás seguro de que deseas eliminar el perfil de ${u.email}?`)) {
+            if (confirm(`¿Eliminar perfil de ${u.email}?`)) {
                 await borrarUsuarioData(u.uid);
                 renderUserList();
             }
@@ -71,77 +80,86 @@ function renderRowViewMode(tr, u) {
     }
 }
 
-function renderRowEditMode(tr, u) {
+function renderCardEditMode(card, u) {
+    card.classList.add('editing');
     const roles = ['Super_admin', 'Admin', 'Operador', 'Cita', 'Grabador', 'pantalla'];
-    
     const roleOptions = roles.map(r => `<option value="${r}" ${u.rol === r ? 'selected' : ''}>${r}</option>`).join("");
     
-    // Lista de sedes para selección múltiple (compacta)
-    const sedeOptions = appStateRef.sedes.map(s => {
-        const selected = (u.sedesAsignadas || []).includes(s.codigoTerritorial) ? 'selected' : '';
-        return `<option value="${s.codigoTerritorial}" ${selected}>${s.codigoTerritorial} - ${s.nombre}</option>`;
-    }).join("");
+    const isAllSedes = (u.sedesAsignadas || []).includes("ALL");
 
-    tr.innerHTML = `
-        <td><input type="text" class="input-modern w-full" value="${u.email}" readonly style="background: #f1f5f9; cursor: not-allowed; font-size: 0.9rem;"></td>
-        <td>
-            <select class="input-modern w-full edit-rol" style="font-size: 0.9rem; padding: 5px;">
-                ${roleOptions}
-            </select>
-        </td>
-        <td>
-            <select class="input-modern w-full edit-sedes" multiple style="height: 60px; font-size: 0.8rem; padding: 5px;">
-                ${u.rol === 'Super_admin' || u.rol === 'Admin' 
-                    ? '<option disabled selected>-- Acceso Total --</option>' 
-                    : sedeOptions}
-            </select>
-            <small class="text-muted" style="font-size: 10px;">Mantén Ctrl+Click para varios</small>
-        </td>
-        <td style="text-align: center;">
-            <div style="display: flex; gap: 8px; justify-content: center;">
-                <button class="btn-icon save-btn" title="Guardar" style="border-color: var(--success); color: var(--success);">💾</button>
-                <button class="btn-icon cancel-btn" title="Cancelar">❌</button>
+    card.innerHTML = `
+        <div class="user-card-header">
+            <div class="user-avatar" style="background:var(--primary); color:white">📝</div>
+            <div class="user-info">
+                <span class="user-email">${u.email}</span>
+                <select class="input-modern edit-rol" style="width: 100%; margin-top: 5px; height: 30px; font-size: 0.8rem;">
+                    ${roleOptions}
+                </select>
             </div>
-        </td>
+        </div>
+        <div class="edit-body" style="padding: 0.5rem 0;">
+            <label style="font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <input type="checkbox" class="check-all-sedes" ${isAllSedes || u.rol === 'Super_admin' || u.rol === 'Admin' ? 'checked' : ''} 
+                    ${u.rol === 'Super_admin' || u.rol === 'Admin' ? 'disabled' : ''}>
+                Acceso a todas las sedes
+            </label>
+            <select class="input-modern edit-sedes" multiple style="width: 100%; height: 80px; font-size: 0.8rem;" 
+                ${isAllSedes || u.rol === 'Super_admin' || u.rol === 'Admin' ? 'disabled' : ''}>
+                ${appStateRef.sedes.map(s => {
+                    const selected = (u.sedesAsignadas || []).includes(s.codigoTerritorial) ? 'selected' : '';
+                    return `<option value="${s.codigoTerritorial}" ${selected}>${s.codigoTerritorial} - ${s.nombre}</option>`;
+                }).join("")}
+            </select>
+        </div>
+        <div class="user-card-actions">
+            <button class="btn-icon save-btn" title="Guardar">💾</button>
+            <button class="btn-icon cancel-btn" title="Cancelar">❌</button>
+        </div>
     `;
 
-    // Lógica para deshabilitar sedes según rol en vivo
-    const selectRol = tr.querySelector('.edit-rol');
-    const selectSedes = tr.querySelector('.edit-sedes');
-    
+    const selectRol = card.querySelector('.edit-rol');
+    const selectSedes = card.querySelector('.edit-sedes');
+    const checkAll = card.querySelector('.check-all-sedes');
+
     selectRol.addEventListener('change', () => {
-        if (selectRol.value === 'Super_admin' || selectRol.value === 'Admin') {
-            selectSedes.innerHTML = '<option disabled selected>-- Acceso Total --</option>';
+        const isAdmin = selectRol.value === 'Super_admin' || selectRol.value === 'Admin';
+        if (isAdmin) {
+            checkAll.checked = true;
+            checkAll.disabled = true;
             selectSedes.disabled = true;
         } else {
-            selectSedes.disabled = false;
-            selectSedes.innerHTML = appStateRef.sedes.map(s => {
-                const selected = (u.sedesAsignadas || []).includes(s.codigoTerritorial) ? 'selected' : '';
-                return `<option value="${s.codigoTerritorial}" ${selected}>${s.codigoTerritorial} - ${s.nombre}</option>`;
-            }).join("");
+            checkAll.disabled = false;
+            selectSedes.disabled = checkAll.checked;
         }
     });
 
-    tr.querySelector('.cancel-btn').addEventListener('click', () => renderRowViewMode(tr, u));
+    checkAll.addEventListener('change', () => {
+        selectSedes.disabled = checkAll.checked;
+    });
+
+    card.querySelector('.cancel-btn').addEventListener('click', () => renderCardViewMode(card, u));
     
-    tr.querySelector('.save-btn').addEventListener('click', async (e) => {
+    card.querySelector('.save-btn').addEventListener('click', async (e) => {
         const newRol = selectRol.value;
         let newSedes = [];
-        if (newRol !== 'Super_admin' && newRol !== 'Admin') {
+        
+        if (newRol === 'Super_admin' || newRol === 'Admin' || checkAll.checked) {
+            newSedes = ["ALL"];
+        } else {
             newSedes = Array.from(selectSedes.selectedOptions).map(opt => opt.value);
         }
 
         const btn = e.target;
-        btn.textContent = "⏳";
+        btn.textContent = "⌛";
         btn.disabled = true;
 
         try {
             const updatedData = { ...u, rol: newRol, sedesAsignadas: newSedes };
             await guardarPerfilUsuario(u.uid, updatedData);
-            renderRowViewMode(tr, updatedData);
+            renderCardViewMode(card, updatedData);
         } catch (err) {
-            alert("Error al guardar: " + err.message);
-            renderRowEditMode(tr, u);
+            alert("Error: " + err.message);
+            renderCardEditMode(card, u);
         }
     });
 }
@@ -154,6 +172,9 @@ async function handleNewUser(e) {
     const sedesSource = document.getElementById('new-user-sedes');
     const sedesAsignadas = Array.from(sedesSource.selectedOptions).map(opt => opt.value);
 
+    // TODO: En el modal también se debería añadir la opción "Todas"
+    // Por ahora hereda el comportamiento si es Admin
+
     const btn = e.target.querySelector('button');
     btn.disabled = true;
     btn.textContent = "Creando...";
@@ -163,7 +184,7 @@ async function handleNewUser(e) {
         await guardarPerfilUsuario(uid, {
             email,
             rol,
-            sedesAsignadas
+            sedesAsignadas: (rol === 'Super_admin' || rol === 'Admin') ? ["ALL"] : sedesAsignadas
         });
 
         alert("Usuario creado con éxito.");
@@ -181,6 +202,12 @@ async function handleNewUser(e) {
 function rellenarSedesEnModal() {
     const select = document.getElementById('new-user-sedes');
     select.innerHTML = '';
+    // Añadimos opción 'Todas' al modal también (V.3.22.0)
+    const optAll = document.createElement('option');
+    optAll.value = "ALL";
+    optAll.textContent = "⭐ TODAS LAS SEDES (Evolutivo)";
+    select.appendChild(optAll);
+
     appStateRef.sedes.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.codigoTerritorial;
