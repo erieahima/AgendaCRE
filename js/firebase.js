@@ -210,13 +210,21 @@ export async function getCitasPorSedeYFecha(codigoSede, fechaStr) {
     return citas;
 }
 
-export async function actualizarCitaData(codigoCita, data) {
+export async function actualizarCitaData(idDocumento, data) {
     if (!isConfigured) {
-        console.log("Simulando update completo:", codigoCita, data);
+        console.log("Simulando update completo:", idDocumento, data);
         return;
     }
-    const citaRef = doc(db, "citas", codigoCita);
-    await updateDoc(citaRef, data);
+    if (!idDocumento) throw new Error("ID de documento no proporcionado");
+    
+    // V.3.23.2: Limpiar campos undefined para evitar errores de Firestore
+    const cleanData = {};
+    Object.keys(data).forEach(key => {
+        if (data[key] !== undefined) cleanData[key] = data[key];
+    });
+
+    const citaRef = doc(db, "citas", idDocumento);
+    await updateDoc(citaRef, cleanData);
 }
 
 export async function getCitasPorSedeYRango(codigoSede, fechaInicioYMD, fechaFinYMD) {

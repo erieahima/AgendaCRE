@@ -115,14 +115,15 @@ function renderGrabacionesList(citas) {
                     if (sel) sel.value = 'Inicia grabación';
 
                     try {
-                        await actualizarCitaData(cita.id, { 
+                        const idParaUpdate = cita.id || cita.codigo;
+                        await actualizarCitaData(idParaUpdate, { 
                             estadoGrabacion: 'Inicia grabación',
                             estadoGrabacionTimestamp: Timestamp.now()
                         });
                     } catch (err) {
                         console.error("Error al actualizar estado tras copia:", err);
-                        // Revertir si falla (posiblemente por permisos de Firebase para el rol grabador)
-                        alert("Atención: No se ha podido cambiar el estado automáticamente (comprueba los permisos). Por favor, cámbialo a 'Inicia grabación' manualmente.");
+                        // V.3.23.2: Mostrar error detallado para diagnóstico
+                        alert("Error de permisos en Firebase: " + err.message + "\n\nPor favor, cambie el estado a 'Inicia grabación' y dele a 'Guardar' manualmente.");
                         aplicarClaseFila(tr, cita.estadoGrabacion || 'Pendiente');
                         if (sel) sel.value = cita.estadoGrabacion || 'Pendiente';
                     }
