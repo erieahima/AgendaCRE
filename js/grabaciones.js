@@ -28,8 +28,8 @@ function renderGrabacionesList(citas) {
     const tbody = document.getElementById('grabaciones-tbody');
     if (!tbody) return;
 
-    // Filtro en cliente: Excluimos las que ya están grabadas 
-    const citasFiltradas = citas.filter(c => c.estadoGrabacion !== 'Grabada');
+    // Filtro en cliente: Excluimos las que ya están grabadas o tienen incidencia
+    const citasFiltradas = citas.filter(c => c.estadoGrabacion !== 'Grabada' && c.estadoGrabacion !== 'Incidencia');
 
     // Ordenar por fecha y hora
     citasFiltradas.sort((a, b) => {
@@ -137,12 +137,35 @@ function renderGrabacionesList(citas) {
         select.addEventListener('change', async (e) => {
             const nuevoEstado = e.target.value;
 
-            // V.3.17.0: Confirmación para pasar a 'Grabada'
+            // V.3.18.0: Confirmación para pasar a 'Grabada'
             if (nuevoEstado === 'Grabada') {
                 const ok = confirm("¿Está seguro/a que desea grabar la ficha como terminada?");
                 if (!ok) {
                     select.value = cita.estadoGrabacion || 'Pendiente';
                     aplicarClaseFila(tr, select.value);
+                    return;
+                }
+            }
+
+            // V.3.18.0: Gestión de Incidencia con motivo obligatorio
+            if (nuevoEstado === 'Incidencia') {
+                const motivo = prompt("Por favor, indique el motivo de la incidencia:");
+                if (!motivo) {
+                    select.value = cita.estadoGrabacion || 'Pendiente';
+                    aplicarClaseFila(tr, select.value);
+                    return;
+                }
+                const nuevasObs = `${cita.observaciones || ''}\n[INCIDENCIA]: ${motivo}`.trim();
+                try {
+                    await actualizarCitaData(cita.id, { 
+                        estadoGrabacion: 'Incidencia',
+                        observaciones: nuevasObs,
+                        estadoGrabacionTimestamp: null
+                    });
+                    alert("Cita marcada como incidencia y movida al histórico.");
+                    return;
+                } catch (err) {
+                    alert("Error al guardar incidencia: " + err.message);
                     return;
                 }
             }
