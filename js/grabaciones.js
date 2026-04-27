@@ -136,6 +136,17 @@ function renderGrabacionesList(citas) {
         // Cambio inmediato para TODOS los estados (evita inconsistencias y doble clic)
         select.addEventListener('change', async (e) => {
             const nuevoEstado = e.target.value;
+
+            // V.3.17.0: Confirmación para pasar a 'Grabada'
+            if (nuevoEstado === 'Grabada') {
+                const ok = confirm("¿Está seguro/a que desea grabar la ficha como terminada?");
+                if (!ok) {
+                    select.value = cita.estadoGrabacion || 'Pendiente';
+                    aplicarClaseFila(tr, select.value);
+                    return;
+                }
+            }
+
             aplicarClaseFila(tr, nuevoEstado);
 
             try {
@@ -153,6 +164,16 @@ function renderGrabacionesList(citas) {
         const saveBtn = tr.querySelector('.btn-guardar-grabacion');
         saveBtn.addEventListener('click', async () => {
             const nuevoEstado = select.value;
+            const codigoUsuario = cita.codigoUsuario || '';
+
+            // V.3.17.0: Validación de código de usuario numérico para estado 'terminada'
+            if (nuevoEstado === 'Grabada') {
+                if (!codigoUsuario.trim() || !/^\d+$/.test(codigoUsuario.trim())) {
+                    alert("Atención: El código de usuario debe contener únicamente números para poder marcar la cita como terminada.");
+                    return;
+                }
+            }
+
             saveBtn.disabled = true;
             saveBtn.textContent = "...";
 

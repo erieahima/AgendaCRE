@@ -260,6 +260,14 @@ function setupModalControls() {
             const estado = document.getElementById('modal-estado-select').value;
             let asistencia = document.getElementById('modal-asistencia-switch').checked;
 
+            // V.3.17.0: Validación de código de usuario numérico para estado 'terminada'
+            if (estado === 'terminada') {
+                if (!codigoUsuario.trim() || !/^\d+$/.test(codigoUsuario.trim())) {
+                    alert("Atención: El código de usuario debe contener únicamente números para poder marcar la cita como terminada.");
+                    return;
+                }
+            }
+
             btnSave.disabled = true;
             const oldText = btnSave.textContent;
             btnSave.textContent = "Guardando...";
