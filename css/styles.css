@@ -834,7 +834,7 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 }
 
 .row-pend { background-color: white; }
-.row-inicia { background-color: #fff7ed; border-left: 4px solid #f97316 !important; }
+.row-inicia { background-color: #ffedd5; border-left: 5px solid #f97316 !important; }
 .row-incid { background-color: #fef2f2; border-left: 4px solid #ef4444 !important; }
 .row-grabada { background-color: #f0fdf4; }
 

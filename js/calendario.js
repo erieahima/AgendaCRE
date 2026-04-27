@@ -346,27 +346,6 @@ function setupModalControls() {
             const btn = e.target;
             const originalText = btn.textContent;
             btn.textContent = '✅';
-
-            // V.3.23.0: Si es perfil Grabación, marcar como 'Inicia grabación' automáticamente
-            if (hasPermission('ver_grabaciones')) {
-                const idDoc = modalCitaActiva.id || modalCitaActiva.codigo;
-                // Solo si está pendiente o no tiene estado de grabación
-                if (!modalCitaActiva.estadoGrabacion || modalCitaActiva.estadoGrabacion === 'Pendiente') {
-                    const { Timestamp, actualizarCitaData } = await import('./firebase.js');
-                    try {
-                        const patch = { 
-                            estadoGrabacion: 'Inicia grabación',
-                            estadoGrabacionTimestamp: Timestamp.now()
-                        };
-                        await actualizarCitaData(idDoc, patch);
-                        modalCitaActiva.estadoGrabacion = 'Inicia grabación';
-                        window.dispatchEvent(new CustomEvent('citaActualizada', { detail: { id: idDoc, patch } }));
-                    } catch (err) {
-                        console.error("Error al marcar inicio grabación desde modal:", err);
-                    }
-                }
-            }
-
             setTimeout(() => { btn.textContent = originalText; }, 1500);
         }
     });

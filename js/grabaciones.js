@@ -109,6 +109,11 @@ function renderGrabacionesList(citas) {
                 
                 // V.3.7.8: Cambiar estado automáticamente al copiar el código
                 if (cita.estadoGrabacion !== 'Inicia grabación') {
+                    // Feedback visual inmediato (V.3.23.1)
+                    aplicarClaseFila(tr, 'Inicia grabación');
+                    const sel = tr.querySelector('.select-estado-grabacion');
+                    if (sel) sel.value = 'Inicia grabación';
+
                     try {
                         await actualizarCitaData(cita.id, { 
                             estadoGrabacion: 'Inicia grabación',
@@ -116,6 +121,10 @@ function renderGrabacionesList(citas) {
                         });
                     } catch (err) {
                         console.error("Error al actualizar estado tras copia:", err);
+                        // Revertir si falla (posiblemente por permisos de Firebase para el rol grabador)
+                        alert("Atención: No se ha podido cambiar el estado automáticamente (comprueba los permisos). Por favor, cámbialo a 'Inicia grabación' manualmente.");
+                        aplicarClaseFila(tr, cita.estadoGrabacion || 'Pendiente');
+                        if (sel) sel.value = cita.estadoGrabacion || 'Pendiente';
                     }
                 }
 
