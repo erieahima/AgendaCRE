@@ -110,6 +110,7 @@ body {
     flex: 1;
     margin-left: 200px;
     padding: 1.5rem;
+    position: relative;
     transition: margin-left 0.3s ease;
 }
 
@@ -299,6 +300,12 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 
 .header-section {
     margin-bottom: 2rem;
+    padding-right: 230px;
+}
+
+.section-header {
+    margin-bottom: 2rem;
+    padding-right: 230px;
 }
 
 .card {
@@ -353,26 +360,29 @@ h3 { font-size: 1.25rem; font-weight: 600; }
 }
 
 .top-bar {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 100;
 }
 
 .top-bar .sede-selector-container {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    background: white;
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
 }
 
 .top-bar .sede-selector-container label {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 /* UI Elements */

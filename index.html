@@ -8,7 +8,7 @@
     <!-- Robustez: Forzar limpieza de caché en cambio de versión -->
     <script>
         (function() {
-            const VERSION = "3.19.0";
+            const VERSION = "3.19.1";
             const savedVersion = localStorage.getItem('app_version');
             if (savedVersion !== VERSION) {
                 console.log("Nueva versión detectada (" + VERSION + "). Limpiando caché...");
@@ -80,7 +80,7 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger); padding: 5px 10px; font-size: 0.9rem;">🚪 <span>Cerrar Sesión</span></button>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.19.0</div>
+                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.19.1</div>
             </div>
         </nav>
 
@@ -158,9 +158,9 @@
             <!-- VIEW: Calendario -->
             <section id="view-calendario" class="view-section">
                 <div class="header-section">
-                    <div style="display: flex; justify-content: space-between; align-items:center; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; align-items:center; flex-wrap: wrap; gap: 10px;">
                         <h1>Calendario</h1>
-                        <input type="text" id="search-cita" class="input-modern" placeholder="🔎 Buscar código de cita..." style="width: 250px;">
+                        <input type="text" id="search-cita" class="input-modern" placeholder="🔎 Buscar cita..." style="width: 180px; height: 38px; font-size: 0.9rem;">
                     </div>
                     <div class="calendar-controls">
                         <div class="view-toggles">
@@ -564,6 +564,6 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module" src="js/app.js?v=3.19.0"></script>
+    <script type="module" src="js/app.js?v=3.19.1"></script>
 </body>
 </html>
