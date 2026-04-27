@@ -13,13 +13,15 @@ export function setupGenerador(appState) {
     
     // Set default dates
     const today = new Date();
-    document.getElementById('gen-fecha-inicio').value = dateToInputString(today);
+    const dateStr = dateToInputString(today);
+    document.getElementById('gen-fecha-inicio').value = dateStr;
+    document.getElementById('gen-fecha-fin').value = dateStr;
     
     // Default franja (09:00 - 14:00)
     addFranjaHTMl(containerFranjas, "09:00", "14:00");
 
     btnAddFranja.addEventListener('click', () => {
-        addFranjaHTMl(containerFranjas, "16:00", "19:00");
+        addFranjaHTMl(containerFranjas, "09:00", "14:00");
     });
 
     form.addEventListener('submit', handleGenerarSubmit);
@@ -193,7 +195,9 @@ async function handleGenerarSubmit(e) {
         setTimeout(() => {
             progressContainer.classList.add('hidden');
             btnSubmit.disabled = false;
-        }, 3000);
+            // Refrescar página para sincronizar calendario
+            location.reload();
+        }, 2000);
 
     } catch (e) {
         console.error("Error en generación:", e);
