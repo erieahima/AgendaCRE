@@ -1,4 +1,4 @@
-import { listenCitasTerminadas, actualizarCitaData } from './firebase.js';
+import { listenCitasTerminadas, actualizarCitaData, Timestamp } from './firebase.js';
 import { formatearFechaHumana, formatearHoraHumana } from './utils.js';
 
 let appStateRef = null;
@@ -39,13 +39,29 @@ function renderGrabacionesList(citas) {
     });
 
     if (citasFiltradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 3rem;">No hay citas terminadas pendientes de grabación. ✨</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding: 3rem;">No hay citas terminadas pendientes de grabación. ✨</td></tr>';
         return;
     }
+
+    const ahora = Date.now();
+    const UNA_HORA = 3600000;
 
     tbody.innerHTML = '';
 
     citasFiltradas.forEach(cita => {
+        // V.3.15.0: Autocomprobación de caducidad de estado 'Inicia grabación' (1h)
+        if (cita.estadoGrabacion === 'Inicia grabación' && cita.estadoGrabacionTimestamp) {
+            const ts = cita.estadoGrabacionTimestamp.toMillis ? cita.estadoGrabacionTimestamp.toMillis() : cita.estadoGrabacionTimestamp;
+            if (ahora - ts > UNA_HORA) {
+                console.log(`Estado caducado para cita ${cita.codigo}. Revirtiendo a Pendiente...`);
+                actualizarCitaData(cita.id, { 
+                    estadoGrabacion: 'Pendiente', 
+                    estadoGrabacionTimestamp: null 
+                });
+                return; // El listener actualizará la vista
+            }
+        }
+
         const tr = document.createElement('tr');
         aplicarClaseFila(tr, cita.estadoGrabacion);
 
@@ -94,7 +110,10 @@ function renderGrabacionesList(citas) {
                 // V.3.7.8: Cambiar estado automáticamente al copiar el código
                 if (cita.estadoGrabacion !== 'Inicia grabación') {
                     try {
-                        await actualizarCitaData(cita.id, { estadoGrabacion: 'Inicia grabación' });
+                        await actualizarCitaData(cita.id, { 
+                            estadoGrabacion: 'Inicia grabación',
+                            estadoGrabacionTimestamp: Timestamp.now()
+                        });
                     } catch (err) {
                         console.error("Error al actualizar estado tras copia:", err);
                     }
@@ -113,10 +132,20 @@ function renderGrabacionesList(citas) {
 
             if (nuevoEstado === 'Inicia grabación') {
                 try {
-                    await actualizarCitaData(cita.codigo, { estadoGrabacion: nuevoEstado });
+                    await actualizarCitaData(cita.codigo || cita.id, { 
+                        estadoGrabacion: nuevoEstado,
+                        estadoGrabacionTimestamp: Timestamp.now()
+                    });
                 } catch (err) {
                     console.error("Error sincronizando inicio:", err);
                 }
+            } else {
+                // Si cambiamos a cualquier otro estado, limpiamos el timestamp por limpieza
+                try {
+                    await actualizarCitaData(cita.codigo || cita.id, { 
+                        estadoGrabacionTimestamp: null 
+                    });
+                } catch (err) { }
             }
         });
 
