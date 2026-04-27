@@ -7,9 +7,11 @@ export function setupObservatorio(appState) {
 
     // Eventos
     document.getElementById('btn-refresh-observatorio').addEventListener('click', loadStats);
+    document.getElementById('check-jerarquico').addEventListener('change', loadStats);
 
     // Cargar si se cambia de sede
     window.addEventListener('sedeChanged', () => {
+        checkJerarquicoUI();
         if(document.getElementById('view-observatorio').classList.contains('active')) {
             loadStats();
         }
@@ -17,8 +19,23 @@ export function setupObservatorio(appState) {
 
     // Cargar automáticamente si la vista se activa
     document.querySelector('[data-target="view-observatorio"]').addEventListener('click', () => {
+        checkJerarquicoUI(true);
         loadStats();
     });
+}
+
+function checkJerarquicoUI(forceShow = false) {
+    const wrapper = document.getElementById('wrapper-jerarquico');
+    const isObservatorio = document.getElementById('view-observatorio').classList.contains('active') || forceShow;
+    const sedeActual = appStateRef.sedes.find(s => s.codigoTerritorial === appStateRef.sedeActivaId);
+    
+    // Mostramos el check solo en Observatorio y solo si es la Oficina Provincial de Málaga
+    if (isObservatorio && sedeActual && sedeActual.nombre === "Oficina Provincial de Málaga") {
+        wrapper.classList.remove('hidden');
+    } else {
+        wrapper.classList.add('hidden');
+        document.getElementById('check-jerarquico').checked = false;
+    }
 }
 
 async function loadStats() {
@@ -26,6 +43,7 @@ async function loadStats() {
 
     const fechaInicio = document.getElementById('obs-fecha-inicio').value.replace(/-/g, '');
     const fechaFin = document.getElementById('obs-fecha-fin').value.replace(/-/g, '');
+    const isJerarquico = document.getElementById('check-jerarquico').checked;
 
     const btn = document.getElementById('btn-refresh-observatorio');
     const originalText = btn.textContent;
@@ -33,9 +51,17 @@ async function loadStats() {
     btn.disabled = true;
 
     try {
-        // Obtenemos todas las citas de la sede
-        // Nota: En un futuro esto debería filtrarse en Firebase por rango de fecha
-        const citas = await getCitasPorSede(appStateRef.sedeActivaId);
+        let citas = [];
+        
+        if (isJerarquico) {
+            // Cargar de TODAS las sedes disponibles
+            const promesas = appStateRef.sedes.map(s => getCitasPorSede(s.codigoTerritorial));
+            const resultados = await Promise.all(promesas);
+            resultados.forEach(r => citas = citas.concat(r));
+        } else {
+            // Solo sede activa
+            citas = await getCitasPorSede(appStateRef.sedeActivaId);
+        }
         
         // Filtrar por rango
         const filtradas = citas.filter(c => c.fecha >= fechaInicio && c.fecha <= fechaFin);
@@ -53,28 +79,29 @@ async function loadStats() {
 function calculateAndDisplay(citas) {
     let total = citas.length;
     let asignadas = 0;
-    let terminadas = 0;
+    let atendidas = 0; // Se refiere a 'terminada'
     let grabadas = 0;
     let incidencias = 0;
+    let pendientesGrabar = 0;
 
     citas.forEach(c => {
-        // Citas asignadas (tienen estado asignada o terminada o grabada)
-        // Pero el usuario pide "Número de citas asignadas" específicamente. 
-        // Normalmente se refiere a las que están en estado 'asignada' actualmente?
-        // O las que alguna vez fueron asignadas? 
-        // Siguiendo los estados del modal: pendiente, asignada, terminada, anulada.
         if (c.estado === 'asignada') asignadas++;
-        if (c.estado === 'terminada') terminadas++;
+        if (c.estado === 'terminada') {
+            atendidas++;
+            // Si está terminada pero no ha sido grabada ni es incidencia, es pendiente de grabar
+            if (c.estadoGrabacion !== 'Grabada' && c.estadoGrabacion !== 'Incidencia') {
+                pendientesGrabar++;
+            }
+        }
         
-        // Métricas de grabación
         if (c.estadoGrabacion === 'Grabada') grabadas++;
         if (c.estadoGrabacion === 'Incidencia') incidencias++;
     });
 
-    // Animación de números (opcional, pero queda premium)
     animateValue("stat-total", total);
     animateValue("stat-asignadas", asignadas);
-    animateValue("stat-terminadas", terminadas);
+    animateValue("stat-terminadas", atendidas);
+    animateValue("stat-pend-grab", pendientesGrabar);
     animateValue("stat-grabadas", grabadas);
     animateValue("stat-incidencias", incidencias);
 }

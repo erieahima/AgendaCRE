@@ -174,6 +174,10 @@ function setupNavigation() {
             const targetId = btn.getAttribute('data-target');
             document.getElementById(targetId).classList.add('active');
 
+            // Ocultar jerárquico por defecto al cambiar de vista (v3.20.1)
+            const wrapperJer = document.getElementById('wrapper-jerarquico');
+            if(wrapperJer) wrapperJer.classList.add('hidden');
+
             // Hook específico onViewEnter
             if (targetId === 'view-calendario') {
                 loadCitasCalendario(AppState.sedeActivaId);
