@@ -8,7 +8,7 @@
     <!-- Robustez: Forzar limpieza de caché en cambio de versión -->
     <script>
         (function() {
-            const VERSION = "3.18.1";
+            const VERSION = "3.19.0";
             const savedVersion = localStorage.getItem('app_version');
             if (savedVersion !== VERSION) {
                 console.log("Nueva versión detectada (" + VERSION + "). Limpiando caché...");
@@ -62,13 +62,7 @@
             <div class="sidebar-header">
                 <h2>Agenda Web</h2>
             </div>
-            
-            <div class="sede-selector-container">
-                <label for="global-sede-selector">Sede activa:</label>
-                <select id="global-sede-selector" class="input-modern">
-                    <option value="" disabled selected>Cargando sedes...</option>
-                </select>
-            </div>
+
 
             <ul class="nav-links">
                 <li id="nav-item-calendario"><button class="nav-btn active" data-target="view-calendario">📅 <span>Calendario</span></button></li>
@@ -86,13 +80,20 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger); padding: 5px 10px; font-size: 0.9rem;">🚪 <span>Cerrar Sesión</span></button>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.18.1</div>
+                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.19.0</div>
             </div>
         </nav>
 
         <!-- Main Content Area -->
         <main class="main-content">
-            
+            <div class="top-bar">
+                <div class="sede-selector-container">
+                    <label for="global-sede-selector">Sede activa:</label>
+                    <select id="global-sede-selector" class="input-modern select-sm">
+                        <option value="" disabled selected>Cargando sedes...</option>
+                    </select>
+                </div>
+            </div>
             <!-- VIEW: Generador -->
             <section id="view-generador" class="view-section active">
                 <div class="header-section">
@@ -563,6 +564,6 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module" src="js/app.js?v=3.18.1"></script>
+    <script type="module" src="js/app.js?v=3.19.0"></script>
 </body>
 </html>
