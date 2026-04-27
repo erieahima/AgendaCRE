@@ -2,7 +2,7 @@
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { 
-    initializeFirestore, persistentLocalCache, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot, limit, orderBy, startAt, endAt 
+    initializeFirestore, persistentLocalCache, collection, doc, setDoc, getDocs, getDoc, query, where, writeBatch, Timestamp, addDoc, updateDoc, onSnapshot, limit, orderBy, startAt, endAt, getCountFromServer
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 import { 
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword
@@ -153,6 +153,44 @@ export async function getCitasPorSede(codigoSede) {
     const citas = [];
     snapshot.forEach(doc => citas.push(doc.data()));
     return citas;
+}
+
+/**
+ * OPTIMIZACIÓN (v3.20.3): Obtiene estadísticas usando consultas de agregación (getCountFromServer)
+ * Esto es mucho más barato y rápido que descargar todos los documentos.
+ */
+export async function getStatsCitas(codigoSede, fechaInicio, fechaFin) {
+    if (!isConfigured) return { total: 0, asignadas: 0, atendidas: 0, grabadas: 0, incidencias: 0 };
+    
+    const citasRef = collection(db, "citas");
+    const baseQuery = query(citasRef, 
+        where("sede", "==", codigoSede),
+        where("fecha", ">=", fechaInicio),
+        where("fecha", "<=", fechaFin)
+    );
+
+    // Lanzamos las peticiones de conteo en paralelo
+    const [
+        snapTotal,
+        snapAsignadas,
+        snapAtendidas,
+        snapGrabadas,
+        snapIncidencias
+    ] = await Promise.all([
+        getCountFromServer(baseQuery),
+        getCountFromServer(query(baseQuery, where("estado", "==", "asignada"))),
+        getCountFromServer(query(baseQuery, where("estado", "==", "terminada"))),
+        getCountFromServer(query(baseQuery, where("estadoGrabacion", "==", "Grabada"))),
+        getCountFromServer(query(baseQuery, where("estadoGrabacion", "==", "Incidencia")))
+    ]);
+
+    return {
+        total: snapTotal.data().count,
+        asignadas: snapAsignadas.data().count,
+        atendidas: snapAtendidas.data().count,
+        grabadas: snapGrabadas.data().count,
+        incidencias: snapIncidencias.data().count
+    };
 }
 
 export async function getCitasPorSedeYFecha(codigoSede, fechaStr) {
@@ -440,6 +478,7 @@ export async function buscarCitasParaAsignar(sedeId, term = "") {
         } catch (e) {
             console.error("Error cargando citas para asignar:", e);
         }
+        return results;
         return results;
     }
 

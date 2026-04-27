@@ -1,4 +1,4 @@
-import { getCitasPorSede } from './firebase.js';
+import { getStatsCitas } from './firebase.js';
 
 let appStateRef = null;
 
@@ -53,22 +53,26 @@ async function loadStats() {
     btn.disabled = true;
 
     try {
-        let citas = [];
+        let stats = { total: 0, asignadas: 0, atendidas: 0, grabadas: 0, incidencias: 0 };
         
         if (isJerarquico) {
-            // Cargar de TODAS las sedes disponibles
-            const promesas = appStateRef.sedes.map(s => getCitasPorSede(s.codigoTerritorial));
+            // Cargar de TODAS las sedes disponibles usando agregación por cada una
+            const promesas = appStateRef.sedes.map(s => getStatsCitas(s.codigoTerritorial, fechaInicio, fechaFin));
             const resultados = await Promise.all(promesas);
-            resultados.forEach(r => citas = citas.concat(r));
+            
+            resultados.forEach(r => {
+                stats.total += r.total;
+                stats.asignadas += r.asignadas;
+                stats.atendidas += r.atendidas;
+                stats.grabadas += r.grabadas;
+                stats.incidencias += r.incidencias;
+            });
         } else {
-            // Solo sede activa
-            citas = await getCitasPorSede(appStateRef.sedeActivaId);
+            // Solo sede activa usando agregación
+            stats = await getStatsCitas(appStateRef.sedeActivaId, fechaInicio, fechaFin);
         }
         
-        // Filtrar por rango
-        const filtradas = citas.filter(c => c.fecha >= fechaInicio && c.fecha <= fechaFin);
-
-        calculateAndDisplay(filtradas);
+        displayStats(stats);
     } catch (err) {
         console.error("Error al cargar estadísticas:", err);
         alert("Error al cargar los datos del observatorio.");
@@ -78,34 +82,16 @@ async function loadStats() {
     }
 }
 
-function calculateAndDisplay(citas) {
-    let total = citas.length;
-    let asignadas = 0;
-    let atendidas = 0; // Se refiere a 'terminada'
-    let grabadas = 0;
-    let incidencias = 0;
-    let pendientesGrabar = 0;
+function displayStats(stats) {
+    // Calculamos pendientes de grabar: Atendidas - (Grabadas + Incidencias)
+    const pendientesGrabar = Math.max(0, stats.atendidas - (stats.grabadas + stats.incidencias));
 
-    citas.forEach(c => {
-        if (c.estado === 'asignada') asignadas++;
-        if (c.estado === 'terminada') {
-            atendidas++;
-            // Si está terminada pero no ha sido grabada ni es incidencia, es pendiente de grabar
-            if (c.estadoGrabacion !== 'Grabada' && c.estadoGrabacion !== 'Incidencia') {
-                pendientesGrabar++;
-            }
-        }
-        
-        if (c.estadoGrabacion === 'Grabada') grabadas++;
-        if (c.estadoGrabacion === 'Incidencia') incidencias++;
-    });
-
-    animateValue("stat-total", total);
-    animateValue("stat-asignadas", asignadas);
-    animateValue("stat-terminadas", atendidas);
+    animateValue("stat-total", stats.total);
+    animateValue("stat-asignadas", stats.asignadas);
+    animateValue("stat-terminadas", stats.atendidas);
     animateValue("stat-pend-grab", pendientesGrabar);
-    animateValue("stat-grabadas", grabadas);
-    animateValue("stat-incidencias", incidencias);
+    animateValue("stat-grabadas", stats.grabadas);
+    animateValue("stat-incidencias", stats.incidencias);
 }
 
 function animateValue(id, value) {
