@@ -237,6 +237,8 @@ function setupModalControls() {
             if(!modalCitaActiva) return;
 
             const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
+            const haceConstar = document.getElementById('modal-hace-constar').checked;
+            const vulnerabilidad = document.getElementById('modal-vulnerabilidad').checked;
             const iniciales = document.getElementById('modal-iniciales').value.toUpperCase();
             const observaciones = document.getElementById('modal-observaciones').value;
             const estado = document.getElementById('modal-estado-select').value;
@@ -248,7 +250,7 @@ function setupModalControls() {
 
             try {
                 const idDocumento = modalCitaActiva.id || modalCitaActiva.codigo;
-                const patch = { codigoUsuario, iniciales, observaciones, estado, asistencia };
+                const patch = { codigoUsuario, iniciales, observaciones, estado, asistencia, haceConstar, vulnerabilidad };
                 await actualizarCitaData(idDocumento, patch);
                 
                 // Actualizar la caché sin volver a leer de Firestore
@@ -327,6 +329,8 @@ export function openModal(cita, isRestricted = false) {
     const switchAsistencia = document.getElementById('modal-asistencia-switch');
 
     inputUser.value = cita.codigoUsuario || "";
+    document.getElementById('modal-hace-constar').checked = cita.haceConstar || false;
+    document.getElementById('modal-vulnerabilidad').checked = cita.vulnerabilidad || false;
     inputInit.value = cita.iniciales || "";
     inputObs.value = cita.observaciones || "";
     selectEstado.value = cita.estado || "pendiente";

@@ -54,14 +54,16 @@ function renderGrabacionesList(citas) {
                 <div style="font-weight: 600; color: var(--text-main);">${formatearFechaHumana(cita.fecha)}</div>
                 <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraHumana(cita.hora)}</div>
             </td>
-            <td><span class="badge" style="background: #f1f5f9; color: #475569; font-family: monospace;">${cita.codigo}</span></td>
+            <td><span class="badge" title="${cita.codigo}" style="background: #f1f5f9; color: #475569; font-family: monospace;">${cita.codigo.slice(-3)}</span></td>
             <td><strong>${cita.iniciales || '---'}</strong></td>
             <td>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <strong id="user-code-${cita.id}">${cita.codigoUsuario || '---'}</strong>
+                    <strong id="user-code-${cita.id}" style="font-size: 0.9rem;">${cita.codigoUsuario || '---'}</strong>
                     ${cita.codigoUsuario ? `<button class="btn-copy-code" data-code="${cita.codigoUsuario}" style="background:none; border:none; cursor:pointer; font-size: 1rem; padding: 2px;" title="Copiar código">📋</button>` : ''}
                 </div>
             </td>
+            <td class="text-center">${cita.haceConstar ? '✅' : '---'}</td>
+            <td class="text-center">${cita.vulnerabilidad ? '⚠️' : '---'}</td>
             <td style="max-width: 250px; font-size: 0.85rem; color: #64748b; line-height: 1.4;">${cita.observaciones || '<i style="color:#cbd5e1">Sin observaciones</i>'}</td>
             <td>
                 <select class="input-modern select-estado-grabacion" style="width: 160px; font-weight: 500;">
