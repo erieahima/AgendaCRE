@@ -123,39 +123,29 @@ function renderGrabacionesList(citas) {
             });
         }
 
+        // V.3.16.2: Permitir abrir modal al pulsar en la fila
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', (e) => {
+            // Evitar abrir modal si pulsamos en el botón de copiar, el select o el botón de guardar
+            if (e.target.closest('button') || e.target.closest('select')) return;
+            import('./calendario.js').then(m => m.openModal(cita));
+        });
+
         const select = tr.querySelector('.select-estado-grabacion');
         
-        // Cambio inmediato para "Inicia grabación" (Coordinación)
+        // Cambio inmediato para TODOS los estados (evita inconsistencias y doble clic)
         select.addEventListener('change', async (e) => {
             const nuevoEstado = e.target.value;
             aplicarClaseFila(tr, nuevoEstado);
 
-            if (nuevoEstado === 'Inicia grabación') {
-                try {
-                    await actualizarCitaData(cita.codigo || cita.id, { 
-                        estadoGrabacion: nuevoEstado,
-                        estadoGrabacionTimestamp: Timestamp.now()
-                    });
-                } catch (err) {
-                    console.error("Error sincronizando inicio:", err);
-                }
-            } else if (nuevoEstado === 'Pendiente') {
-                try {
-                    await actualizarCitaData(cita.codigo || cita.id, { 
-                        estadoGrabacion: nuevoEstado,
-                        estadoGrabacionTimestamp: null 
-                    });
-                } catch (err) {
-                    console.error("Error sincronizando vuelta a pendiente:", err);
-                }
-            } else {
-                // Para el resto (Incidencia, Grabada), el botón guardar se encargará,
-                // pero limpiamos el timestamp preventivamente si se cambia en el select
-                try {
-                    await actualizarCitaData(cita.codigo || cita.id, { 
-                        estadoGrabacionTimestamp: null 
-                    });
-                } catch (err) { }
+            try {
+                const patch = { 
+                    estadoGrabacion: nuevoEstado,
+                    estadoGrabacionTimestamp: (nuevoEstado === 'Inicia grabación') ? Timestamp.now() : null
+                };
+                await actualizarCitaData(cita.codigo || cita.id, patch);
+            } catch (err) {
+                console.error("Error sincronizando estado:", err);
             }
         });
 
