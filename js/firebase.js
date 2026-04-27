@@ -315,7 +315,7 @@ export async function getHistoricoGrabaciones(sedeId, fechaInicio, fechaFin) {
         where("sede", "==", sedeId),
         where("fecha", ">=", fechaInicio),
         where("fecha", "<=", fechaFin),
-        where("estadoGrabacion", "==", "Grabada")
+        where("estadoGrabacion", "in", ["Grabada", "Incidencia"])
     );
     
     const snapshot = await getDocs(q);
@@ -331,18 +331,18 @@ export async function buscarCitasHistorico(sedeId, term) {
     const termClean = term.trim().toUpperCase();
     const citasRef = collection(db, "citas");
     
-    // Buscamos por prefijo de Código de Cita + Grabada
+    // Buscamos por prefijo de Código de Cita + Grabada/Incidencia
     const q1 = query(citasRef, 
-        where("estadoGrabacion", "==", "Grabada"),
+        where("estadoGrabacion", "in", ["Grabada", "Incidencia"]),
         orderBy("codigo"), 
         startAt(termClean), 
         endAt(termClean + "\uf8ff"), 
         limit(20)
     );
     
-    // Buscamos por prefijo de Código de Usuario + Grabada
+    // Buscamos por prefijo de Código de Usuario + Grabada/Incidencia
     const q2 = query(citasRef, 
-        where("estadoGrabacion", "==", "Grabada"),
+        where("estadoGrabacion", "in", ["Grabada", "Incidencia"]),
         orderBy("codigoUsuario"), 
         startAt(termClean), 
         endAt(termClean + "\uf8ff"), 
