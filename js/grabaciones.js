@@ -139,8 +139,18 @@ function renderGrabacionesList(citas) {
                 } catch (err) {
                     console.error("Error sincronizando inicio:", err);
                 }
+            } else if (nuevoEstado === 'Pendiente') {
+                try {
+                    await actualizarCitaData(cita.codigo || cita.id, { 
+                        estadoGrabacion: nuevoEstado,
+                        estadoGrabacionTimestamp: null 
+                    });
+                } catch (err) {
+                    console.error("Error sincronizando vuelta a pendiente:", err);
+                }
             } else {
-                // Si cambiamos a cualquier otro estado, limpiamos el timestamp por limpieza
+                // Para el resto (Incidencia, Grabada), el botón guardar se encargará,
+                // pero limpiamos el timestamp preventivamente si se cambia en el select
                 try {
                     await actualizarCitaData(cita.codigo || cita.id, { 
                         estadoGrabacionTimestamp: null 
