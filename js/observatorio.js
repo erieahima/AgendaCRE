@@ -29,8 +29,10 @@ function checkJerarquicoUI(forceShow = false) {
     const isObservatorio = document.getElementById('view-observatorio').classList.contains('active') || forceShow;
     const sedeActual = appStateRef.sedes.find(s => s.codigoTerritorial === appStateRef.sedeActivaId);
     
-    // Mostramos el check solo en Observatorio y solo si es la Oficina Provincial de Málaga
-    if (isObservatorio && sedeActual && sedeActual.nombre === "Oficina Provincial de Málaga") {
+    // Mostramos el check solo en Observatorio y solo si es la Oficina Provincial de Málaga (nombre flexible)
+    if (isObservatorio && sedeActual && 
+        sedeActual.nombre.toLowerCase().includes("provincial") && 
+        (sedeActual.nombre.toLowerCase().includes("málaga") || sedeActual.nombre.toLowerCase().includes("malaga"))) {
         wrapper.classList.remove('hidden');
     } else {
         wrapper.classList.add('hidden');
