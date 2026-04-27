@@ -62,8 +62,12 @@ function renderGrabacionesList(citas) {
                     ${cita.codigoUsuario ? `<button class="btn-copy-code" data-code="${cita.codigoUsuario}" style="background:none; border:none; cursor:pointer; font-size: 1rem; padding: 2px;" title="Copiar código">📋</button>` : ''}
                 </div>
             </td>
-            <td class="text-center">${cita.haceConstar ? '✅' : '---'}</td>
-            <td class="text-center">${cita.vulnerabilidad ? '⚠️' : '---'}</td>
+            <td class="text-center">
+                <div style="width: 18px; height: 18px; background: ${cita.haceConstar ? '#22c55e' : '#fff'}; border-radius: 4px; margin: 0 auto; border: 1px solid ${cita.haceConstar ? '#16a34a' : '#cbd5e1'}; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);"></div>
+            </td>
+            <td class="text-center">
+                <div style="width: 18px; height: 18px; background: ${cita.vulnerabilidad ? '#22c55e' : '#fff'}; border-radius: 4px; margin: 0 auto; border: 1px solid ${cita.vulnerabilidad ? '#16a34a' : '#cbd5e1'}; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);"></div>
+            </td>
             <td style="max-width: 250px; font-size: 0.85rem; color: #64748b; line-height: 1.4;">${cita.observaciones || '<i style="color:#cbd5e1">Sin observaciones</i>'}</td>
             <td>
                 <select class="input-modern select-estado-grabacion" style="width: 160px; font-weight: 500;">

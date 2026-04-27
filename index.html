@@ -8,7 +8,7 @@
     <!-- Robustez: Forzar limpieza de caché en cambio de versión -->
     <script>
         (function() {
-            const VERSION = "3.14.0";
+            const VERSION = "3.14.1";
             const savedVersion = localStorage.getItem('app_version');
             if (savedVersion !== VERSION) {
                 console.log("Nueva versión detectada (" + VERSION + "). Limpiando caché...");
@@ -86,7 +86,7 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger); padding: 5px 10px; font-size: 0.9rem;">🚪 <span>Cerrar Sesión</span></button>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.14.0</div>
+                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.14.1</div>
             </div>
         </nav>
 
@@ -476,9 +476,9 @@
                         <input type="checkbox" id="modal-hace-constar">
                         <span style="font-size: 0.9rem; font-weight: 600;">Hace constar</span>
                     </label>
-                    <label style="flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff1f2; padding: 8px; border-radius: 8px; border: 1px solid #fecdd3;">
+                    <label style="flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
                         <input type="checkbox" id="modal-vulnerabilidad">
-                        <span style="font-size: 0.9rem; font-weight: 600; color: #9f1239;">Vulnerabilidad</span>
+                        <span style="font-size: 0.9rem; font-weight: 600;">Vulnerabilidad</span>
                     </label>
                 </div>
                 <div class="form-group mt-2">
@@ -560,6 +560,6 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module" src="js/app.js?v=3.14.0"></script>
+    <script type="module" src="js/app.js?v=3.14.1"></script>
 </body>
 </html>
