@@ -229,8 +229,24 @@ function setupModalControls() {
         });
     }
 
-    // DELEGACIÓN GLOBAL PARA GUARDAR
+    // DELEGACIÓN GLOBAL PARA GUARDAR Y OTROS BOTONES
     document.addEventListener('click', async (e) => {
+        if (e.target.id === 'btn-admin-edit') {
+            const btn = e.target;
+            // Habilitar campos
+            document.getElementById('modal-codigo-usuario').disabled = false;
+            document.getElementById('modal-hace-constar').disabled = false;
+            document.getElementById('modal-vulnerabilidad').disabled = false;
+            document.getElementById('modal-iniciales').disabled = false;
+            document.getElementById('modal-observaciones').disabled = false;
+            document.getElementById('modal-estado-select').disabled = false;
+            document.getElementById('modal-asistencia-switch').disabled = false;
+            
+            document.getElementById('btn-save-cita').classList.remove('hidden');
+            btn.classList.add('hidden');
+            return;
+        }
+
         if (e.target.id === 'btn-save-cita') {
             const btnSave = e.target;
             
@@ -354,15 +370,48 @@ export function openModal(cita, isRestricted = false) {
         }
     }
 
-    // Si es modo restringido (Asignar Cita), deshabilitamos campos
-    if (isRestricted) {
+    // Si es modo restringido (Asignar Cita) o si ya está grabada, deshabilitamos campos
+    const isGrabada = cita.estadoGrabacion === 'Grabada';
+    const canAdminEdit = AppState.user.rol === 'Super_admin';
+    const btnSave = document.getElementById('btn-save-cita');
+    const btnAdminEdit = document.getElementById('btn-admin-edit');
+
+    if (isGrabada) {
         inputUser.disabled = true;
+        document.getElementById('modal-hace-constar').disabled = true;
+        document.getElementById('modal-vulnerabilidad').disabled = true;
+        inputInit.disabled = true;
         inputObs.disabled = true;
         selectEstado.disabled = true;
+        switchAsistencia.disabled = true;
+        
+        btnSave.classList.add('hidden');
+        if (canAdminEdit) {
+            btnAdminEdit.classList.remove('hidden');
+        } else {
+            btnAdminEdit.classList.add('hidden');
+        }
     } else {
-        inputUser.disabled = false;
-        inputObs.disabled = false;
-        selectEstado.disabled = false;
+        btnAdminEdit.classList.add('hidden');
+        btnSave.classList.remove('hidden');
+        
+        if (isRestricted) {
+            inputUser.disabled = true;
+            document.getElementById('modal-hace-constar').disabled = false; // Permitir HC/Vuln incluso en asignación? 
+            document.getElementById('modal-vulnerabilidad').disabled = false;
+            inputInit.disabled = false;
+            inputObs.disabled = true;
+            selectEstado.disabled = true;
+            switchAsistencia.disabled = false;
+        } else {
+            inputUser.disabled = false;
+            document.getElementById('modal-hace-constar').disabled = false;
+            document.getElementById('modal-vulnerabilidad').disabled = false;
+            inputInit.disabled = false;
+            inputObs.disabled = false;
+            selectEstado.disabled = false;
+            switchAsistencia.disabled = false;
+        }
     }
     
     modal.classList.remove('hidden');
