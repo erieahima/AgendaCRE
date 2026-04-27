@@ -8,7 +8,7 @@
     <!-- Robustez: Forzar limpieza de caché en cambio de versión -->
     <script>
         (function() {
-            const VERSION = "3.19.1";
+            const VERSION = "3.20.0";
             const savedVersion = localStorage.getItem('app_version');
             if (savedVersion !== VERSION) {
                 console.log("Nueva versión detectada (" + VERSION + "). Limpiando caché...");
@@ -71,6 +71,7 @@
                 <li id="nav-item-grabaciones"><button class="nav-btn" data-target="view-grabaciones">🎥 <span>Grabaciones</span></button></li>
                 <li id="nav-item-config-puesto"><button class="nav-btn" data-target="view-config-puesto">🖥️ <span>Configurar Puesto</span></button></li>
                 <li id="nav-item-historico"><button class="nav-btn" data-target="view-historico">📚 <span>Histórico</span></button></li>
+                <li id="nav-item-observatorio"><button class="nav-btn" data-target="view-observatorio">📊 <span>Observatorio</span></button></li>
                 <li id="nav-item-generador"><button class="nav-btn" data-target="view-generador">⚙️ <span>Generador de citas</span></button></li>
                 <li id="nav-item-impresion"><button class="nav-btn" data-target="view-impresion">🖨️ <span>Impresión</span></button></li>
                 <li id="nav-item-pantalla-citas"><button class="nav-btn" data-target="view-pantalla-citas">📺 <span>Pantalla Citas</span></button></li>
@@ -80,7 +81,7 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger); padding: 5px 10px; font-size: 0.9rem;">🚪 <span>Cerrar Sesión</span></button>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.19.1</div>
+                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.20.0</div>
             </div>
         </nav>
 
@@ -94,6 +95,66 @@
                     </select>
                 </div>
             </div>
+            <!-- VIEW: Observatorio -->
+            <section id="view-observatorio" class="view-section">
+                <div class="header-section">
+                    <h1>Observatorio</h1>
+                    <p class="subtitle">Estadísticas y métricas de rendimiento de la sede.</p>
+                </div>
+
+                <div class="card mb-6">
+                    <div class="grid-form" style="align-items: flex-end;">
+                        <div class="form-group">
+                            <label>Desde:</label>
+                            <input type="date" id="obs-fecha-inicio" class="input-modern" value="2026-01-01">
+                        </div>
+                        <div class="form-group">
+                            <label>Hasta:</label>
+                            <input type="date" id="obs-fecha-fin" class="input-modern" value="2026-12-31">
+                        </div>
+                        <button id="btn-refresh-observatorio" class="btn-primary" style="height: 45px;">🔄 Actualizar Datos</button>
+                    </div>
+                </div>
+
+                <div id="observatorio-dashboard" class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #e0f2fe; color: #0369a1;">📅</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Citas Generadas</span>
+                            <h2 id="stat-total" class="stat-value">0</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #eff6ff; color: #1d4ed8;">🖊️</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Citas Asignadas</span>
+                            <h2 id="stat-asignadas" class="stat-value">0</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #ecfdf5; color: #047857;">✅</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Citas Terminadas</span>
+                            <h2 id="stat-terminadas" class="stat-value">0</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #f0fdf4; color: #166534;">🎥</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Citas Grabadas</span>
+                            <h2 id="stat-grabadas" class="stat-value">0</h2>
+                        </div>
+                    </div>
+                    <div class="stat-card col-span-full">
+                        <div class="stat-icon" style="background: #fef2f2; color: #991b1b;">⚠️</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Citas con Incidencia</span>
+                            <h2 id="stat-incidencias" class="stat-value">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- VIEW: Generador -->
             <section id="view-generador" class="view-section active">
                 <div class="header-section">
@@ -564,6 +625,6 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module" src="js/app.js?v=3.19.1"></script>
+    <script type="module" src="js/app.js?v=3.20.0"></script>
 </body>
 </html>

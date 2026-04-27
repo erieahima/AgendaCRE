@@ -13,6 +13,7 @@ import { setupPuesto } from './puesto.js';
 import { setupPantalla } from './pantalla.js';
 import { setupEspera } from './espera.js';
 import { setupTablasMaestras } from './tablasMaestras.js';
+import { setupObservatorio } from './observatorio.js';
 
 // Estado global de la aplicación
 const AppState = {
@@ -78,6 +79,7 @@ async function loadAuthenticatedApp() {
     document.getElementById('nav-item-calendario').style.display = hasPermission('ver_calendario') ? 'block' : 'none';
     document.getElementById('nav-item-grabaciones').style.display = hasPermission('ver_grabaciones') ? 'block' : 'none';
     document.getElementById('nav-item-historico').style.display = hasPermission('ver_historico') ? 'block' : 'none';
+    document.getElementById('nav-item-observatorio').style.display = hasPermission('ver_observatorio') ? 'block' : 'none';
     document.getElementById('nav-item-generador').style.display = hasPermission('generar') ? 'block' : 'none';
     document.getElementById('nav-item-asignar').style.display = hasPermission('asignar_cita') ? 'block' : 'none';
     document.getElementById('nav-item-impresion').style.display = hasPermission('ver_impresion') ? 'block' : 'none';
@@ -114,6 +116,7 @@ async function loadAuthenticatedApp() {
     if(hasPermission('ver_pantalla')) setupPantalla(AppState);
     if(hasPermission('ver_espera')) setupEspera(AppState);
     if(hasPermission('admin_tablas')) setupTablasMaestras(AppState);
+    if(hasPermission('ver_observatorio')) setupObservatorio(AppState);
 
     // Conectar eventos globales
     window.addEventListener('sedeChanged', (e) => {

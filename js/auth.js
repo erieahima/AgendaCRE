@@ -89,8 +89,8 @@ export function hasPermission(action) {
     
     // Mapeo detallado de permisos por rol (V.3.0.0)
     const permissions = {
-        'super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera', 'admin_tablas'],
-        'admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera'],
+        'super_admin': ['generar', 'ver_calendario', 'ver_grabaciones', 'ver_impresion', 'admin_usuarios', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera', 'admin_tablas', 'ver_observatorio'],
+        'admin':       ['ver_calendario', 'ver_grabaciones', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera', 'ver_observatorio'],
         'operador':    ['ver_calendario', 'asignar_cita', 'ver_espera', 'config_puesto', 'ver_pantalla'],
         'cita':        ['asignar_cita'],
         'grabador':    ['ver_grabaciones'],
