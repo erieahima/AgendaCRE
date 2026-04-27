@@ -4,8 +4,11 @@ import { guardarCitasBulk, getCitasPorSedeYRango, borrarCitasBulk } from './fire
 
 let appStateRef = null;
 let franjaIdCounter = 0;
+let isSetup = false;
 
 export function setupGenerador(appState) {
+    if (isSetup) return;
+    isSetup = true;
     appStateRef = appState;
     const form = document.getElementById('form-generador');
     const btnAddFranja = document.getElementById('btn-add-franja');
@@ -17,7 +20,8 @@ export function setupGenerador(appState) {
     document.getElementById('gen-fecha-inicio').value = dateStr;
     document.getElementById('gen-fecha-fin').value = dateStr;
     
-    // Default franja (09:00 - 14:00)
+    // Limpiar y añadir franja única (09:00 - 14:00)
+    containerFranjas.innerHTML = '';
     addFranjaHTMl(containerFranjas, "09:00", "14:00");
 
     btnAddFranja.addEventListener('click', () => {
@@ -195,9 +199,10 @@ async function handleGenerarSubmit(e) {
         setTimeout(() => {
             progressContainer.classList.add('hidden');
             btnSubmit.disabled = false;
-            // Refrescar página para sincronizar calendario
+            // Refrescar página para sincronizar calendario (con pequeño retardo extra para asegurar propagación)
+            console.log("Citas generadas. Recargando...");
             location.reload();
-        }, 2000);
+        }, 2500);
 
     } catch (e) {
         console.error("Error en generación:", e);
@@ -235,6 +240,8 @@ async function handleBorrarSubmit(e) {
         const ids = existentes.map(c => c.id);
         const borradas = await borrarCitasBulk(ids);
         alert(`Borradas ${borradas} citas.`);
+        // Refrescar también al borrar
+        location.reload();
     } catch (err) {
         alert("Error: " + err.message);
     }
