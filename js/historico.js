@@ -117,6 +117,7 @@ function renderTable(data, termHighlight = "") {
 
     data.forEach(cita => {
         const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
         
         // Marcamos en rojo si coincide con el término de búsqueda
         const matches = termHighlight && (
@@ -134,13 +135,24 @@ function renderTable(data, termHighlight = "") {
                 <div style="font-weight: 600;">${formatearFechaHumana(cita.fecha)}</div>
                 <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraHumana(cita.hora)}</div>
             </td>
-            <td><span class="badge" style="background:#f1f5f9; color:#475569">${cita.codigo}</span></td>
+            <td><span class="badge" title="${cita.codigo}" style="background:#f1f5f9; color:#475569">${cita.codigo.slice(-3)}</span></td>
             <td><strong>${cita.iniciales || '---'}</strong></td>
             <td><strong style="${matches ? 'color:#ef4444' : ''}">${cita.codigoUsuario || '---'}</strong></td>
-            <td style="font-size:0.85rem">${cita.observaciones || '---'}</td>
+            <td class="text-center">
+                <div style="width: 15px; height: 15px; background: ${cita.haceConstar ? '#22c55e' : '#fff'}; border-radius: 3px; margin: 0 auto; border: 1px solid ${cita.haceConstar ? '#16a34a' : '#cbd5e1'};"></div>
+            </td>
+            <td class="text-center">
+                <div style="width: 15px; height: 15px; background: ${cita.vulnerabilidad ? '#22c55e' : '#fff'}; border-radius: 3px; margin: 0 auto; border: 1px solid ${cita.vulnerabilidad ? '#16a34a' : '#cbd5e1'};"></div>
+            </td>
+            <td style="font-size:0.85rem; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${cita.observaciones || '---'}</td>
             <td>${appStateRef.sedes.find(s => s.codigoTerritorial === cita.sede)?.nombre || cita.sede}</td>
-            <td>${renderEstadoBadge(cita.estadoGrabacion)}</td>
+            <td>${renderEstadoBadge(cita.estadoGrabacion || cita.estado)}</td>
         `;
+
+        tr.addEventListener('click', () => {
+            import('./calendario.js').then(m => m.openModal(cita));
+        });
+
         tbody.appendChild(tr);
     });
 }
