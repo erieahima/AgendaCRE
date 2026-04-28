@@ -79,7 +79,8 @@ async function filtrarEnPantalla(term) {
     // 1. Filtrado local (lo que ya está cargado en la semana) - Búsqueda PARCIAL
     const locales = historicalData.filter(c => {
         return (c.codigoUsuario || "").toLowerCase().includes(termLower) || 
-               (c.codigo || "").toLowerCase().includes(termLower);
+               (c.codigo || "").toLowerCase().includes(termLower) ||
+               (c.documento || c.iniciales || "").toLowerCase().includes(termLower);
     });
 
     // 2. Si el término es suficiente, buscamos globalmente (EXACTA o casi exacta)
@@ -122,7 +123,8 @@ function renderTable(data, termHighlight = "") {
         // Marcamos en rojo si coincide con el término de búsqueda
         const matches = termHighlight && (
             (cita.codigoUsuario || "").toLowerCase().includes(termHighlight.toLowerCase()) ||
-            cita.codigo.toLowerCase().includes(termHighlight.toLowerCase())
+            cita.codigo.toLowerCase().includes(termHighlight.toLowerCase()) ||
+            (cita.documento || cita.iniciales || "").toLowerCase().includes(termHighlight.toLowerCase())
         );
 
         if (matches) {
@@ -136,8 +138,8 @@ function renderTable(data, termHighlight = "") {
                 <div style="font-size: 0.8rem; color: var(--text-muted);">${formatearHoraHumana(cita.hora)}</div>
             </td>
             <td><span class="badge" title="${cita.codigo}" style="background:#f1f5f9; color:#475569">${cita.codigo.slice(-3)}</span></td>
-            <td><strong>${cita.iniciales || '---'}</strong></td>
-            <td><strong style="${matches ? 'color:#ef4444' : ''}">${cita.codigoUsuario || '---'}</strong></td>
+            <td><strong style="${matches ? 'color:#ef4444' : ''}">${cita.documento || cita.iniciales || '---'}</strong></td>
+            <td><strong>${cita.codigoUsuario || '---'}</strong></td>
             <td class="text-center">
                 <div style="width: 15px; height: 15px; background: ${cita.haceConstar ? '#22c55e' : '#fff'}; border-radius: 3px; margin: 0 auto; border: 1px solid ${cita.haceConstar ? '#16a34a' : '#cbd5e1'};"></div>
             </td>

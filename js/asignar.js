@@ -50,9 +50,11 @@ export function setupAsignar(appState) {
                 const allCitas = await getOrLoadCitas(sedeId);
 
                 // 2. Filtrado local (cubre TODOS los días ya en memoria)
-                const locales = allCitas.filter(cita =>
-                    cita.codigo && cita.codigo.toUpperCase().includes(term)
-                );
+                const locales = allCitas.filter(cita => {
+                    const code = (cita.codigo || "").toUpperCase();
+                    const doc = (cita.documento || cita.iniciales || "").toUpperCase();
+                    return code.includes(term) || doc.includes(term);
+                });
 
                 // 3. Solo consultar el servidor si hay muy pocos resultados locales
                 //    y el término parece suficientemente específico (> 3 chars)
@@ -98,10 +100,13 @@ export function setupAsignar(appState) {
         }
 
         // Refrescar resultados visibles con los datos actualizados del caché
-        const term = searchInput.value.trim().toUpperCase();
         if (term.length >= 3) {
             const allCitas = await getOrLoadCitas(appState.sedeActivaId);
-            const locales = allCitas.filter(c => c.codigo && c.codigo.toUpperCase().includes(term));
+            const locales = allCitas.filter(cita => {
+                const code = (cita.codigo || "").toUpperCase();
+                const doc = (cita.documento || cita.iniciales || "").toUpperCase();
+                return code.includes(term) || doc.includes(term);
+            });
             locales.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
             renderResults(locales.slice(0, 40));
         }
@@ -137,7 +142,7 @@ function renderResults(citas) {
             <div class="mt-2" style="font-size: 0.9rem;">
                 <div>🗓️ ${formatearFechaHumana(cita.fecha)}</div>
                 <div>🕒 ${formatearHoraHumana(cita.hora)}</div>
-                ${cita.iniciales ? `<div style="color:var(--primary); font-weight:600;">👤 Asignada a: ${cita.iniciales}</div>` : '<div style="color:var(--text-muted);">❌ Sin asignar</div>'}
+                ${(cita.documento || cita.iniciales) ? `<div style="color:var(--primary); font-weight:600;">👤 Doc: ${cita.documento || cita.iniciales}</div>` : '<div style="color:var(--text-muted);">❌ Sin asignar</div>'}
             </div>
         `;
 

@@ -84,8 +84,10 @@ function setupControls() {
                     el.style.opacity = '1';
                     return;
                 }
-                const codigoCita = (el.dataset.codigo || el.textContent).toLowerCase();
-                if(codigoCita.includes(term)) {
+                const codigoCita = (el.dataset.codigo || "").toLowerCase();
+                const numDoc = (el.dataset.documento || "").toLowerCase();
+                
+                if(codigoCita.includes(term) || numDoc.includes(term)) {
                     el.classList.add('highlighted');
                     el.style.opacity = '1';
                 } else {
@@ -168,6 +170,7 @@ async function renderDayView(grid) {
             const div = document.createElement('div');
             div.className = `cita-evento ${cita.estado}`;
             div.dataset.codigo = cita.codigo;
+            div.dataset.documento = cita.documento || "";
             
             div.innerHTML = `
                 ${cita.asistencia ? '<div class="asistencia-dot-absolute"></div>' : ''}
@@ -204,16 +207,16 @@ function setupModalControls() {
         }
     });
     
-    // Auto-asignar al poner iniciales
-    const inputInit = document.getElementById('modal-iniciales');
-    if (inputInit) {
-        inputInit.addEventListener('input', (e) => {
+    // Auto-asignar al poner documento
+    const inputDoc = document.getElementById('modal-documento');
+    if (inputDoc) {
+        inputDoc.addEventListener('input', (e) => {
+            // V.3.26.0: Forzar solo números
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            
             if (e.target.value.trim() !== "") {
                 document.getElementById('modal-estado-select').value = 'asignada';
             }
-        });
-        inputInit.addEventListener('blur', (e) => {
-            e.target.value = e.target.value.toUpperCase();
         });
     }
 
@@ -256,7 +259,7 @@ function setupModalControls() {
             const codigoUsuario = document.getElementById('modal-codigo-usuario').value;
             const haceConstar = document.getElementById('modal-hace-constar').checked;
             const vulnerabilidad = document.getElementById('modal-vulnerabilidad').checked;
-            const iniciales = document.getElementById('modal-iniciales').value.toUpperCase();
+            const documento = document.getElementById('modal-documento').value;
             const observaciones = document.getElementById('modal-observaciones').value;
             const estado = document.getElementById('modal-estado-select').value;
             let asistencia = document.getElementById('modal-asistencia-switch').checked;
@@ -275,7 +278,7 @@ function setupModalControls() {
 
             try {
                 const idDocumento = modalCitaActiva.id || modalCitaActiva.codigo;
-                const patch = { codigoUsuario, iniciales, observaciones, estado, asistencia, haceConstar, vulnerabilidad };
+                const patch = { codigoUsuario, documento, observaciones, estado, asistencia, haceConstar, vulnerabilidad };
                 await actualizarCitaData(idDocumento, patch);
                 
                 // Actualizar la caché sin volver a leer de Firestore
@@ -359,8 +362,7 @@ export function openModal(cita, isRestricted = false) {
     document.getElementById('modal-fecha').textContent = formatearFechaHumana(cita.fecha);
     document.getElementById('modal-hora').textContent = formatearHoraHumana(cita.hora);
     
-    const inputUser = document.getElementById('modal-codigo-usuario');
-    const inputInit = document.getElementById('modal-iniciales');
+    const inputDoc = document.getElementById('modal-documento');
     const inputObs = document.getElementById('modal-observaciones');
     const selectEstado = document.getElementById('modal-estado-select');
     const switchAsistencia = document.getElementById('modal-asistencia-switch');
@@ -368,7 +370,8 @@ export function openModal(cita, isRestricted = false) {
     inputUser.value = cita.codigoUsuario || "";
     document.getElementById('modal-hace-constar').checked = cita.haceConstar || false;
     document.getElementById('modal-vulnerabilidad').checked = cita.vulnerabilidad || false;
-    inputInit.value = cita.iniciales || "";
+    // V.3.26.0: Soportar campo antiguo 'iniciales' si 'documento' no existe yet
+    inputDoc.value = cita.documento || cita.iniciales || "";
     inputObs.value = cita.observaciones || "";
     selectEstado.value = cita.estado || "pendiente";
     switchAsistencia.checked = cita.asistencia || false;
@@ -401,7 +404,7 @@ export function openModal(cita, isRestricted = false) {
         inputUser.disabled = true;
         document.getElementById('modal-hace-constar').disabled = true;
         document.getElementById('modal-vulnerabilidad').disabled = true;
-        inputInit.disabled = true;
+        inputDoc.disabled = true;
         inputObs.disabled = true;
         selectEstado.disabled = true;
         switchAsistencia.disabled = true;
@@ -420,7 +423,7 @@ export function openModal(cita, isRestricted = false) {
             inputUser.disabled = true;
             document.getElementById('modal-hace-constar').disabled = false; // Permitir HC/Vuln incluso en asignación? 
             document.getElementById('modal-vulnerabilidad').disabled = false;
-            inputInit.disabled = false;
+            inputDoc.disabled = false;
             inputObs.disabled = true;
             selectEstado.disabled = true;
             switchAsistencia.disabled = false;
@@ -428,7 +431,7 @@ export function openModal(cita, isRestricted = false) {
             inputUser.disabled = false;
             document.getElementById('modal-hace-constar').disabled = false;
             document.getElementById('modal-vulnerabilidad').disabled = false;
-            inputInit.disabled = false;
+            inputDoc.disabled = false;
             inputObs.disabled = false;
             selectEstado.disabled = false;
             switchAsistencia.disabled = false;
