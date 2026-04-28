@@ -100,6 +100,7 @@ export function setupAsignar(appState) {
         }
 
         // Refrescar resultados visibles con los datos actualizados del caché
+        const term = searchInput.value.trim().toUpperCase();
         if (term.length >= 3) {
             const allCitas = await getOrLoadCitas(appState.sedeActivaId);
             const locales = allCitas.filter(cita => {
