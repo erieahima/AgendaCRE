@@ -1,5 +1,5 @@
 // js/impresion.js
-import { getCitasPorSedeYFecha } from './firebase.js';
+import { getCitasPorSedeYRango } from './firebase.js';
 import { formatHoraToDisplay, dateToInputString, formatearFechaHumana, formatearHoraHumana } from './utils.js';
 
 let appStateRef = null;
@@ -7,7 +7,9 @@ let appStateRef = null;
 export function setupImpresion(appState) {
     appStateRef = appState;
     const today = new Date();
-    document.getElementById('print-fecha').value = dateToInputString(today);
+    const todayStr = dateToInputString(today);
+    document.getElementById('print-fecha-inicio').value = todayStr;
+    document.getElementById('print-fecha-fin').value = todayStr;
 
     document.getElementById('btn-print-pdf').addEventListener('click', handleExportPDF);
 }
@@ -18,13 +20,16 @@ async function handleExportPDF() {
         return;
     }
 
-    const fechaInput = document.getElementById('print-fecha').value;
-    if (!fechaInput) {
-        alert("Selecciona una fecha.");
+    const fInicio = document.getElementById('print-fecha-inicio').value;
+    const fFin = document.getElementById('print-fecha-fin').value;
+    
+    if (!fInicio || !fFin) {
+        alert("Selecciona ambas fechas.");
         return;
     }
 
-    const yyyymmdd = fechaInput.replace(/-/g, '');
+    const yyyymmddInicio = fInicio.replace(/-/g, '');
+    const yyyymmddFin = fFin.replace(/-/g, '');
     const sede = appStateRef.sedes.find(s => s.codigoTerritorial === appStateRef.sedeActivaId);
     if (!sede) return;
 
@@ -37,11 +42,19 @@ async function handleExportPDF() {
         btnExport.disabled = true;
         msgContainer.classList.remove('hidden');
         statusText.textContent = "Obteniendo datos de Firebase...";
+        statusText.textContent = `Consultando rango: ${fInicio} al ${fFin}...`;
 
-        const citas = await getCitasPorSedeYFecha(appStateRef.sedeActivaId, yyyymmdd);
+        let citas = await getCitasPorSedeYRango(appStateRef.sedeActivaId, yyyymmddInicio, yyyymmddFin);
+        
+        // Ordenar por fecha y hora manualmente (V.3.25.0)
+        citas.sort((a,b) => {
+            const da = a.fecha.localeCompare(b.fecha);
+            if(da !== 0) return da;
+            return a.hora.localeCompare(b.hora);
+        });
         
         if (citas.length === 0) {
-            alert("No hay citas para exportar en este día.");
+            alert("No hay citas registradas en el rango seleccionado.");
             msgContainer.classList.add('hidden');
             btnExport.disabled = false;
             return;
@@ -78,7 +91,7 @@ async function handleExportPDF() {
         }
 
         statusText.textContent = "¡Documento listo! Descargando...";
-        const fileName = `${yyyymmdd}-Citas-${sede.nombre.replace(/ /g, '_')}.pdf`;
+        const fileName = `${yyyymmddInicio}_${yyyymmddFin}-Citas-${sede.nombre.replace(/ /g, '_')}.pdf`;
         doc.save(fileName);
 
         setTimeout(() => {
