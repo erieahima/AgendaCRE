@@ -137,7 +137,6 @@ function createA4Html(cita, sede) {
             ">
                 <div>
                     <div style="font-size: 20pt; font-weight: 800; color: #e20613; line-height: 1.1;">Cruz Roja</div>
-                    <div style="font-size: 10pt; font-weight: 400; letter-spacing: 0.5px; margin-top: 1mm;">Española</div>
                     <div style="font-size: 7pt; font-weight: 700; color: #e20613; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px;">
                         Proceso de regularización extraordinaria
                     </div>
