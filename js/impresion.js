@@ -73,7 +73,7 @@ async function handleExportPDF() {
             statusText.textContent = `Generando página ${i + 1} de ${citas.length}...`;
 
             // Preparar el HTML de UNA hoja A4
-            renderArea.innerHTML = createA4Html(cita, sede, fechaInput);
+            renderArea.innerHTML = createA4Html(cita, sede);
             
             // Renderizar a Canvas
             const canvas = await html2canvas(renderArea.querySelector('.a4-page'), {
@@ -108,7 +108,7 @@ async function handleExportPDF() {
     }
 }
 
-function createA4Html(cita, sede, fechaISO) {
+function createA4Html(cita, sede) {
     const shortCode = cita.codigo.slice(-3);
     const fechaHumana = formatearFechaHumana(cita.fecha);
     const horaHumana = formatearHoraHumana(cita.hora);
