@@ -362,6 +362,7 @@ export function openModal(cita, isRestricted = false) {
     document.getElementById('modal-fecha').textContent = formatearFechaHumana(cita.fecha);
     document.getElementById('modal-hora').textContent = formatearHoraHumana(cita.hora);
     
+    const inputUser = document.getElementById('modal-codigo-usuario');
     const inputDoc = document.getElementById('modal-documento');
     const inputObs = document.getElementById('modal-observaciones');
     const selectEstado = document.getElementById('modal-estado-select');
