@@ -422,8 +422,8 @@ export function openModal(cita, isRestricted = false) {
         
         if (isRestricted) {
             inputUser.disabled = true;
-            document.getElementById('modal-hace-constar').disabled = false; // Permitir HC/Vuln incluso en asignación? 
-            document.getElementById('modal-vulnerabilidad').disabled = false;
+            document.getElementById('modal-hace-constar').disabled = true;
+            document.getElementById('modal-vulnerabilidad').disabled = true;
             inputDoc.disabled = false;
             inputObs.disabled = true;
             selectEstado.disabled = true;
