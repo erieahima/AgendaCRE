@@ -1,5 +1,5 @@
 // js/app.js
-import { getSedes, inicializarSedes } from './firebase.js';
+import { getSedes, inicializarSedes, resetLlamadasSede } from './firebase.js';
 import { cacheClear, cacheInvalidatePrefix } from './cache.js';
 import { renderCalendario, loadCitasCalendario, initCalendarioModal } from './calendario.js';
 import { setupGenerador } from './generador.js';
@@ -102,6 +102,7 @@ async function loadAuthenticatedApp() {
         // Invalidar caché de la sede anterior para no servir datos cruzados
         cacheInvalidatePrefix(`cal_dia_`);
         cacheInvalidatePrefix(`cal_mes_`);
+        checkDailyReset(AppState.sedeActivaId); // Verificar reset diario al cambiar de sede
         window.dispatchEvent(new CustomEvent('sedeChanged', { detail: AppState.sedeActivaId }));
     });
 
@@ -165,6 +166,37 @@ async function loadAuthenticatedApp() {
     if (firstVisibleBtn) {
         firstVisibleBtn.click();
     }
+
+    // [V.3.24.0] Auto-limpieza diaria de pantalla (00:00h)
+    // Sincroniza el estado de la pantalla al detectar cambio de día local
+    const checkDailyReset = async (sedeId) => {
+        if (!sedeId) return;
+        const today = new Date().toLocaleDateString('es-ES');
+        const storageKey = `last_reset_date_${sedeId}`;
+        const lastReset = localStorage.getItem(storageKey);
+        
+        if (lastReset && lastReset !== today) {
+            console.log(`[AutoReset] Nueva jornada detectada para sede ${sedeId}. Limpiando pantalla...`);
+            try {
+                // Ejecutamos limpieza como si se pulsara el botón manual
+                await resetLlamadasSede(sedeId);
+                localStorage.setItem(storageKey, today);
+                // Notificar a la vista de pantalla si está activa para forzar refresco visual
+                window.dispatchEvent(new CustomEvent('pantallaResetAuto'));
+            } catch (err) {
+                console.error("Error en reset automático:", err);
+            }
+        } else if (!lastReset) {
+            localStorage.setItem(storageKey, today);
+        }
+    };
+
+    // Ejecución inicial y listener de cambio de sede
+    if (AppState.sedeActivaId) checkDailyReset(AppState.sedeActivaId);
+
+    setInterval(() => {
+        if (AppState.sedeActivaId) checkDailyReset(AppState.sedeActivaId);
+    }, 60000); // Revisar cada minuto
 }
 
 /**
