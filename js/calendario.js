@@ -396,13 +396,13 @@ export function openModal(cita, isRestricted = false) {
         }
     }
 
-    // Si es modo restringido (Asignar Cita) o si ya está grabada, deshabilitamos campos
-    const isGrabada = cita.estado === 'grabada';  // V.3.28.0: bloqueo por estado principal
+    // Si es modo restringido (Asignar Cita) o si ya está finalizada (grabada o incidencia), deshabilitamos campos
+    const isFinalizado = cita.estado === 'grabada' || cita.estado === 'incidencia';  // V.3.28.0
     const canAdminEdit = AppState.user.rol === 'Super_admin';
     const btnSave = document.getElementById('btn-save-cita');
     const btnAdminEdit = document.getElementById('btn-admin-edit');
 
-    if (isGrabada) {
+    if (isFinalizado) {
         inputUser.disabled = true;
         document.getElementById('modal-hace-constar').disabled = true;
         document.getElementById('modal-vulnerabilidad').disabled = true;

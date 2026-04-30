@@ -696,13 +696,15 @@ h3 { font-size: 1.25rem; font-weight: 600; }
     color: #374151;
 }
 
-.cita-evento.terminada {
+.cita-evento.terminada,
+.cita-evento.grabada {
     background-color: var(--success-bg);
     border-color: #a7f3d0;
     color: #065f46;
 }
 
-.cita-evento.anulada {
+.cita-evento.anulada,
+.cita-evento.incidencia {
     background-color: var(--danger-bg);
     border-color: #fecaca;
     color: #991b1b;
