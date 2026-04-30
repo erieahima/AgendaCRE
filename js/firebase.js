@@ -317,41 +317,13 @@ export async function guardarPerfilUsuario(uid, data) {
     await setDoc(doc(db, "usuarios", uid), data);
 }
 
-async function getCitasTerminadas() {
-    if (!isConfigured) return [];
-    const citasRef = collection(db, "citas");
-    // Buscamos tanto en minúscula como con la primera en mayúscula por si acaso
-    const q = query(
-        citasRef, 
-        where("estado", "in", ["terminada", "Terminada"]),
-        limit(200)
-    );
-    const snapshot = await getDocs(q);
-    const citas = [];
-    snapshot.forEach(docSnap => citas.push({ id: docSnap.id, ...docSnap.data() }));
-    return citas;
-}
-
 export async function borrarUsuarioData(uid) {
     const userRef = doc(db, "usuarios", uid);
     await writeBatch(db).delete(userRef).commit();
 }
 
-export function listenCitasTerminadas(sedeId, callback) {
-    if (!isConfigured || !sedeId) return () => {};
-    const citasRef = collection(db, "citas");
-    const q = query(
-        citasRef, 
-        where("sede", "==", sedeId),
-        where("estado", "in", ["terminada", "Terminada"]),
-        limit(200)
-    );
-    return onSnapshot(q, (snapshot) => {
-        const citas = [];
-        snapshot.forEach(docSnap => citas.push({ id: docSnap.id, ...docSnap.data() }));
-        callback(citas);
-    });
-}
+// NOTA: listenCitasTerminadas() y getCitasTerminadas() eliminadas en v3.28.2
+// (módulo de grabaciones eliminado en v3.28.0, funciones ya no tienen importador)
 
 export async function getHistoricoGrabaciones(sedeId, fechaInicio, fechaFin) {
     if (!isConfigured || !sedeId) return [];
@@ -470,13 +442,18 @@ export async function buscarCitasParaAsignar(sedeId, term = "") {
     }
 
     // ESTRATEGIA C: Carga de proximidad (Solo si NO hay término de búsqueda)
-    // Se usa para cargar el caché inicial de forma que el filtrado local sea instantáneo
+    // Carga los últimos 90 días (v3.28.2: reducido de 10.000 a 2.000 docs con filtro de fecha)
     if (!term) {
-        const q = query(citasRef, 
+        const fechaLimite = new Date();
+        fechaLimite.setDate(fechaLimite.getDate() - 90);
+        const fechaLimiteStr = `${fechaLimite.getFullYear()}${String(fechaLimite.getMonth()+1).padStart(2,'0')}${String(fechaLimite.getDate()).padStart(2,'0')}`;
+
+        const q = query(citasRef,
             where("sede", "==", sedeId),
+            where("fecha", ">=", fechaLimiteStr),
             orderBy("fecha", "desc"),
             orderBy("hora", "desc"),
-            limit(10000) 
+            limit(2000)
         );
 
         const results = [];
@@ -486,7 +463,6 @@ export async function buscarCitasParaAsignar(sedeId, term = "") {
         } catch (e) {
             console.error("Error cargando citas para asignar:", e);
         }
-        return results;
         return results;
     }
 
@@ -607,4 +583,4 @@ export function listenListaEspera(sedeId, callback) {
     });
 }
 
-export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, getCitasTerminadas, Timestamp };
+export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, Timestamp };

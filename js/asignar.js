@@ -1,6 +1,6 @@
 import { buscarCitasParaAsignar } from './firebase.js';
 import { formatearFechaHumana, formatearHoraHumana } from './utils.js';
-import { cacheGet, cacheSet, cachePatchItem } from './cache.js';
+import { cacheGet, cacheSet, cachePatchItem, cacheInvalidate } from './cache.js';
 
 // Caché de 10 minutos para la carga masiva de citas de la sede.
 // Cubre TODOS los días (no solo hoy), igual que antes.
@@ -92,11 +92,19 @@ export function setupAsignar(appState) {
     });
 
     // Al guardar una cita desde el modal: actualizar el elemento en caché (patch)
-    // en lugar de recargar los 10.000 docs.
+    // en lugar de recargar los docs.
     window.addEventListener('citaActualizada', async (e) => {
         const { id, patch } = e.detail || {};
         if (id && patch && appState.sedeActivaId) {
+            // Actualizar caché del módulo Asignar
             cachePatchItem(getCacheKey(appState.sedeActivaId), id, patch);
+            
+            // v3.28.2: Invalidar también la caché del calendario para ese día
+            // para que el estado quede sincronizado en la vista Calendario
+            if (patch.fecha || (e.detail.cita && e.detail.cita.fecha)) {
+                const fecha = patch.fecha;
+                if (fecha) cacheInvalidate(`cal_dia_${appState.sedeActivaId}_${fecha}`);
+            }
         }
 
         // Refrescar resultados visibles con los datos actualizados del caché

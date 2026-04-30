@@ -76,18 +76,16 @@ export function setupPantalla(appState) {
         }
     }
 
-    // Iniciar inmediatamente si ya hay sede
-    if (appState.sedeActivaId) {
-        startListening(appState.sedeActivaId);
-    }
-
-    // Escuchar entrada a la vista
+    // v3.28.2: Iniciar el listener SOLO cuando el usuario entra a la vista Pantalla (lazy)
+    // Antes se iniciaba siempre al cargar la app, generando snapshots innecesarios
     window.addEventListener('pantallaViewEntered', () => {
         if (appState.sedeActivaId) startListening(appState.sedeActivaId);
     });
 
     window.addEventListener('sedeChanged', (e) => {
-        startListening(e.detail);
+        // Solo reconectar si la vista Pantalla está activa
+        const isPantallaActive = document.getElementById('view-pantalla-citas')?.classList.contains('active');
+        if (isPantallaActive) startListening(e.detail);
     });
 }
 
