@@ -179,9 +179,9 @@ export async function getStatsCitas(codigoSede, fechaInicio, fechaFin) {
     ] = await Promise.all([
         getCountFromServer(baseQuery),
         getCountFromServer(query(baseQuery, where("estado", "==", "asignada"))),
-        getCountFromServer(query(baseQuery, where("estado", "==", "terminada"))),
-        getCountFromServer(query(baseQuery, where("estadoGrabacion", "==", "Grabada"))),
-        getCountFromServer(query(baseQuery, where("estadoGrabacion", "==", "Incidencia")))
+        getCountFromServer(query(baseQuery, where("estado", "in", ["grabada", "incidencia"]))),
+        getCountFromServer(query(baseQuery, where("estado", "==", "grabada"))),
+        getCountFromServer(query(baseQuery, where("estado", "==", "incidencia")))
     ]);
 
     return {
@@ -361,7 +361,7 @@ export async function getHistoricoGrabaciones(sedeId, fechaInicio, fechaFin) {
         where("sede", "==", sedeId),
         where("fecha", ">=", fechaInicio),
         where("fecha", "<=", fechaFin),
-        where("estadoGrabacion", "in", ["Grabada", "Incidencia"])
+        where("estado", "in", ["grabada", "incidencia"])
     );
     
     const snapshot = await getDocs(q);
@@ -377,18 +377,18 @@ export async function buscarCitasHistorico(sedeId, term) {
     const termClean = term.trim().toUpperCase();
     const citasRef = collection(db, "citas");
     
-    // Buscamos por prefijo de Código de Cita + Grabada/Incidencia
+    // Buscamos por prefijo de Código de Cita + estado grabada/incidencia
     const q1 = query(citasRef, 
-        where("estadoGrabacion", "in", ["Grabada", "Incidencia"]),
+        where("estado", "in", ["grabada", "incidencia"]),
         orderBy("codigo"), 
         startAt(termClean), 
         endAt(termClean + "\uf8ff"), 
         limit(20)
     );
     
-    // Buscamos por prefijo de Código de Usuario + Grabada/Incidencia
+    // Buscamos por prefijo de Código de Usuario + estado grabada/incidencia
     const q2 = query(citasRef, 
-        where("estadoGrabacion", "in", ["Grabada", "Incidencia"]),
+        where("estado", "in", ["grabada", "incidencia"]),
         orderBy("codigoUsuario"), 
         startAt(termClean), 
         endAt(termClean + "\uf8ff"), 

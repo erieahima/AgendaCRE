@@ -164,10 +164,9 @@ function renderEstadoBadge(estado) {
     let bg = "#f1f5f9";
     let texto = estado || "Pendiente";
 
-    if (estado === "Grabada") { bg = "#dcfce7"; color = "#166534"; }
-    else if (estado === "Incidencia") { bg = "#fee2e2"; color = "#991b1b"; }
-    else if (estado === "Inicia grabación") { bg = "#ffedd5"; color = "#9a3412"; }
-    else if (estado === "asignada") { bg = "#eff6ff"; color = "#1e40af"; }
+    if (estado === "grabada") { bg = "#dcfce7"; color = "#166534"; texto = "Grabada"; }
+    else if (estado === "incidencia") { bg = "#fee2e2"; color = "#991b1b"; texto = "Incidencia"; }
+    else if (estado === "asignada") { bg = "#eff6ff"; color = "#1e40af"; texto = "Asignada"; }
 
     return `<span class="badge" style="background:${bg}; color:${color}">${texto}</span>`;
 }

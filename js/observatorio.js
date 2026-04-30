@@ -83,13 +83,9 @@ async function loadStats() {
 }
 
 function displayStats(stats) {
-    // Calculamos pendientes de grabar: Atendidas - (Grabadas + Incidencias)
-    const pendientesGrabar = Math.max(0, stats.atendidas - (stats.grabadas + stats.incidencias));
-
     animateValue("stat-total", stats.total);
     animateValue("stat-asignadas", stats.asignadas);
     animateValue("stat-terminadas", stats.atendidas);
-    animateValue("stat-pend-grab", pendientesGrabar);
     animateValue("stat-grabadas", stats.grabadas);
     animateValue("stat-incidencias", stats.incidencias);
 }

@@ -226,8 +226,8 @@ function setupModalControls() {
     if (selectEstado && switchAsistencia) {
         selectEstado.addEventListener('change', (e) => {
             const estado = e.target.value;
-            // Si pasamos a terminado o anulado, quitamos asistencia automáticamente
-            if (['terminada', 'anulada', 'pendiente'].includes(estado)) {
+            // Si pasamos a grabada, incidencia o pendiente, quitamos asistencia automáticamente
+            if (['grabada', 'incidencia', 'pendiente'].includes(estado)) {
                 switchAsistencia.checked = false;
             }
         });
@@ -264,10 +264,11 @@ function setupModalControls() {
             const estado = document.getElementById('modal-estado-select').value;
             let asistencia = document.getElementById('modal-asistencia-switch').checked;
 
-            // V.3.17.0: Validación de código de usuario numérico para estado 'terminada'
-            if (estado === 'terminada') {
-                if (!codigoUsuario.trim() || !/^\d+$/.test(codigoUsuario.trim())) {
-                    alert("Atención: El código de usuario debe contener únicamente números para poder marcar la cita como terminada.");
+            // V.3.28.0: Validación obligatoria de observaciones para estado 'incidencia'
+            if (estado === 'incidencia') {
+                if (!observaciones.trim()) {
+                    alert("Atención: Para registrar una incidencia es obligatorio indicar algo en el campo Observaciones.");
+                    document.getElementById('modal-observaciones').focus();
                     return;
                 }
             }
@@ -396,7 +397,7 @@ export function openModal(cita, isRestricted = false) {
     }
 
     // Si es modo restringido (Asignar Cita) o si ya está grabada, deshabilitamos campos
-    const isGrabada = cita.estadoGrabacion === 'Grabada';
+    const isGrabada = cita.estado === 'grabada';  // V.3.28.0: bloqueo por estado principal
     const canAdminEdit = AppState.user.rol === 'Super_admin';
     const btnSave = document.getElementById('btn-save-cita');
     const btnAdminEdit = document.getElementById('btn-admin-edit');

@@ -166,11 +166,11 @@ function aplicarEstiloEstado(el, estado) {
             el.style.backgroundColor = '#eff6ff';
             el.style.borderLeft = '6px solid #3b82f6';
             break;
-        case 'terminada':
+        case 'grabada':
             el.style.backgroundColor = '#f0fdf4';
             el.style.borderLeft = '6px solid #22c55e';
             break;
-        case 'anulada':
+        case 'incidencia':
             el.style.backgroundColor = '#fef2f2';
             el.style.borderLeft = '6px solid #ef4444';
             break;
