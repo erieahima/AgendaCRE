@@ -34,10 +34,10 @@ export function setupHistorico(appState) {
         }
     });
 
-    // Cargar automáticamente al iniciar si hay sede
-    if (appState.sedeActivaId) {
-        loadHistorico(); 
-    }
+    // v3.28.3: Carga lazy — solo cuando el usuario entra a la vista Histórico
+    window.addEventListener('historicoViewEntered', () => {
+        if (appState.sedeActivaId) loadHistorico();
+    });
 }
 
 async function loadHistorico() {

@@ -385,88 +385,80 @@ export async function buscarCitasHistorico(sedeId, term) {
 
 export async function buscarCitasParaAsignar(sedeId, term = "") {
     if (!isConfigured || !sedeId) return [];
-    
+
+    // v3.28.3: Sin término → no hay carga masiva. Se devuelve array vacío.
+    if (!term) return [];
+
     const citasRef = collection(db, "citas");
     const termClean = term.trim().toUpperCase();
+    const isNumeric = /^\d+$/.test(termClean);
+    const results = new Map();
 
-    // ESTRATEGIA A: Búsqueda por SUFIJO (Los 3 caracteres finales)
-    if (termClean.length === 3) {
-        // Buscamos por sufijo en TODAS las citas y filtramos por sede en el cliente
-        // Esto evita requerir índices compuestos complejos y es rápido porque hay pocos duplicados de sufijo
-        const qSufijo = query(citasRef, 
+    // ESTRATEGIA A: Búsqueda por SUFIJO exacto (3 caracteres finales del código)
+    if (termClean.length === 3 && !isNumeric) {
+        const qSufijo = query(citasRef,
             where("sufijo", "==", termClean),
             limit(100)
         );
         try {
             const snap = await getDocs(qSufijo);
-            const results = [];
             snap.forEach(d => {
                 const data = d.data();
-                if (data.sede === sedeId) {
-                    results.push({id: d.id, ...data});
-                }
+                if (data.sede === sedeId) results.set(d.id, { id: d.id, ...data });
             });
-            // Si encontramos resultados por sufijo, los devolvemos directamente
-            if (results.length > 0) return results;
-        } catch (e) {
-            console.error("Error buscando por sufijo:", e);
-        }
+            if (results.size > 0) return Array.from(results.values());
+        } catch (e) { console.error("Error buscando por sufijo:", e); }
     }
 
-    // ESTRATEGIA B: Búsqueda por PREFIJO (Fecha YYYYMMDD o Código Completo)
-    if (termClean.length > 3) {
+    // ESTRATEGIA B: Búsqueda por PREFIJO de código (fecha YYYYMMDD o código completo)
+    if (termClean.length > 3 && !isNumeric) {
         let prefix = termClean;
         if (!prefix.startsWith("REG")) {
-            // Si el usuario escribe una fecha (ej 20260425), anteponemos REG+SEDE para que sea un prefijo válido
             prefix = `REG${sedeId}${termClean}`;
         } else {
-            // Si ya escribe REG..., validamos que pertenezca a su sede
-            if (!prefix.startsWith(`REG${sedeId}`)) return []; 
+            if (!prefix.startsWith(`REG${sedeId}`)) return [];
         }
-
-        const qPrefix = query(citasRef, 
-            orderBy("codigo"), 
-            startAt(prefix), 
+        const qPrefix = query(citasRef,
+            orderBy("codigo"),
+            startAt(prefix),
             endAt(prefix + "\uf8ff"),
             limit(100)
         );
-
         try {
             const snap = await getDocs(qPrefix);
-            const results = [];
-            snap.forEach(d => results.push({id: d.id, ...d.data()}));
-            return results;
-        } catch (e) {
-            console.error("Error buscando por prefijo:", e);
-        }
+            snap.forEach(d => results.set(d.id, { id: d.id, ...d.data() }));
+            if (results.size > 0) return Array.from(results.values());
+        } catch (e) { console.error("Error buscando por prefijo código:", e); }
     }
 
-    // ESTRATEGIA C: Carga de proximidad (Solo si NO hay término de búsqueda)
-    // Carga los últimos 90 días (v3.28.2: reducido de 10.000 a 2.000 docs con filtro de fecha)
-    if (!term) {
-        const fechaLimite = new Date();
-        fechaLimite.setDate(fechaLimite.getDate() - 90);
-        const fechaLimiteStr = `${fechaLimite.getFullYear()}${String(fechaLimite.getMonth()+1).padStart(2,'0')}${String(fechaLimite.getDate()).padStart(2,'0')}`;
-
-        const q = query(citasRef,
-            where("sede", "==", sedeId),
-            where("fecha", ">=", fechaLimiteStr),
-            orderBy("fecha", "desc"),
-            orderBy("hora", "desc"),
-            limit(2000)
-        );
-
-        const results = [];
+    // ESTRATEGIA D: Búsqueda por NÚMERO DE DOCUMENTO (cuando el término es numérico ≥ 4 dígitos)
+    // Requiere índice compuesto (sede ASC, documento ASC) en Firestore
+    if (isNumeric && termClean.length >= 4) {
         try {
-            const snap = await getDocs(q);
-            snap.forEach(d => results.push({id: d.id, ...d.data()}));
+            const qDoc = query(citasRef,
+                where("sede", "==", sedeId),
+                orderBy("documento"),
+                startAt(termClean),
+                endAt(termClean + "\uf8ff"),
+                limit(20)
+            );
+            const snap = await getDocs(qDoc);
+            snap.forEach(d => results.set(d.id, { id: d.id, ...d.data() }));
         } catch (e) {
-            console.error("Error cargando citas para asignar:", e);
+            // Fallback: búsqueda exacta si falta el índice compuesto
+            try {
+                const qExact = query(citasRef,
+                    where("sede", "==", sedeId),
+                    where("documento", "==", termClean),
+                    limit(20)
+                );
+                const snap = await getDocs(qExact);
+                snap.forEach(d => results.set(d.id, { id: d.id, ...d.data() }));
+            } catch (e2) { console.error("Error buscando por documento:", e2); }
         }
-        return results;
     }
 
-    return []; // Si hay término pero no hubo resultados en las estrategias A o B
+    return Array.from(results.values());
 }
 
 // -- CONFIGURACION DE PUESTO --

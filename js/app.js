@@ -232,6 +232,8 @@ function setupNavigation() {
                 window.dispatchEvent(new CustomEvent('esperaViewEntered'));
             } else if (targetId === 'view-tablas-maestras') {
                 window.dispatchEvent(new CustomEvent('tablasViewEntered'));
+            } else if (targetId === 'view-historico') {
+                window.dispatchEvent(new CustomEvent('historicoViewEntered'));
             }
         });
     });
