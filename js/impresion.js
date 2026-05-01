@@ -576,7 +576,7 @@ function buildListadoSheet(workbook, citas) {
         { header: 'Documento',      key: 'documento',      width: 14 },
         { header: 'HC',             key: 'haceConstar',    width: 6  },
         { header: 'Vulnerabilidad', key: 'vulnerabilidad', width: 15 },
-        { header: 'Asistencia',     key: 'asistencia',     width: 11 },
+        { header: '¿Asiste?',       key: 'asistencia',     width: 11 },
         { header: 'Observaciones',  key: 'observaciones',  width: 35 },
     ];
 
@@ -629,6 +629,15 @@ function buildListadoSheet(workbook, citas) {
         } else {
             cellEstado.value = estadoLabel(estado);
         }
+
+        // Listas desplegables para Sí/No
+        ['haceConstar', 'vulnerabilidad', 'asistencia'].forEach(colKey => {
+            row.getCell(colKey).dataValidation = {
+                type: 'list',
+                allowBlank: true,
+                formulae: ['"Sí,No"']
+            };
+        });
 
         const fill = ESTADO_FILL[estado] || ESTADO_FILL.pendiente;
         const fontColor = ESTADO_FONT_COLOR[estado] || ESTADO_FONT_COLOR.pendiente;
