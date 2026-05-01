@@ -12,6 +12,7 @@ export function setupImpresion(appState) {
     document.getElementById('print-fecha-fin').value = todayStr;
 
     document.getElementById('btn-print-pdf').addEventListener('click', handleExportPDF);
+    document.getElementById('btn-export-excel').addEventListener('click', handleExportExcel);
 }
 
 async function handleExportPDF() {
@@ -318,4 +319,262 @@ function createA4Html(cita, sede) {
             </div>
         </div>
     `;
+}
+// ═══════════════════════════════════════════════════════
+// EXPORTACIÓN A EXCEL (v3.29.0)
+// ═══════════════════════════════════════════════════════
+
+async function handleExportExcel() {
+    if (!appStateRef.sedeActivaId) { alert('Selecciona una sede arriba.'); return; }
+
+    const fInicio = document.getElementById('print-fecha-inicio').value;
+    const fFin    = document.getElementById('print-fecha-fin').value;
+    if (!fInicio || !fFin) { alert('Selecciona ambas fechas.'); return; }
+
+    const sede = appStateRef.sedes.find(s => s.codigoTerritorial === appStateRef.sedeActivaId);
+    if (!sede) return;
+
+    const yyyymmddIni = fInicio.replace(/-/g, '');
+    const yyyymmddFin = fFin.replace(/-/g, '');
+
+    const btn = document.getElementById('btn-export-excel');
+    const msgContainer = document.getElementById('pdf-generating-msg');
+    const statusText   = document.getElementById('pdf-status-text');
+
+    try {
+        btn.disabled = true;
+        msgContainer.classList.remove('hidden');
+        statusText.textContent = 'Obteniendo datos de Firebase...';
+
+        let citas = await getCitasPorSedeYRango(appStateRef.sedeActivaId, yyyymmddIni, yyyymmddFin);
+        citas.sort((a, b) => {
+            const d = a.fecha.localeCompare(b.fecha);
+            if (d !== 0) return d;
+            if (a.hora !== b.hora) return a.hora.localeCompare(b.hora);
+            return (a.puesto || 0) - (b.puesto || 0);
+        });
+
+        if (citas.length === 0) {
+            alert('No hay citas en el rango seleccionado.');
+            msgContainer.classList.add('hidden');
+            btn.disabled = false;
+            return;
+        }
+
+        statusText.textContent = `Generando Excel con ${citas.length} citas...`;
+
+        const ExcelJS = window.ExcelJS;
+        if (!ExcelJS) { alert('La librería ExcelJS no está disponible. Recarga la página.'); return; }
+
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'AgendaCRE';
+        workbook.created = new Date();
+
+        buildCalendarioSheet(workbook, citas, fInicio, fFin, sede);
+        buildListadoSheet(workbook, citas);
+
+        statusText.textContent = '¡Listo! Descargando...';
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url    = URL.createObjectURL(blob);
+        const a      = document.createElement('a');
+        a.href       = url;
+        a.download   = `${yyyymmddIni}-${yyyymmddFin}_${sede.nombre.replace(/ /g, '_')}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error(err);
+        alert('Error al generar Excel: ' + err.message);
+    } finally {
+        msgContainer.classList.add('hidden');
+        btn.disabled = false;
+    }
+}
+
+// ── Colores de celda por estado (ARGB: Alpha+RGB) ──────────────────────────
+const ESTADO_FILL = {
+    grabada:    { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }, // verde claro
+    incidencia: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } }, // rojo claro
+    asignada:   { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }, // azul claro
+    pendiente:  { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } }, // gris claro
+};
+const ESTADO_FONT_COLOR = {
+    grabada:    { argb: 'FF065F46' },
+    incidencia: { argb: 'FF991B1B' },
+    asignada:   { argb: 'FF1E40AF' },
+    pendiente:  { argb: 'FF374151' },
+};
+const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
+const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
+const BORDER_THIN = { style: 'thin', color: { argb: 'FFD1D5DB' } };
+const ALL_BORDERS = { top: BORDER_THIN, left: BORDER_THIN, bottom: BORDER_THIN, right: BORDER_THIN };
+
+function estadoLabel(estado) {
+    const labels = { grabada: 'Grabada', incidencia: 'Incidencia', asignada: 'Asignada', pendiente: 'Pendiente' };
+    return labels[estado] || (estado || 'Pendiente');
+}
+
+function fechaHumanaCorta(yyyymmdd) {
+    if (!yyyymmdd || yyyymmdd.length < 8) return yyyymmdd;
+    const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const d = new Date(yyyymmdd.slice(0,4), yyyymmdd.slice(4,6)-1, yyyymmdd.slice(6,8));
+    return `${dias[d.getDay()]} ${yyyymmdd.slice(6,8)}/${yyyymmdd.slice(4,6)}`;
+}
+
+// ── Hoja 1: CALENDARIO (grid visual igual que la app) ─────────────────────
+function buildCalendarioSheet(workbook, citas, fInicio, fFin, sede) {
+    const ws = workbook.addWorksheet('Calendario', { views: [{ state: 'frozen', xSplit: 1, ySplit: 2 }] });
+
+    // Calcular días del rango
+    const dates = [];
+    const cur = new Date(fInicio);
+    const end = new Date(fFin);
+    while (cur <= end) {
+        const y  = cur.getFullYear();
+        const m  = String(cur.getMonth() + 1).padStart(2, '0');
+        const dd = String(cur.getDate()).padStart(2, '0');
+        dates.push(`${y}${m}${dd}`);
+        cur.setDate(cur.getDate() + 1);
+    }
+
+    // Calcular filas únicas: combinaciones (hora × puesto)
+    const slots = [];
+    const slotSet = new Set();
+    citas.forEach(c => {
+        const key = `${c.hora}|${c.puesto}`;
+        if (!slotSet.has(key)) { slotSet.add(key); slots.push({ hora: c.hora, puesto: c.puesto }); }
+    });
+    slots.sort((a, b) => a.hora.localeCompare(b.hora) || (a.puesto - b.puesto));
+
+    // Mapa rápido de citas
+    const citaMap = new Map();
+    citas.forEach(c => citaMap.set(`${c.fecha}|${c.hora}|${c.puesto}`, c));
+
+    // Fila 1: cabecera de sede
+    const sedeRow = ws.getRow(1);
+    sedeRow.getCell(1).value = `${sede.nombre} · ${fInicio} → ${fFin}`;
+    sedeRow.getCell(1).font  = { bold: true, size: 12, color: { argb: 'FF1E40AF' } };
+    ws.mergeCells(1, 1, 1, dates.length + 1);
+    sedeRow.height = 22;
+
+    // Fila 2: cabeceras de fecha
+    const headerRow = ws.getRow(2);
+    headerRow.getCell(1).value = 'Hora / Puesto';
+    headerRow.getCell(1).fill  = HEADER_FILL;
+    headerRow.getCell(1).font  = HEADER_FONT;
+    headerRow.getCell(1).border = ALL_BORDERS;
+    headerRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+    dates.forEach((fecha, i) => {
+        const cell = headerRow.getCell(i + 2);
+        cell.value     = fechaHumanaCorta(fecha);
+        cell.fill      = HEADER_FILL;
+        cell.font      = HEADER_FONT;
+        cell.border    = ALL_BORDERS;
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    });
+    headerRow.height = 28;
+
+    // Columna A: etiquetas de slot
+    ws.getColumn(1).width = 14;
+
+    // Filas de datos
+    slots.forEach((slot, si) => {
+        const row  = ws.getRow(si + 3);
+        row.height = 52;
+
+        const labelCell = row.getCell(1);
+        labelCell.value     = `${slot.hora}   P.${slot.puesto}`;
+        labelCell.font      = { bold: true, size: 9, color: { argb: 'FF374151' } };
+        labelCell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+        labelCell.border    = ALL_BORDERS;
+        labelCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        dates.forEach((fecha, di) => {
+            const cita = citaMap.get(`${fecha}|${slot.hora}|${slot.puesto}`);
+            const cell = row.getCell(di + 2);
+            cell.border    = ALL_BORDERS;
+            cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
+            cell.font      = { size: 9 };
+
+            if (cita) {
+                const shortCode = (cita.codigo || '').slice(-3);
+                const doc       = cita.documento || '—';
+                const estado    = cita.estado || 'pendiente';
+                const asist     = cita.asistencia ? ' ✓' : '';
+                cell.value      = `${shortCode}${asist}\n${doc}\n${estadoLabel(estado)}`;
+                cell.fill       = ESTADO_FILL[estado] || ESTADO_FILL.pendiente;
+                cell.font       = { size: 9, color: ESTADO_FONT_COLOR[estado] || ESTADO_FONT_COLOR.pendiente };
+            } else {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+            }
+        });
+    });
+
+    // Anchos de columnas de fecha
+    dates.forEach((_, i) => { ws.getColumn(i + 2).width = 16; });
+}
+
+// ── Hoja 2: LISTADO (tabla completa de backup) ─────────────────────────────
+function buildListadoSheet(workbook, citas) {
+    const ws = workbook.addWorksheet('Listado');
+
+    ws.columns = [
+        { header: 'Fecha',          key: 'fecha',          width: 12 },
+        { header: 'Hora',           key: 'hora',           width: 8  },
+        { header: 'Puesto',         key: 'puesto',         width: 8  },
+        { header: 'Código',         key: 'codigo',         width: 28 },
+        { header: 'Estado',         key: 'estado',         width: 13 },
+        { header: 'Documento',      key: 'documento',      width: 14 },
+        { header: 'HC',             key: 'haceConstar',    width: 6  },
+        { header: 'Vulnerabilidad', key: 'vulnerabilidad', width: 15 },
+        { header: 'Asistencia',     key: 'asistencia',     width: 11 },
+        { header: 'Observaciones',  key: 'observaciones',  width: 35 },
+    ];
+
+    // Estilo de cabecera
+    const headerRow = ws.getRow(1);
+    headerRow.eachCell(cell => {
+        cell.fill      = HEADER_FILL;
+        cell.font      = HEADER_FONT;
+        cell.border    = ALL_BORDERS;
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+    headerRow.height = 24;
+
+    // Filas de datos
+    citas.forEach(cita => {
+        const estado = cita.estado || 'pendiente';
+        const f = cita.fecha || '';
+        const fechaDisplay = f.length === 8
+            ? `${f.slice(6,8)}/${f.slice(4,6)}/${f.slice(0,4)}`
+            : f;
+
+        const row = ws.addRow({
+            fecha:          fechaDisplay,
+            hora:           cita.hora           || '',
+            puesto:         cita.puesto         || '',
+            codigo:         cita.codigo         || '',
+            estado:         estadoLabel(estado),
+            documento:      cita.documento      || '',
+            haceConstar:    cita.haceConstar    ? 'Sí' : 'No',
+            vulnerabilidad: cita.vulnerabilidad ? 'Sí' : 'No',
+            asistencia:     cita.asistencia     ? 'Sí' : 'No',
+            observaciones:  cita.observaciones  || '',
+        });
+
+        const fill = ESTADO_FILL[estado] || ESTADO_FILL.pendiente;
+        const fontColor = ESTADO_FONT_COLOR[estado] || ESTADO_FONT_COLOR.pendiente;
+        row.eachCell(cell => {
+            cell.fill      = fill;
+            cell.font      = { size: 10, color: fontColor };
+            cell.border    = ALL_BORDERS;
+            cell.alignment = { vertical: 'middle', wrapText: false };
+        });
+        row.height = 18;
+    });
+
+    // Auto-filtro en la cabecera
+    ws.autoFilter = { from: 'A1', to: `J1` };
 }

@@ -8,7 +8,7 @@
     <!-- Robustez: Forzar limpieza de caché en cambio de versión -->
     <script>
         (function() {
-            const VERSION = "3.28.3";
+            const VERSION = "3.29.0";
             const savedVersion = localStorage.getItem('app_version');
             if (savedVersion !== VERSION) {
                 console.log("Nueva versión detectada (" + VERSION + "). Limpiando caché...");
@@ -81,7 +81,7 @@
 
             <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;">
                 <button id="btn-logout" class="nav-btn" style="color: var(--danger); padding: 5px 10px; font-size: 0.9rem;">🚪 <span>Cerrar Sesión</span></button>
-                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.28.3</div>
+                <div style="font-size: 0.8rem; color: var(--primary); font-weight: 700; padding: 0 10px;">Versión 3.29.0</div>
             </div>
         </nav>
 
@@ -287,8 +287,9 @@
                             <label>Hasta:</label>
                             <input type="date" id="print-fecha-fin" class="input-modern">
                         </div>
-                        <div class="form-actions" style="align-items: flex-end;">
-                            <button id="btn-print-pdf" class="btn-primary" style="width: 250px; height: 45px; font-size: 1.1rem; font-weight: 700;">📄 Exportar a PDF (A4)</button>
+                        <div class="form-actions" style="align-items: flex-end; display: flex; gap: 10px;">
+                            <button id="btn-print-pdf" class="btn-primary" style="width: 230px; height: 45px; font-size: 1rem; font-weight: 700;">📄 Exportar a PDF (A4)</button>
+                            <button id="btn-export-excel" class="btn-secondary" style="width: 230px; height: 45px; font-size: 1rem; font-weight: 700;">📊 Exportar a Excel</button>
                         </div>
                     </div>
                 </div>
@@ -598,6 +599,7 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script type="module" src="js/app.js?v=3.28.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script type="module" src="js/app.js?v=3.29.0"></script>
 </body>
 </html>
