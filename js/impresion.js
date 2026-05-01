@@ -401,6 +401,13 @@ const ESTADO_FILL = {
     asignada:   { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } }, // azul claro
     pendiente:  { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } }, // gris claro
 };
+// El Formato Condicional en Excel requiere usar bgColor para rellenos sólidos
+const ESTADO_CF_FILL = {
+    grabada:    { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFD1FAE5' } },
+    incidencia: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFEE2E2' } },
+    asignada:   { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFDBEAFE' } },
+    pendiente:  { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFF1F5F9' } },
+};
 const ESTADO_FONT_COLOR = {
     grabada:    { argb: 'FF065F46' },
     incidencia: { argb: 'FF991B1B' },
@@ -431,6 +438,9 @@ function fechaHumanaCorta(yyyymmdd) {
 // dos hojas lo actualiza en la otra automáticamente.
 function buildCalendarioSheet(workbook, citas, fInicio, fFin, sede, rowMap) {
     const ws = workbook.addWorksheet('Calendario', { views: [{ state: 'frozen', xSplit: 1, ySplit: 2 }] });
+    
+    // v3.29.2: Proteger la hoja para que sea de solo lectura
+    ws.protect('AgendaCRE', { selectLockedCells: true, selectUnlockedCells: true });
 
     // Calcular días del rango
     const dates = [];
@@ -513,9 +523,9 @@ function buildCalendarioSheet(workbook, citas, fInicio, fFin, sede, rowMap) {
 
                 if (listadoRow) {
                     // Fórmula vinculada: la celda de Documento en Listado es la columna F (6)
-                    // Si el usuario edita el documento en Listado, se actualiza aquí, y viceversa.
+                    // Además, el Estado lo leemos dinámicamente de la columna E (5) de Listado.
                     // Formato: Código(+✓) \n Documento \n Estado
-                    const formula = `"${shortCode}${asist}"&CHAR(10)&IF(Listado!F${listadoRow}<>"",Listado!F${listadoRow},"—")&CHAR(10)&"${estadoLabel(estado)}"`;
+                    const formula = `"${shortCode}${asist}"&CHAR(10)&IF(Listado!F${listadoRow}<>"",Listado!F${listadoRow},"—")&CHAR(10)&Listado!E${listadoRow}`;
                     cell.value = {
                         formula,
                         result: `${shortCode}${asist}\n${doc}\n${estadoLabel(estado)}`
@@ -534,6 +544,19 @@ function buildCalendarioSheet(workbook, citas, fInicio, fFin, sede, rowMap) {
 
     // Anchos de columnas de fecha
     dates.forEach((_, i) => { ws.getColumn(i + 2).width = 16; });
+
+    // Formato Condicional para Calendario: cambia color si el texto cambia dinámicamente
+    const endCol = ws.getColumn(dates.length + 1).letter;
+    const gridRef = `B3:${endCol}${slots.length + 2}`;
+    ws.addConditionalFormatting({
+        ref: gridRef,
+        rules: [
+            { type: 'expression', formulae: ['ISNUMBER(SEARCH("Grabada",B3))'], style: { fill: ESTADO_CF_FILL.grabada, font: { color: ESTADO_FONT_COLOR.grabada } } },
+            { type: 'expression', formulae: ['ISNUMBER(SEARCH("Incidencia",B3))'], style: { fill: ESTADO_CF_FILL.incidencia, font: { color: ESTADO_FONT_COLOR.incidencia } } },
+            { type: 'expression', formulae: ['ISNUMBER(SEARCH("Asignada",B3))'], style: { fill: ESTADO_CF_FILL.asignada, font: { color: ESTADO_FONT_COLOR.asignada } } },
+            { type: 'expression', formulae: ['ISNUMBER(SEARCH("Pendiente",B3))'], style: { fill: ESTADO_CF_FILL.pendiente, font: { color: ESTADO_FONT_COLOR.pendiente } } }
+        ]
+    });
 }
 
 // ── Hoja 2: LISTADO (tabla completa de backup) ─────────────────────────────
@@ -580,14 +603,32 @@ function buildListadoSheet(workbook, citas) {
             fecha:          fechaDisplay,
             hora:           cita.hora           || '',
             puesto:         cita.puesto         || '',
-            codigo:         (cita.codigo        || '').slice(-3), // ← solo los 3 últimos caracteres
-            estado:         estadoLabel(estado),
+            codigo:         (cita.codigo        || '').slice(-3),
+            estado:         '', // Se rellena con fórmula/desplegable a continuación
             documento:      cita.documento      || '',
             haceConstar:    cita.haceConstar    ? 'Sí' : 'No',
             vulnerabilidad: cita.vulnerabilidad ? 'Sí' : 'No',
             asistencia:     cita.asistencia     ? 'Sí' : 'No',
             observaciones:  cita.observaciones  || '',
         });
+
+        // Lista desplegable y automatización del Estado
+        const cellEstado = row.getCell('estado');
+        cellEstado.dataValidation = {
+            type: 'list',
+            allowBlank: false,
+            formulae: ['"Pendiente,Asignada,Grabada,Incidencia"']
+        };
+
+        // Si la cita aún es editable, automatizamos para que Documento -> Asignada
+        if (estado === 'pendiente' || estado === 'asignada') {
+            cellEstado.value = {
+                formula: `IF(F${excelRow}<>"","Asignada","Pendiente")`,
+                result: estadoLabel(estado)
+            };
+        } else {
+            cellEstado.value = estadoLabel(estado);
+        }
 
         const fill = ESTADO_FILL[estado] || ESTADO_FILL.pendiente;
         const fontColor = ESTADO_FONT_COLOR[estado] || ESTADO_FONT_COLOR.pendiente;
@@ -602,6 +643,17 @@ function buildListadoSheet(workbook, citas) {
         // Registrar la fila en el mapa para que Calendario pueda referenciarla
         const citaKey = `${cita.fecha}|${cita.hora}|${cita.puesto}`;
         rowMap.set(citaKey, excelRow);
+    });
+
+    // Formato condicional para pintar toda la fila según el estado
+    ws.addConditionalFormatting({
+        ref: `A2:J${citas.length + 1}`,
+        rules: [
+            { type: 'expression', formulae: ['$E2="Grabada"'], style: { fill: ESTADO_CF_FILL.grabada, font: { color: ESTADO_FONT_COLOR.grabada } } },
+            { type: 'expression', formulae: ['$E2="Incidencia"'], style: { fill: ESTADO_CF_FILL.incidencia, font: { color: ESTADO_FONT_COLOR.incidencia } } },
+            { type: 'expression', formulae: ['$E2="Asignada"'], style: { fill: ESTADO_CF_FILL.asignada, font: { color: ESTADO_FONT_COLOR.asignada } } },
+            { type: 'expression', formulae: ['$E2="Pendiente"'], style: { fill: ESTADO_CF_FILL.pendiente, font: { color: ESTADO_FONT_COLOR.pendiente } } }
+        ]
     });
 
     // Auto-filtro en la cabecera
