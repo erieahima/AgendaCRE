@@ -370,8 +370,10 @@ async function handleExportExcel() {
         workbook.creator = 'AgendaCRE';
         workbook.created = new Date();
 
-        buildCalendarioSheet(workbook, citas, fInicio, fFin, sede);
-        buildListadoSheet(workbook, citas);
+        // Primero construir Listado para obtener el mapa de filas
+        // que Calendario usará para referenciar celdas con fórmulas vinculadas
+        const rowMap = buildListadoSheet(workbook, citas);
+        buildCalendarioSheet(workbook, citas, fInicio, fFin, sede, rowMap);
 
         statusText.textContent = '¡Listo! Descargando...';
         const buffer = await workbook.xlsx.writeBuffer();
@@ -423,7 +425,11 @@ function fechaHumanaCorta(yyyymmdd) {
 }
 
 // ── Hoja 1: CALENDARIO (grid visual igual que la app) ─────────────────────
-function buildCalendarioSheet(workbook, citas, fInicio, fFin, sede) {
+// rowMap: Map<"fecha|hora|puesto" → número de fila en Listado>
+// Las celdas de la hoja Calendario usan fórmulas que apuntan a la columna
+// Documento de Listado, por lo que editar el documento en cualquiera de las
+// dos hojas lo actualiza en la otra automáticamente.
+function buildCalendarioSheet(workbook, citas, fInicio, fFin, sede, rowMap) {
     const ws = workbook.addWorksheet('Calendario', { views: [{ state: 'frozen', xSplit: 1, ySplit: 2 }] });
 
     // Calcular días del rango
@@ -492,20 +498,34 @@ function buildCalendarioSheet(workbook, citas, fInicio, fFin, sede) {
         labelCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
         dates.forEach((fecha, di) => {
-            const cita = citaMap.get(`${fecha}|${slot.hora}|${slot.puesto}`);
-            const cell = row.getCell(di + 2);
+            const citaKey = `${fecha}|${slot.hora}|${slot.puesto}`;
+            const cita    = citaMap.get(citaKey);
+            const cell    = row.getCell(di + 2);
             cell.border    = ALL_BORDERS;
             cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
-            cell.font      = { size: 9 };
 
             if (cita) {
                 const shortCode = (cita.codigo || '').slice(-3);
                 const doc       = cita.documento || '—';
                 const estado    = cita.estado || 'pendiente';
                 const asist     = cita.asistencia ? ' ✓' : '';
-                cell.value      = `${shortCode}${asist}\n${doc}\n${estadoLabel(estado)}`;
-                cell.fill       = ESTADO_FILL[estado] || ESTADO_FILL.pendiente;
-                cell.font       = { size: 9, color: ESTADO_FONT_COLOR[estado] || ESTADO_FONT_COLOR.pendiente };
+                const listadoRow = rowMap ? rowMap.get(citaKey) : null;
+
+                if (listadoRow) {
+                    // Fórmula vinculada: la celda de Documento en Listado es la columna F (6)
+                    // Si el usuario edita el documento en Listado, se actualiza aquí, y viceversa.
+                    // Formato: Código(+✓) \n Documento \n Estado
+                    const formula = `"${shortCode}${asist}"&CHAR(10)&IF(Listado!F${listadoRow}<>"",Listado!F${listadoRow},"—")&CHAR(10)&"${estadoLabel(estado)}"`;
+                    cell.value = {
+                        formula,
+                        result: `${shortCode}${asist}\n${doc}\n${estadoLabel(estado)}`
+                    };
+                } else {
+                    cell.value = `${shortCode}${asist}\n${doc}\n${estadoLabel(estado)}`;
+                }
+
+                cell.fill = ESTADO_FILL[estado] || ESTADO_FILL.pendiente;
+                cell.font = { size: 9, color: ESTADO_FONT_COLOR[estado] || ESTADO_FONT_COLOR.pendiente };
             } else {
                 cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
             }
@@ -517,14 +537,18 @@ function buildCalendarioSheet(workbook, citas, fInicio, fFin, sede) {
 }
 
 // ── Hoja 2: LISTADO (tabla completa de backup) ─────────────────────────────
+// Devuelve Map<"fecha|hora|puesto" → número de fila> para que Calendario
+// pueda generar fórmulas vinculadas a la columna Documento (F).
 function buildListadoSheet(workbook, citas) {
     const ws = workbook.addWorksheet('Listado');
+    // rowMap guarda en qué fila de Excel quedó cada cita
+    const rowMap = new Map();
 
     ws.columns = [
         { header: 'Fecha',          key: 'fecha',          width: 12 },
         { header: 'Hora',           key: 'hora',           width: 8  },
         { header: 'Puesto',         key: 'puesto',         width: 8  },
-        { header: 'Código',         key: 'codigo',         width: 28 },
+        { header: 'Código',         key: 'codigo',         width: 8  }, // solo 3 chars
         { header: 'Estado',         key: 'estado',         width: 13 },
         { header: 'Documento',      key: 'documento',      width: 14 },
         { header: 'HC',             key: 'haceConstar',    width: 6  },
@@ -543,8 +567,9 @@ function buildListadoSheet(workbook, citas) {
     });
     headerRow.height = 24;
 
-    // Filas de datos
-    citas.forEach(cita => {
+    // Filas de datos (fila 1 = cabecera, datos desde fila 2)
+    citas.forEach((cita, idx) => {
+        const excelRow = idx + 2; // la fila 1 es la cabecera
         const estado = cita.estado || 'pendiente';
         const f = cita.fecha || '';
         const fechaDisplay = f.length === 8
@@ -555,7 +580,7 @@ function buildListadoSheet(workbook, citas) {
             fecha:          fechaDisplay,
             hora:           cita.hora           || '',
             puesto:         cita.puesto         || '',
-            codigo:         cita.codigo         || '',
+            codigo:         (cita.codigo        || '').slice(-3), // ← solo los 3 últimos caracteres
             estado:         estadoLabel(estado),
             documento:      cita.documento      || '',
             haceConstar:    cita.haceConstar    ? 'Sí' : 'No',
@@ -573,8 +598,15 @@ function buildListadoSheet(workbook, citas) {
             cell.alignment = { vertical: 'middle', wrapText: false };
         });
         row.height = 18;
+
+        // Registrar la fila en el mapa para que Calendario pueda referenciarla
+        const citaKey = `${cita.fecha}|${cita.hora}|${cita.puesto}`;
+        rowMap.set(citaKey, excelRow);
     });
 
     // Auto-filtro en la cabecera
-    ws.autoFilter = { from: 'A1', to: `J1` };
+    ws.autoFilter = { from: 'A1', to: 'J1' };
+
+    return rowMap; // Devolvemos el mapa para el vínculo con Calendario
 }
+
