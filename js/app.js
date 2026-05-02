@@ -1,19 +1,19 @@
 // js/app.js
-import { getSedes, inicializarSedes, resetLlamadasSede } from './firebase.js';
-import { cacheClear, cacheInvalidatePrefix } from './cache.js';
-import { renderCalendario, loadCitasCalendario, initCalendarioModal } from './calendario.js';
-import { setupGenerador } from './generador.js';
-import { setupImpresion } from './impresion.js';
-import { initAuth, hasPermission } from './auth.js';
-import { setupUsuarios } from './usuarios.js';
+import { getSedes, inicializarSedes, resetLlamadasSede } from './firebase.js?v=3.29.6';
+import { cacheClear, cacheInvalidatePrefix } from './cache.js?v=3.29.6';
+import { renderCalendario, loadCitasCalendario, initCalendarioModal } from './calendario.js?v=3.29.6';
+import { setupGenerador } from './generador.js?v=3.29.6';
+import { setupImpresion } from './impresion.js?v=3.29.6';
+import { initAuth, hasPermission } from './auth.js?v=3.29.6';
+import { setupUsuarios } from './usuarios.js?v=3.29.6';
 
-import { setupHistorico } from './historico.js';
-import { setupAsignar } from './asignar.js';
-import { setupPuesto } from './puesto.js';
-import { setupPantalla } from './pantalla.js';
-import { setupEspera } from './espera.js';
-import { setupTablasMaestras } from './tablasMaestras.js';
-import { setupObservatorio } from './observatorio.js';
+import { setupHistorico } from './historico.js?v=3.29.6';
+import { setupAsignar } from './asignar.js?v=3.29.6';
+import { setupPuesto } from './puesto.js?v=3.29.6';
+import { setupPantalla } from './pantalla.js?v=3.29.6';
+import { setupEspera } from './espera.js?v=3.29.6';
+import { setupTablasMaestras } from './tablasMaestras.js?v=3.29.6';
+import { setupObservatorio } from './observatorio.js?v=3.29.6';
 
 // Estado global de la aplicación
 const AppState = {
