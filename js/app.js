@@ -46,6 +46,12 @@ async function loadAuthenticatedApp() {
         }
     }
     AppState.sedes = sedesData;
+
+    // Renderizar perfil de usuario en el sidebar
+    const emailEl = document.getElementById('sidebar-user-email');
+    const roleEl = document.getElementById('sidebar-user-role');
+    if (emailEl) emailEl.textContent = AppState.user.email || "Usuario";
+    if (roleEl) roleEl.textContent = AppState.user.rol || "Sin rol";
     
     // Rellenar selectores
     const globalSelector = document.getElementById('global-sede-selector');
