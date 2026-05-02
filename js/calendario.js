@@ -422,7 +422,7 @@ export function openModal(cita, isRestricted = false) {
         btnSave.classList.remove('hidden');
         
         if (isRestricted) {
-            inputUser.disabled = true;
+            inputUser.disabled = false; // V.3.29.10: Habilitado en modo Asignar
             document.getElementById('modal-hace-constar').disabled = true;
             document.getElementById('modal-vulnerabilidad').disabled = true;
             inputDoc.disabled = false;
