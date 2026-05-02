@@ -67,6 +67,7 @@ function setupControls() {
     });
 
     document.getElementById('cal-today').addEventListener('click', () => {
+        currentDate = new Date(); // V.3.29.11: Faltaba asignar la fecha actual
         updateCalendario();
     });
 
