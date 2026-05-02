@@ -160,11 +160,34 @@ async function loadAuthenticatedApp() {
     // Ejecución inicial de visibilidad por sede
     refreshSedeFeatures();
 
-    // VISTA INICIAL INTELIGENTE: Hacer clic en el primer botón visible para este rol
-    const firstVisibleBtn = Array.from(document.querySelectorAll('.nav-links .nav-btn'))
-                                 .find(btn => btn.parentElement.style.display !== 'none');
-    if (firstVisibleBtn) {
-        firstVisibleBtn.click();
+    // VISTA INICIAL SEGÚN ROL
+    let initialTargetId = "";
+    const role = AppState.user.rol.toLowerCase();
+    
+    if (role === 'super_admin' || role === 'admin' || role === 'operador') {
+        initialTargetId = 'nav-item-calendario';
+    } else if (role === 'cita') {
+        initialTargetId = 'nav-item-asignar';
+    } else if (role === 'pantalla') {
+        initialTargetId = 'nav-item-pantalla-citas';
+    }
+
+    let btnToClick = null;
+    if (initialTargetId) {
+        const item = document.getElementById(initialTargetId);
+        if (item && item.style.display !== 'none') {
+            btnToClick = item.querySelector('.nav-btn');
+        }
+    }
+
+    // Fallback al primer visible si no hay uno específico o no tiene permiso
+    if (!btnToClick) {
+        btnToClick = Array.from(document.querySelectorAll('.nav-links .nav-btn'))
+                          .find(btn => btn.parentElement.style.display !== 'none');
+    }
+
+    if (btnToClick) {
+        btnToClick.click();
     }
 
     // [V.3.24.0] Auto-limpieza diaria de pantalla (00:00h)
