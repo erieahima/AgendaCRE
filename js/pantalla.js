@@ -173,10 +173,11 @@ function renderPantalla(llamadas) {
         // La lista muestra los que ya pasaron por el panel grande
         listado = processedArr.slice(0, indexPrincipal).reverse();
         
-        // El sonido debe sonar SIEMPRE que aparezca un ID de cita diferente (V.3.6.5)
-        if (masReciente.id !== lastPlayedId) {
+        // El sonido debe sonar siempre que el ID O el timestamp cambien (V.3.29.5)
+        // Usamos principalHTML que ya contiene: masReciente.id + "_" + timestamp
+        if (principalHTML !== lastPlayedId) {
             if (playDing()) {
-                lastPlayedId = masReciente.id;
+                lastPlayedId = principalHTML;
             }
         }
     } else {
