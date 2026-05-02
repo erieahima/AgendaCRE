@@ -4,6 +4,7 @@ let appStateRef = null;
 let unsubscribeLlamadas = null;
 let cacheLlamadas = [];
 let lastRenderDataHash = "";
+let isFirstLoad = true;
 
 export function setupPantalla(appState) {
     appStateRef = appState;
@@ -31,18 +32,20 @@ export function setupPantalla(appState) {
     // Refresco de expiración (cada 2 segundos para mayor precisión en el borrado de la principal)
     setInterval(() => {
         if (cacheLlamadas.length > 0) {
-            renderPantalla(cacheLlamadas);
+            renderPantalla(cacheLlamadas, false);
         }
-        updateDebugInfo("OK", appState.sedeActivaId, lastPlayedId);
+        updateDebugInfo("OK", appState.sedeActivaId, lastSnapshotLatestTS);
     }, 2000);
 
     // Función interna para iniciar el listener
     const startListening = (sedeId) => {
         if (unsubscribeLlamadas) unsubscribeLlamadas();
         updateDebugInfo("Conectando...", sedeId);
+        isFirstLoad = true;
         unsubscribeLlamadas = listenLlamadasRecientes(sedeId, (llamadas) => {
             cacheLlamadas = llamadas;
-            renderPantalla(llamadas);
+            renderPantalla(llamadas, isFirstLoad);
+            isFirstLoad = false;
             updateDebugInfo("En Vivo", sedeId);
         });
     };
@@ -92,11 +95,10 @@ export function setupPantalla(appState) {
 const localEntranceTimes = new Map(); 
 let lastMainHTML = "";
 let lastListHTML = "";
-let lastPlayedId = ""; // Asegura que cada código suena una sola vez
 let lastSnapshotArrival = 0; // Tiempo local (ms) en que llegó el último snapshot de datos
 let lastSnapshotLatestTS = 0; // Timestamp (s) de la llamada más reciente del último snapshot
 
-function renderPantalla(llamadas) {
+function renderPantalla(llamadas, isInitialLoad = false) {
     const mainCodigo = document.getElementById('pantalla-main-codigo');
     const mainMesa = document.getElementById('pantalla-main-mesa');
     const listaRecientes = document.getElementById('pantalla-lista-recientes');
@@ -123,7 +125,11 @@ function renderPantalla(llamadas) {
     const newestTS = newestCall.llamada.timestamp.seconds;
 
     // Si el snapshot es nuevo (entró una llamada nueva al sistema), reiniciamos el cronómetro local
+    // Y REPRODUCIMOS EL SONIDO si no es la primera carga y el timestamp es mayor (llamada nueva o repetida)
     if (newestTS !== lastSnapshotLatestTS) {
+        if (!isInitialLoad && newestTS > lastSnapshotLatestTS) {
+            playDing();
+        }
         lastSnapshotLatestTS = newestTS;
         lastSnapshotArrival = Date.now();
     }
@@ -172,14 +178,6 @@ function renderPantalla(llamadas) {
         
         // La lista muestra los que ya pasaron por el panel grande
         listado = processedArr.slice(0, indexPrincipal).reverse();
-        
-        // El sonido debe sonar siempre que el ID O el timestamp cambien (V.3.29.5)
-        // Usamos principalHTML que ya contiene: masReciente.id + "_" + timestamp
-        if (principalHTML !== lastPlayedId) {
-            if (playDing()) {
-                lastPlayedId = principalHTML;
-            }
-        }
     } else {
         // En caso de que todas hayan expirado (o error), todas van a la derecha
         if (principalContainer) principalContainer.style.opacity = '0';
