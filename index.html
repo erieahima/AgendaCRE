@@ -536,7 +536,9 @@
                         <option value="incidencia">Incidencia</option>
                     </select>
                 </div>
-                <div class="form-group mt-4" style="background: #f0fdf4; padding: 10px; border-radius: 8px; border: 1px solid #bbf7d0;">
+            </div>
+            <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-card); border-radius: 0 0 var(--radius-lg) var(--radius-lg); flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
+                <div class="form-group" style="background: #f0fdf4; padding: 10px; border-radius: 8px; border: 1px solid #bbf7d0;">
                     <label class="flex-between" style="cursor: pointer; margin: 0; color: #166534; font-weight: 600;">
                         Persona asiste a la cita
                         <label class="switch">
@@ -545,11 +547,11 @@
                         </label>
                     </label>
                 </div>
-            </div>
-            <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--bg-card); border-radius: 0 0 var(--radius-lg) var(--radius-lg); flex-shrink: 0; display: flex; gap: 10px;">
-                <button id="btn-save-cita" class="btn-primary" style="flex: 2;">Guardar Cambios</button>
-                <button id="btn-admin-edit" class="btn-secondary hidden" style="flex: 1; border-color: var(--danger); color: var(--danger);">🔓 Editar (Admin)</button>
-                <button id="btn-llamar-modal" class="btn-secondary hidden" style="flex: 1; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">🔔 Llamar</button>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-save-cita" class="btn-primary" style="flex: 2;">Guardar Cambios</button>
+                    <button id="btn-admin-edit" class="btn-secondary hidden" style="flex: 1; border-color: var(--danger); color: var(--danger);">🔓 Editar (Admin)</button>
+                    <button id="btn-llamar-modal" class="btn-secondary hidden" style="flex: 1; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">🔔 Llamar</button>
+                </div>
             </div>
         </div>
     </div>
