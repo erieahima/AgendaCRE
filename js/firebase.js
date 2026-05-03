@@ -1,4 +1,4 @@
-// js/firebase.js
+// js/firebase.js v3.28.4
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { 
@@ -351,6 +351,7 @@ export async function buscarCitasHistorico(sedeId, term) {
     
     // Buscamos por prefijo de Código de Cita + estado grabada/incidencia
     const q1 = query(citasRef, 
+        where("sede", "==", sedeId),
         where("estado", "in", ["grabada", "incidencia"]),
         orderBy("codigo"), 
         startAt(termClean), 
@@ -360,6 +361,7 @@ export async function buscarCitasHistorico(sedeId, term) {
     
     // Buscamos por prefijo de Código de Usuario + estado grabada/incidencia
     const q2 = query(citasRef, 
+        where("sede", "==", sedeId),
         where("estado", "in", ["grabada", "incidencia"]),
         orderBy("codigoUsuario"), 
         startAt(termClean), 
@@ -375,9 +377,25 @@ export async function buscarCitasHistorico(sedeId, term) {
     } catch (e) {
         console.error("Error en búsqueda por prefijo:", e);
         // Fallback a búsqueda exacta si hay problemas de índices de ordenación
-        const q3 = query(citasRef, where("codigoUsuario", "==", termClean), limit(20));
-        const s3 = await getDocs(q3);
-        s3.forEach(d => results.set(d.id, {id: d.id, ...d.data()}));
+        try {
+            const q3 = query(citasRef, 
+                where("sede", "==", sedeId),
+                where("codigoUsuario", "==", termClean), 
+                limit(20)
+            );
+            const s3 = await getDocs(q3);
+            s3.forEach(d => {
+                const data = d.data();
+                if (["grabada", "incidencia"].includes(data.estado)) results.set(d.id, {id: d.id, ...data});
+            });
+            
+            // Fallback para código exacto
+            const docRef = doc(db, "citas", termClean);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists() && docSnap.data().sede === sedeId && ["grabada", "incidencia"].includes(docSnap.data().estado)) {
+                results.set(docSnap.id, {id: docSnap.id, ...docSnap.data()});
+            }
+        } catch(e2) { console.error("Error en fallback:", e2); }
     }
     
     return Array.from(results.values());
@@ -397,15 +415,13 @@ export async function buscarCitasParaAsignar(sedeId, term = "") {
     // ESTRATEGIA A: Búsqueda por SUFIJO exacto (3 caracteres finales del código)
     if (termClean.length === 3 && !isNumeric) {
         const qSufijo = query(citasRef,
+            where("sede", "==", sedeId),
             where("sufijo", "==", termClean),
             limit(100)
         );
         try {
             const snap = await getDocs(qSufijo);
-            snap.forEach(d => {
-                const data = d.data();
-                if (data.sede === sedeId) results.set(d.id, { id: d.id, ...data });
-            });
+            snap.forEach(d => results.set(d.id, { id: d.id, ...d.data() }));
             if (results.size > 0) return Array.from(results.values());
         } catch (e) { console.error("Error buscando por sufijo:", e); }
     }
@@ -418,17 +434,45 @@ export async function buscarCitasParaAsignar(sedeId, term = "") {
         } else {
             if (!prefix.startsWith(`REG${sedeId}`)) return [];
         }
-        const qPrefix = query(citasRef,
-            orderBy("codigo"),
-            startAt(prefix),
-            endAt(prefix + "\uf8ff"),
-            limit(100)
-        );
         try {
+            const qPrefix = query(citasRef,
+                where("sede", "==", sedeId),
+                orderBy("codigo"),
+                startAt(prefix),
+                endAt(prefix + "\uf8ff"),
+                limit(100)
+            );
             const snap = await getDocs(qPrefix);
             snap.forEach(d => results.set(d.id, { id: d.id, ...d.data() }));
             if (results.size > 0) return Array.from(results.values());
-        } catch (e) { console.error("Error buscando por prefijo código:", e); }
+        } catch (e) { 
+            console.error("Error buscando por prefijo código, usando fallback:", e);
+            // Fallback si falta índice: Búsqueda exacta si es código largo, o búsqueda por fecha si es fecha
+            if (prefix.length >= 18) {
+                try {
+                    const docSnap = await getDoc(doc(db, "citas", prefix));
+                    if (docSnap.exists() && docSnap.data().sede === sedeId) {
+                        results.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+                    }
+                } catch(e2) { console.error("Error en fallback exacto:", e2); }
+            } else if (prefix.length >= 16) {
+                const fechaStr = prefix.substring(8, 16);
+                try {
+                    const qFecha = query(citasRef,
+                        where("sede", "==", sedeId),
+                        where("fecha", "==", fechaStr),
+                        limit(100)
+                    );
+                    const snap = await getDocs(qFecha);
+                    snap.forEach(d => {
+                        if (d.data().codigo.startsWith(prefix)) {
+                            results.set(d.id, { id: d.id, ...d.data() });
+                        }
+                    });
+                } catch(e3) { console.error("Error en fallback fecha:", e3); }
+            }
+            if (results.size > 0) return Array.from(results.values());
+        }
     }
 
     // ESTRATEGIA D: Búsqueda por NÚMERO DE DOCUMENTO (cuando el término es numérico ≥ 4 dígitos)
