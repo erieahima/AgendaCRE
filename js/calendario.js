@@ -360,7 +360,7 @@ export function openModal(cita, isRestricted = false) {
     modalCitaActiva = cita;
     const modal = document.getElementById('cita-modal');
     
-    document.getElementById('modal-codigo').textContent = cita.codigo;
+    document.getElementById('modal-codigo').textContent = cita.codigo.slice(-3).toUpperCase();
     document.getElementById('modal-fecha').textContent = formatearFechaHumana(cita.fecha);
     document.getElementById('modal-hora').textContent = formatearHoraHumana(cita.hora);
     
