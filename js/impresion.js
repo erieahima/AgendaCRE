@@ -47,6 +47,23 @@ async function handleExportPDF() {
 
         let citas = await getCitasPorSedeYRango(appStateRef.sedeActivaId, yyyymmddInicio, yyyymmddFin);
         
+        // Filtrar por días de la semana seleccionados
+        const selectedDays = [];
+        for (let i = 0; i <= 6; i++) {
+            if (document.getElementById(`print-day-${i}`).checked) {
+                selectedDays.push(i);
+            }
+        }
+        
+        citas = citas.filter(c => {
+            if (!c.fecha || c.fecha.length !== 8) return true;
+            const y = parseInt(c.fecha.slice(0, 4), 10);
+            const m = parseInt(c.fecha.slice(4, 6), 10) - 1;
+            const d = parseInt(c.fecha.slice(6, 8), 10);
+            const dateObj = new Date(y, m, d);
+            return selectedDays.includes(dateObj.getDay());
+        });
+
         // Ordenar por fecha y hora manualmente (V.3.25.0)
         citas.sort((a,b) => {
             const da = a.fecha.localeCompare(b.fecha);
@@ -55,7 +72,7 @@ async function handleExportPDF() {
         });
         
         if (citas.length === 0) {
-            alert("No hay citas registradas en el rango seleccionado.");
+            alert("No hay citas registradas en el rango y días seleccionados.");
             msgContainer.classList.add('hidden');
             btnExport.disabled = false;
             return;
@@ -347,6 +364,24 @@ async function handleExportExcel() {
         statusText.textContent = 'Obteniendo datos de Firebase...';
 
         let citas = await getCitasPorSedeYRango(appStateRef.sedeActivaId, yyyymmddIni, yyyymmddFin);
+        
+        // Filtrar por días de la semana seleccionados
+        const selectedDays = [];
+        for (let i = 0; i <= 6; i++) {
+            if (document.getElementById(`print-day-${i}`).checked) {
+                selectedDays.push(i);
+            }
+        }
+        
+        citas = citas.filter(c => {
+            if (!c.fecha || c.fecha.length !== 8) return true;
+            const y = parseInt(c.fecha.slice(0, 4), 10);
+            const m = parseInt(c.fecha.slice(4, 6), 10) - 1;
+            const d = parseInt(c.fecha.slice(6, 8), 10);
+            const dateObj = new Date(y, m, d);
+            return selectedDays.includes(dateObj.getDay());
+        });
+
         citas.sort((a, b) => {
             const d = a.fecha.localeCompare(b.fecha);
             if (d !== 0) return d;
@@ -355,7 +390,7 @@ async function handleExportExcel() {
         });
 
         if (citas.length === 0) {
-            alert('No hay citas en el rango seleccionado.');
+            alert('No hay citas en el rango y días seleccionados.');
             msgContainer.classList.add('hidden');
             btn.disabled = false;
             return;
