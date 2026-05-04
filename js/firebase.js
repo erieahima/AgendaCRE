@@ -1,4 +1,4 @@
-// js/firebase.js v3.29.16
+// js/firebase.js v3.29.17
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { 

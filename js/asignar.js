@@ -1,4 +1,4 @@
-// js/asignar.js  v3.29.16
+// js/asignar.js  v3.29.17
 // Búsqueda 100% bajo demanda: sin precarga masiva.
 // Cada término buscado se cachea 10 min. No hay lectura al entrar al módulo.
 import { buscarCitasParaAsignar } from './firebase.js';

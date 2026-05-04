@@ -242,7 +242,7 @@ function setupModalControls() {
             document.getElementById('modal-codigo-usuario').disabled = false;
             document.getElementById('modal-hace-constar').disabled = false;
             document.getElementById('modal-vulnerabilidad').disabled = false;
-            document.getElementById('modal-iniciales').disabled = false;
+            document.getElementById('modal-documento').disabled = false;
             document.getElementById('modal-observaciones').disabled = false;
             document.getElementById('modal-estado-select').disabled = false;
             document.getElementById('modal-asistencia-switch').disabled = false;
