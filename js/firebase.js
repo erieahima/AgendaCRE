@@ -653,4 +653,4 @@ export function listenListaEspera(sedeId, callback) {
     });
 }
 
-export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, Timestamp, invalidarCacheSedes, invalidarCacheUsuarios };
+export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, Timestamp };
