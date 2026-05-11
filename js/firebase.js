@@ -1,4 +1,4 @@
-// js/firebase.js v3.29.17
+// js/firebase.js v3.30.0
 import { firebaseConfig } from '../firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { 
@@ -46,8 +46,23 @@ export async function inicializarSedes() {
     }
 }
 
+// -- CACHÉ DE MÓDULO: SEDES (TTL 30 min) --
+// Evita releer la colección 'sedes' en cada login y cambio de vista.
+// Se invalida explícitamente desde tablasMaestras.js cuando cambia alguna sede.
+const SEDES_CACHE_TTL = 30 * 60 * 1000;
+let _sedesActivasCache = null;
+let _sedesActivasExp = 0;
+let _todasSedesCache = null;
+let _todasSedesExp = 0;
+
+export function invalidarCacheSedes() {
+    _sedesActivasCache = null;
+    _todasSedesCache = null;
+}
+
 export async function getSedes() {
     if (!isConfigured) return SEDES_INICIALES;
+    if (_sedesActivasCache && Date.now() < _sedesActivasExp) return _sedesActivasCache;
     const sedesRef = collection(db, "sedes");
     const q = query(sedesRef, where("activa", "==", true));
     const snapshot = await getDocs(q);
@@ -58,11 +73,14 @@ export async function getSedes() {
         if (data.hasQueuingSystem === undefined) data.hasQueuingSystem = true;
         sedes.push({ id: doc.id, ...data });
     });
+    _sedesActivasCache = sedes;
+    _sedesActivasExp = Date.now() + SEDES_CACHE_TTL;
     return sedes;
 }
 
 export async function getAllSedes() {
     if (!isConfigured) return SEDES_INICIALES;
+    if (_todasSedesCache && Date.now() < _todasSedesExp) return _todasSedesCache;
     const sedesRef = collection(db, "sedes");
     const snapshot = await getDocs(sedesRef);
     const sedes = [];
@@ -71,6 +89,8 @@ export async function getAllSedes() {
         if (data.hasQueuingSystem === undefined) data.hasQueuingSystem = true;
         sedes.push({ id: doc.id, ...data });
     });
+    _todasSedesCache = sedes;
+    _todasSedesExp = Date.now() + SEDES_CACHE_TTL;
     return sedes;
 }
 
@@ -303,13 +323,27 @@ export async function getUsuarioData(uid) {
     return null;
 }
 
+// -- CACHÉ DE MÓDULO: USUARIOS (TTL 10 min) --
+// Evita releer toda la colección de usuarios en cada visita al panel.
+// Se invalida explícitamente desde usuarios.js cuando se crea o borra un usuario.
+const USUARIOS_CACHE_TTL = 10 * 60 * 1000;
+let _usuariosCache = null;
+let _usuariosExp = 0;
+
+export function invalidarCacheUsuarios() {
+    _usuariosCache = null;
+}
+
 export async function getTodosLosUsuarios() {
     if (!isConfigured) return [];
+    if (_usuariosCache && Date.now() < _usuariosExp) return _usuariosCache;
     const usuarios = [];
     const snap = await getDocs(collection(db, "usuarios"));
     snap.forEach(doc => {
         usuarios.push({ ...doc.data(), uid: doc.id });
     });
+    _usuariosCache = usuarios;
+    _usuariosExp = Date.now() + USUARIOS_CACHE_TTL;
     return usuarios;
 }
 
@@ -619,4 +653,4 @@ export function listenListaEspera(sedeId, callback) {
     });
 }
 
-export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, Timestamp };
+export { db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, firebaseConfig, initializeApp, getAuth, Timestamp, invalidarCacheSedes, invalidarCacheUsuarios };

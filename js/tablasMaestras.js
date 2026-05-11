@@ -1,5 +1,5 @@
 // js/tablasMaestras.js
-import { getAllSedes, guardarSede } from './firebase.js';
+import { getAllSedes, guardarSede, invalidarCacheSedes } from './firebase.js';
 
 export function setupTablasMaestras(appState) {
     const container = document.getElementById('sedes-cards-container');
@@ -73,6 +73,7 @@ export function setupTablasMaestras(appState) {
             delBtn.addEventListener('click', async () => {
                 if (confirm(`¿Dar de baja la sede ${sede.nombre}?`)) {
                     await guardarSede(sede.codigoTerritorial, { activa: false });
+                    invalidarCacheSedes(); // v3.30.0: forzar recarga en el próximo getSedes()
                     renderSedesCards();
                     window.dispatchEvent(new CustomEvent('sedesListChanged'));
                 }
@@ -151,6 +152,7 @@ export function setupTablasMaestras(appState) {
             };
 
             await guardarSede(nuevoCodigo, data);
+            invalidarCacheSedes(); // v3.30.0: forzar recarga en el próximo getSedes()
             renderSedesCards();
             window.dispatchEvent(new CustomEvent('sedesListChanged'));
         });

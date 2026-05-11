@@ -1,4 +1,5 @@
 import { getStatsCitas } from './firebase.js';
+import { cacheGet, cacheSet, cacheInvalidatePrefix } from './cache.js';
 
 let appStateRef = null;
 
@@ -21,6 +22,13 @@ export function setupObservatorio(appState) {
     document.querySelector('[data-target="view-observatorio"]').addEventListener('click', () => {
         checkJerarquicoUI(true);
         loadStats();
+    });
+
+    // v3.30.0: Invalidar caché de estadísticas cuando se actualiza una cita
+    window.addEventListener('citaActualizada', () => {
+        if (appStateRef.sedeActivaId) {
+            cacheInvalidatePrefix(`obs_${appStateRef.sedeActivaId}_`);
+        }
     });
 }
 
@@ -52,12 +60,22 @@ async function loadStats() {
     btn.textContent = "⌛ Cargando...";
     btn.disabled = true;
 
+    // v3.30.0: TTL de 3 minutos por sede+rango para evitar relanzar agregaciones redundantes
+    const OBS_TTL = 3 * 60 * 1000;
+
     try {
         let stats = { total: 0, asignadas: 0, atendidas: 0, grabadas: 0, incidencias: 0 };
         
         if (isJerarquico) {
             // Cargar de TODAS las sedes disponibles usando agregación por cada una
-            const promesas = appStateRef.sedes.map(s => getStatsCitas(s.codigoTerritorial, fechaInicio, fechaFin));
+            // Cada sede tiene su propia clave de caché
+            const promesas = appStateRef.sedes.map(s => {
+                const key = `obs_${s.codigoTerritorial}_${fechaInicio}_${fechaFin}`;
+                const cached = cacheGet(key);
+                if (cached) return Promise.resolve(cached);
+                return getStatsCitas(s.codigoTerritorial, fechaInicio, fechaFin)
+                    .then(r => { cacheSet(key, r, OBS_TTL); return r; });
+            });
             const resultados = await Promise.all(promesas);
             
             resultados.forEach(r => {
@@ -68,8 +86,15 @@ async function loadStats() {
                 stats.incidencias += r.incidencias;
             });
         } else {
-            // Solo sede activa usando agregación
-            stats = await getStatsCitas(appStateRef.sedeActivaId, fechaInicio, fechaFin);
+            // Solo sede activa
+            const key = `obs_${appStateRef.sedeActivaId}_${fechaInicio}_${fechaFin}`;
+            const cached = cacheGet(key);
+            if (cached) {
+                stats = cached;
+            } else {
+                stats = await getStatsCitas(appStateRef.sedeActivaId, fechaInicio, fechaFin);
+                cacheSet(key, stats, OBS_TTL);
+            }
         }
         
         displayStats(stats);

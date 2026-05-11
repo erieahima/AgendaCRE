@@ -1,4 +1,4 @@
-import { getTodosLosUsuarios, guardarPerfilUsuario, borrarUsuarioData } from './firebase.js';
+import { getTodosLosUsuarios, guardarPerfilUsuario, borrarUsuarioData, invalidarCacheUsuarios } from './firebase.js';
 import { crearUsuarioAutenticacion } from './auth.js';
 
 let appStateRef = null;
@@ -74,6 +74,7 @@ function renderCardViewMode(card, u) {
         delBtn.addEventListener('click', async () => {
             if (confirm(`¿Eliminar perfil de ${u.email}?`)) {
                 await borrarUsuarioData(u.uid);
+                invalidarCacheUsuarios(); // v3.30.0: la próxima carga será fresca
                 renderUserList();
             }
         });
@@ -187,6 +188,7 @@ async function handleNewUser(e) {
             sedesAsignadas: (rol === 'Super_admin' || rol === 'Admin') ? ["ALL"] : sedesAsignadas
         });
 
+        invalidarCacheUsuarios(); // v3.30.0: forzar recarga en el próximo getTodosLosUsuarios()
         alert("Usuario creado con éxito.");
         document.getElementById('user-modal').classList.add('hidden');
         e.target.reset();

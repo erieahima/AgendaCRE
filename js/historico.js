@@ -1,5 +1,6 @@
 import { getHistoricoGrabaciones, buscarCitasHistorico } from './firebase.js';
 import { dateToInputString, formatearFechaHumana, formatearHoraHumana } from './utils.js';
+import { cacheGet, cacheSet, cacheInvalidatePrefix } from './cache.js';
 
 let appStateRef = null;
 let historicalData = [];
@@ -38,6 +39,13 @@ export function setupHistorico(appState) {
     window.addEventListener('historicoViewEntered', () => {
         if (appState.sedeActivaId) loadHistorico();
     });
+
+    // v3.30.0: Invalidar caché del histórico cuando se graba/actualiza una cita
+    window.addEventListener('citaActualizada', () => {
+        if (appState.sedeActivaId) {
+            cacheInvalidatePrefix(`hist_${appState.sedeActivaId}_`);
+        }
+    });
 }
 
 async function loadHistorico() {
@@ -61,7 +69,15 @@ async function loadHistorico() {
     tbody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando historial...</td></tr>';
 
     try {
-        historicalData = await getHistoricoGrabaciones(appStateRef.sedeActivaId, start, end);
+        // v3.30.0: Caché de 5 min por sede+rango — evita releer Firestore al entrar/salir de la vista
+        const cacheKey = `hist_${appStateRef.sedeActivaId}_${start}_${end}`;
+        let cached = cacheGet(cacheKey);
+        if (cached) {
+            historicalData = cached;
+        } else {
+            historicalData = await getHistoricoGrabaciones(appStateRef.sedeActivaId, start, end);
+            cacheSet(cacheKey, historicalData, 5 * 60 * 1000);
+        }
         renderTable(historicalData);
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="color:red">Error: ${err.message}</td></tr>`;

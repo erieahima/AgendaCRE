@@ -1,19 +1,19 @@
 // js/app.js
-import { getSedes, inicializarSedes, resetLlamadasSede } from './firebase.js?v=3.29.17';
-import { cacheClear, cacheInvalidatePrefix } from './cache.js?v=3.29.17';
-import { renderCalendario, loadCitasCalendario, initCalendarioModal } from './calendario.js?v=3.29.17';
-import { setupGenerador } from './generador.js?v=3.29.17';
-import { setupImpresion } from './impresion.js?v=3.29.17';
-import { initAuth, hasPermission } from './auth.js?v=3.29.17';
-import { setupUsuarios } from './usuarios.js?v=3.29.17';
+import { getSedes, inicializarSedes, resetLlamadasSede, invalidarCacheSedes } from './firebase.js?v=3.30.0';
+import { cacheClear } from './cache.js?v=3.30.0';
+import { renderCalendario, loadCitasCalendario, initCalendarioModal } from './calendario.js?v=3.30.0';
+import { setupGenerador } from './generador.js?v=3.30.0';
+import { setupImpresion } from './impresion.js?v=3.30.0';
+import { initAuth, hasPermission } from './auth.js?v=3.30.0';
+import { setupUsuarios } from './usuarios.js?v=3.30.0';
 
-import { setupHistorico } from './historico.js?v=3.29.17';
-import { setupAsignar } from './asignar.js?v=3.29.17';
-import { setupPuesto } from './puesto.js?v=3.29.17';
-import { setupPantalla } from './pantalla.js?v=3.29.17';
-import { setupEspera } from './espera.js?v=3.29.17';
-import { setupTablasMaestras } from './tablasMaestras.js?v=3.29.17';
-import { setupObservatorio } from './observatorio.js?v=3.29.17';
+import { setupHistorico } from './historico.js?v=3.30.0';
+import { setupAsignar } from './asignar.js?v=3.30.0';
+import { setupPuesto } from './puesto.js?v=3.30.0';
+import { setupPantalla } from './pantalla.js?v=3.30.0';
+import { setupEspera } from './espera.js?v=3.30.0';
+import { setupTablasMaestras } from './tablasMaestras.js?v=3.30.0';
+import { setupObservatorio } from './observatorio.js?v=3.30.0';
 
 // Estado global de la aplicación
 const AppState = {
@@ -35,7 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadAuthenticatedApp() {
     // 2. Inicializar y cargar sedes
-    await inicializarSedes();
+    // Guard: solo comprobamos la inicialización una vez por navegador (evita 1 lectura extra en cada login)
+    if (!localStorage.getItem('sedes_initialized')) {
+        await inicializarSedes();
+        localStorage.setItem('sedes_initialized', '1');
+    }
     let sedesData = await getSedes();
     
     // FILTRAR SEDES: Admin/Super ve todo, otros solo sedesAsignadas (v3.22.0 con soporte ALL)
@@ -105,9 +109,9 @@ async function loadAuthenticatedApp() {
     globalSelector.addEventListener('change', (e) => {
         AppState.sedeActivaId = e.target.value;
         localStorage.setItem('last_sede_id', AppState.sedeActivaId);
-        // Invalidar caché de la sede anterior para no servir datos cruzados
-        cacheInvalidatePrefix(`cal_dia_`);
-        cacheInvalidatePrefix(`cal_mes_`);
+        // NO invalidamos el caché de calendario al cambiar de sede:
+        // cada sede tiene su propia clave y el TTL expira de forma natural.
+        // Sólo los datos de asignar se limpian para no servir datos cruzados.
         checkDailyReset(AppState.sedeActivaId); // Verificar reset diario al cambiar de sede
         window.dispatchEvent(new CustomEvent('sedeChanged', { detail: AppState.sedeActivaId }));
     });
@@ -138,7 +142,9 @@ async function loadAuthenticatedApp() {
     });
 
     window.addEventListener('sedesListChanged', async () => {
-        // Recargar sedes en el selector sin perder la activa
+        // Recargar sedes en el selector sin perder la activa.
+        // invalidarCacheSedes() ya fue llamado desde tablasMaestras.js antes de disparar este evento,
+        // por lo que getSedes() hará una lectura fresca a Firestore.
         const currentSede = AppState.sedeActivaId;
         let sedesData = await getSedes();
         
