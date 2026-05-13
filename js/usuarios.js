@@ -83,7 +83,7 @@ function renderCardViewMode(card, u) {
 
 function renderCardEditMode(card, u) {
     card.classList.add('editing');
-    const roles = ['Super_admin', 'Admin', 'Operador', 'Cita', 'Grabador', 'pantalla'];
+    const roles = ['Super_admin', 'Admin', 'Operador', 'Cita', 'Observador', 'pantalla'];
     const roleOptions = roles.map(r => `<option value="${r}" ${u.rol === r ? 'selected' : ''}>${r}</option>`).join("");
     
     const isAllSedes = (u.sedesAsignadas || []).includes("ALL");
