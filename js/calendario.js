@@ -356,7 +356,9 @@ function setupModalControls() {
     });
 }
 
-export function openModal(cita, isRestricted = false) {
+export function openModal(cita, isRestricted = false, isReadOnly = false) {
+    // v3.30.2: El rol 'observador' siempre abre el modal en modo solo lectura
+    if (AppState.user?.rol?.toLowerCase() === 'observador') isReadOnly = true;
     modalCitaActiva = cita;
     const modal = document.getElementById('cita-modal');
     
@@ -382,7 +384,7 @@ export function openModal(cita, isRestricted = false) {
     // Control del botón de llamar en el modal
     const btnLlamarModal = document.getElementById('btn-llamar-modal');
     if (btnLlamarModal) {
-        if (isRestricted) {
+        if (isRestricted || isReadOnly) {
             btnLlamarModal.classList.add('hidden');
         } else {
             // Consultar config del puesto para ver si mostramos el botón
@@ -403,6 +405,23 @@ export function openModal(cita, isRestricted = false) {
     const btnSave = document.getElementById('btn-save-cita');
     const btnAdminEdit = document.getElementById('btn-admin-edit');
 
+    // v3.30.2: Modo solo lectura (rol observador u openModal con isReadOnly=true)
+    // Todos los campos deshabilitados y ningún botón de acción visible.
+    if (isReadOnly) {
+        inputUser.disabled = true;
+        document.getElementById('modal-hace-constar').disabled = true;
+        document.getElementById('modal-vulnerabilidad').disabled = true;
+        inputDoc.disabled = true;
+        inputObs.disabled = true;
+        selectEstado.disabled = true;
+        switchAsistencia.disabled = true;
+        btnSave.classList.add('hidden');
+        btnAdminEdit.classList.add('hidden');
+        if (btnLlamarModal) btnLlamarModal.classList.add('hidden');
+        modal.classList.remove('hidden');
+        return; // salir antes del bloque normal
+    }
+
     if (isFinalizado) {
         inputUser.disabled = true;
         document.getElementById('modal-hace-constar').disabled = true;
@@ -411,7 +430,7 @@ export function openModal(cita, isRestricted = false) {
         inputObs.disabled = true;
         selectEstado.disabled = true;
         switchAsistencia.disabled = true;
-        
+
         btnSave.classList.add('hidden');
         if (canAdminEdit) {
             btnAdminEdit.classList.remove('hidden');
@@ -421,7 +440,7 @@ export function openModal(cita, isRestricted = false) {
     } else {
         btnAdminEdit.classList.add('hidden');
         btnSave.classList.remove('hidden');
-        
+
         if (isRestricted) {
             inputUser.disabled = false; // V.3.29.10: Habilitado en modo Asignar
             document.getElementById('modal-hace-constar').disabled = true;
@@ -440,7 +459,7 @@ export function openModal(cita, isRestricted = false) {
             switchAsistencia.disabled = false;
         }
     }
-    
+
     modal.classList.remove('hidden');
 }
 

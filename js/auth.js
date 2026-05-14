@@ -93,7 +93,7 @@ export function hasPermission(action) {
         'admin':       ['ver_calendario', 'ver_historico', 'asignar_cita', 'config_puesto', 'ver_pantalla', 'ver_espera', 'ver_observatorio'],
         'operador':    ['ver_calendario', 'asignar_cita', 'ver_espera', 'config_puesto', 'ver_pantalla'],
         'cita':        ['asignar_cita'],
-        'observador':  ['ver_observatorio'],
+        'observador':  ['ver_observatorio', 'ver_calendario'],
         'pantalla':    ['ver_pantalla']
     };
 
