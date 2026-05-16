@@ -16,9 +16,16 @@ export async function setupPuesto(appState) {
     const cargarConfig = async () => {
         if (!appState.user) return;
         const config = await getPuestoConfig(appState.user.uid);
-        inputNombre.value = config.nombre || "";
+        inputNombre.value = (config.nombre || "").toUpperCase();
         inputActivo.checked = config.activo || false;
     };
+
+    // Forzar mayúsculas en tiempo real mientras el usuario escribe
+    inputNombre.addEventListener('input', () => {
+        const pos = inputNombre.selectionStart;
+        inputNombre.value = inputNombre.value.toUpperCase();
+        inputNombre.setSelectionRange(pos, pos);
+    });
 
     // Escuchar entrada a la vista
     window.addEventListener('puestoViewEntered', cargarConfig);
@@ -34,7 +41,7 @@ export async function setupPuesto(appState) {
 
         try {
             await guardarPuestoConfig(appState.user.uid, {
-                nombre: inputNombre.value.trim(),
+                nombre: inputNombre.value.trim().toUpperCase(),
                 activo: inputActivo.checked
             });
             
